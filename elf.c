@@ -48,13 +48,11 @@ static void do_init_elf(struct ltelf *lte, const char *filename)
 		error(EXIT_FAILURE, 0, "Can't open ELF file \"%s\"", filename);
 
 	if (gelf_getehdr(lte->elf, &lte->ehdr) == NULL)
-		error(EXIT_FAILURE, 0, "Can't read ELF header of \"%s\"",
-		      filename);
+		error(EXIT_FAILURE, 0, "Can't read ELF header of \"%s\"", filename);
 
 	if (lte->ehdr.e_type != ET_EXEC && lte->ehdr.e_type != ET_DYN)
 		error(EXIT_FAILURE, 0,
-		      "\"%s\" is not an ELF executable nor shared library",
-		      filename);
+		      "\"%s\" is not an ELF executable nor shared library", filename);
 
 	if ((lte->ehdr.e_ident[EI_CLASS] != LT_ELFCLASS
 	     || lte->ehdr.e_machine != LT_ELF_MACHINE)
@@ -78,26 +76,22 @@ static void do_init_elf(struct ltelf *lte, const char *filename)
 		scn = elf_getscn(lte->elf, i);
 		if (scn == NULL || gelf_getshdr(scn, &shdr) == NULL)
 			error(EXIT_FAILURE, 0,
-			      "Couldn't get section header from \"%s\"",
-			      filename);
+			      "Couldn't get section header from \"%s\"", filename);
 
 		name = elf_strptr(lte->elf, lte->ehdr.e_shstrndx, shdr.sh_name);
 		if (name == NULL)
 			error(EXIT_FAILURE, 0,
-			      "Couldn't get section header from \"%s\"",
-			      filename);
+			      "Couldn't get section header from \"%s\"", filename);
 
 		if (shdr.sh_type == SHT_SYMTAB) {
 			Elf_Data *data;
 
 			lte->symtab = elf_getdata(scn, NULL);
 			lte->symtab_count = shdr.sh_size / shdr.sh_entsize;
-			if ((lte->symtab == NULL
-			     || elf_getdata(scn, lte->symtab) != NULL)
+			if ((lte->symtab == NULL || elf_getdata(scn, lte->symtab) != NULL)
 			    && opt_x != NULL)
 				error(EXIT_FAILURE, 0,
-				      "Couldn't get .symtab data from \"%s\"",
-				      filename);
+				      "Couldn't get .symtab data from \"%s\"", filename);
 
 			scn = elf_getscn(lte->elf, shdr.sh_link);
 			if (scn == NULL || gelf_getshdr(scn, &shdr) == NULL)
@@ -109,8 +103,7 @@ static void do_init_elf(struct ltelf *lte, const char *filename)
 			if (data == NULL || elf_getdata(scn, data) != NULL
 			    || shdr.sh_size != data->d_size || data->d_off)
 				error(EXIT_FAILURE, 0,
-				      "Couldn't get .strtab data from \"%s\"",
-				      filename);
+				      "Couldn't get .strtab data from \"%s\"", filename);
 
 			lte->strtab = data->d_buf;
 		} else if (shdr.sh_type == SHT_DYNSYM) {
@@ -118,11 +111,9 @@ static void do_init_elf(struct ltelf *lte, const char *filename)
 
 			lte->dynsym = elf_getdata(scn, NULL);
 			lte->dynsym_count = shdr.sh_size / shdr.sh_entsize;
-			if (lte->dynsym == NULL
-			    || elf_getdata(scn, lte->dynsym) != NULL)
+			if (lte->dynsym == NULL || elf_getdata(scn, lte->dynsym) != NULL)
 				error(EXIT_FAILURE, 0,
-				      "Couldn't get .dynsym data from \"%s\"",
-				      filename);
+				      "Couldn't get .dynsym data from \"%s\"", filename);
 
 			scn = elf_getscn(lte->elf, shdr.sh_link);
 			if (scn == NULL || gelf_getshdr(scn, &shdr) == NULL)
@@ -134,8 +125,7 @@ static void do_init_elf(struct ltelf *lte, const char *filename)
 			if (data == NULL || elf_getdata(scn, data) != NULL
 			    || shdr.sh_size != data->d_size || data->d_off)
 				error(EXIT_FAILURE, 0,
-				      "Couldn't get .dynstr data from \"%s\"",
-				      filename);
+				      "Couldn't get .dynstr data from \"%s\"", filename);
 
 			lte->dynstr = data->d_buf;
 		} else if (shdr.sh_type == SHT_DYNAMIC) {
@@ -145,8 +135,7 @@ static void do_init_elf(struct ltelf *lte, const char *filename)
 			data = elf_getdata(scn, NULL);
 			if (data == NULL || elf_getdata(scn, data) != NULL)
 				error(EXIT_FAILURE, 0,
-				      "Couldn't get .dynamic data from \"%s\"",
-				      filename);
+				      "Couldn't get .dynamic data from \"%s\"", filename);
 
 			for (j = 0; j < shdr.sh_size / shdr.sh_entsize; ++j) {
 				GElf_Dyn dyn;
@@ -172,14 +161,14 @@ static void do_init_elf(struct ltelf *lte, const char *filename)
   table.
 
  */
-				if(dyn.d_tag==DT_PLTGOT){
-					lte->pltgot_addr=dyn.d_un.d_ptr; 
+				if (dyn.d_tag == DT_PLTGOT) {
+					lte->pltgot_addr = dyn.d_un.d_ptr;
 				}
-				if(dyn.d_tag==DT_MIPS_LOCAL_GOTNO){
-					lte->mips_local_gotno=dyn.d_un.d_val;
+				if (dyn.d_tag == DT_MIPS_LOCAL_GOTNO) {
+					lte->mips_local_gotno = dyn.d_un.d_val;
 				}
-				if(dyn.d_tag==DT_MIPS_GOTSYM){
-					lte->mips_gotsym=dyn.d_un.d_val;
+				if (dyn.d_tag == DT_MIPS_GOTSYM) {
+					lte->mips_gotsym = dyn.d_un.d_val;
 				}
 #endif // __mips__
 				if (dyn.d_tag == DT_JMPREL)
@@ -197,8 +186,7 @@ static void do_init_elf(struct ltelf *lte, const char *filename)
 			if (data == NULL || elf_getdata(scn, data) != NULL
 			    || data->d_off || data->d_size != shdr.sh_size)
 				error(EXIT_FAILURE, 0,
-				      "Couldn't get .hash data from \"%s\"",
-				      filename);
+				      "Couldn't get .hash data from \"%s\"", filename);
 
 			if (shdr.sh_entsize == 4) {
 				/* Standard conforming ELF.  */
@@ -224,23 +212,19 @@ static void do_init_elf(struct ltelf *lte, const char *filename)
 				if ((data->d_type == ELF_T_WORD
 				     && __BYTE_ORDER == __BIG_ENDIAN)
 				    || (data->d_type == ELF_T_XWORD
-					&& lte->ehdr.e_ident[EI_DATA] ==
-					ELFDATA2MSB))
+					&& lte->ehdr.e_ident[EI_DATA] == ELFDATA2MSB))
 					++src;
 				for (j = 0; j < hash_count; ++j, src += 2)
 					*dst++ = *src;
 			} else
 				error(EXIT_FAILURE, 0,
-				      "Unknown .hash sh_entsize in \"%s\"",
-				      filename);
-		} else if (shdr.sh_type == SHT_GNU_HASH
-			   && lte->hash == NULL) {
+				      "Unknown .hash sh_entsize in \"%s\"", filename);
+		} else if (shdr.sh_type == SHT_GNU_HASH && lte->hash == NULL) {
 			Elf_Data *data;
 
 			lte->hash_type = SHT_GNU_HASH;
 
-			if (shdr.sh_entsize != 0
-			    && shdr.sh_entsize != 4) {
+			if (shdr.sh_entsize != 0 && shdr.sh_entsize != 4) {
 				error(EXIT_FAILURE, 0,
 				      ".gnu.hash sh_entsize in \"%s\" should be 4, but is %llu",
 				      filename, shdr.sh_entsize);
@@ -254,8 +238,7 @@ static void do_init_elf(struct ltelf *lte, const char *filename)
 				      filename);
 
 			lte->hash = (Elf32_Word *) data->d_buf;
-		} else if (shdr.sh_type == SHT_PROGBITS
-			   || shdr.sh_type == SHT_NOBITS) {
+		} else if (shdr.sh_type == SHT_PROGBITS || shdr.sh_type == SHT_NOBITS) {
 			if (strcmp(name, ".plt") == 0) {
 				lte->plt_addr = shdr.sh_addr;
 				lte->plt_size = shdr.sh_size;
@@ -265,7 +248,7 @@ static void do_init_elf(struct ltelf *lte, const char *filename)
 			}
 #ifdef ARCH_SUPPORTS_OPD
 			else if (strcmp(name, ".opd") == 0) {
-				lte->opd_addr = (GElf_Addr *) (long) shdr.sh_addr;
+				lte->opd_addr = (GElf_Addr *) (long)shdr.sh_addr;
 				lte->opd_size = shdr.sh_size;
 				lte->opd = elf_rawdata(scn, NULL);
 			}
@@ -291,11 +274,9 @@ static void do_init_elf(struct ltelf *lte, const char *filename)
 				error(EXIT_FAILURE, 0,
 				      "Couldn't get section header from \"%s\"",
 				      filename);
-			if (shdr.sh_addr == relplt_addr
-			    && shdr.sh_size == relplt_size) {
+			if (shdr.sh_addr == relplt_addr && shdr.sh_size == relplt_size) {
 				lte->relplt = elf_getdata(scn, NULL);
-				lte->relplt_count =
-				    shdr.sh_size / shdr.sh_entsize;
+				lte->relplt_count = shdr.sh_size / shdr.sh_entsize;
 				if (lte->relplt == NULL
 				    || elf_getdata(scn, lte->relplt) != NULL)
 					error(EXIT_FAILURE, 0,
@@ -307,8 +288,7 @@ static void do_init_elf(struct ltelf *lte, const char *filename)
 
 		if (i == lte->ehdr.e_shnum)
 			error(EXIT_FAILURE, 0,
-			      "Couldn't find .rel*.plt section in \"%s\"",
-			      filename);
+			      "Couldn't find .rel*.plt section in \"%s\"", filename);
 
 		debug(1, "%s %zd PLT relocations", filename, lte->relplt_count);
 	}
@@ -371,12 +351,12 @@ static int in_load_libraries(const char *name, struct ltelf *lte)
 			continue;
 
 		if (lte[i].hash_type == SHT_GNU_HASH) {
-			Elf32_Word * hashbase = lte[i].hash;
+			Elf32_Word *hashbase = lte[i].hash;
 			Elf32_Word nbuckets = *hashbase++;
 			Elf32_Word symbias = *hashbase++;
 			Elf32_Word bitmask_nwords = *hashbase++;
-			Elf32_Word * buckets;
-			Elf32_Word * chain_zero;
+			Elf32_Word *buckets;
+			Elf32_Word *chain_zero;
 			Elf32_Word bucket;
 
 			// +1 for skipped `shift'
@@ -393,13 +373,18 @@ static int in_load_libraries(const char *name, struct ltelf *lte)
 						int symidx = hasharr - chain_zero;
 						GElf_Sym sym;
 
-						if (gelf_getsym(lte[i].dynsym, symidx, &sym) == NULL)
-							error(EXIT_FAILURE, 0,
+						if (gelf_getsym
+						    (lte[i].dynsym, symidx, &sym) == NULL)
+							error(EXIT_FAILURE,
+							      0,
 							      "Couldn't get symbol from .dynsym");
 
 						if (sym.st_value != 0
-						    && sym.st_shndx != SHN_UNDEF
-						    && strcmp(name, lte[i].dynstr + sym.st_name) == 0)
+						    && sym.st_shndx !=
+						    SHN_UNDEF
+						    && strcmp(name,
+							      lte[i].
+							      dynstr + sym.st_name) == 0)
 							return 1;
 					}
 				while ((*hasharr++ & 1u) == 0);
@@ -442,7 +427,7 @@ static GElf_Addr opd2addr(struct ltelf *lte, GElf_Addr addr)
 	if (offset > lte->opd_size)
 		error(EXIT_FAILURE, 0, "static plt not in .opd");
 
-	return *(GElf_Addr*)(base + offset);
+	return *(GElf_Addr *) (base + offset);
 #else //!ARCH_SUPPORTS_OPD
 	return addr;
 #endif
@@ -467,22 +452,21 @@ struct library_symbol *read_elf(struct process *proc)
 	// MIPS doesn't use the PLT and the GOT entries get changed
 	// on startup. 
 	proc->need_to_reinitialize_breakpoints = 1;
-	for(i=lte->mips_gotsym; i<lte->dynsym_count;i++){
+	for (i = lte->mips_gotsym; i < lte->dynsym_count; i++) {
 		GElf_Sym sym;
 		const char *name;
 		GElf_Addr addr = arch_plt_sym_val(lte, i, 0);
-		if (gelf_getsym(lte->dynsym, i, &sym) == NULL){
+		if (gelf_getsym(lte->dynsym, i, &sym) == NULL) {
 			error(EXIT_FAILURE, 0,
-					"Couldn't get relocation from \"%s\"",
-					proc->filename);       
+			      "Couldn't get relocation from \"%s\"", proc->filename);
 		}
-		name=lte->dynstr+sym.st_name;
-		if(ELF64_ST_TYPE(sym.st_info) != STT_FUNC){
-			debug(2,"sym %s not a function",name);
+		name = lte->dynstr + sym.st_name;
+		if (ELF64_ST_TYPE(sym.st_info) != STT_FUNC) {
+			debug(2, "sym %s not a function", name);
 			continue;
 		}
 		add_library_symbol(addr, name, &library_symbols, 0,
-				ELF64_ST_BIND(sym.st_info) != 0);
+				   ELF64_ST_BIND(sym.st_info) != 0);
 		if (!lib_tail)
 			lib_tail = &(library_symbols->next);
 	}
@@ -505,11 +489,9 @@ struct library_symbol *read_elf(struct process *proc)
 
 		if (ret == NULL
 		    || ELF64_R_SYM(rela.r_info) >= lte->dynsym_count
-		    || gelf_getsym(lte->dynsym, ELF64_R_SYM(rela.r_info),
-				   &sym) == NULL)
+		    || gelf_getsym(lte->dynsym, ELF64_R_SYM(rela.r_info), &sym) == NULL)
 			error(EXIT_FAILURE, 0,
-			      "Couldn't get relocation from \"%s\"",
-			      proc->filename);
+			      "Couldn't get relocation from \"%s\"", proc->filename);
 
 #ifdef PLT_REINITALISATION_BP
 		if (!sym.st_value && PLTs_initialized_by_here)
@@ -521,7 +503,8 @@ struct library_symbol *read_elf(struct process *proc)
 			addr = arch_plt_sym_val(lte, i, &rela);
 			add_library_symbol(addr, name, &library_symbols,
 					   (PLTS_ARE_EXECUTABLE(lte)
-					   ?  LS_TOPLT_EXEC : LS_TOPLT_POINT),
+					    ? LS_TOPLT_EXEC :
+					    LS_TOPLT_POINT),
 					   ELF64_ST_BIND(sym.st_info) == STB_WEAK);
 			if (!lib_tail)
 				lib_tail = &(library_symbols->next);
@@ -542,8 +525,8 @@ struct library_symbol *read_elf(struct process *proc)
 		main_cheat->name = PLTs_initialized_by_here;
 
 		for (xptr = opt_x; xptr; xptr = xptr->next)
-			if (strcmp(xptr->name, PLTs_initialized_by_here) == 0
-			    && main_cheat) {
+			if (strcmp(xptr->name, PLTs_initialized_by_here) ==
+			    0 && main_cheat) {
 				free(main_cheat);
 				main_cheat = NULL;
 				break;
@@ -560,8 +543,7 @@ struct library_symbol *read_elf(struct process *proc)
 
 		if (gelf_getsym(lte->symtab, i, &sym) == NULL)
 			error(EXIT_FAILURE, 0,
-			      "Couldn't get symbol from \"%s\"",
-			      proc->filename);
+			      "Couldn't get symbol from \"%s\"", proc->filename);
 
 		name = lte->strtab + sym.st_name;
 		addr = sym.st_value;
@@ -579,32 +561,35 @@ struct library_symbol *read_elf(struct process *proc)
 			}
 	}
 	for (xptr = opt_x; xptr; xptr = xptr->next)
-		if ( ! xptr->found) {
+		if (!xptr->found) {
 			char *badthing = "WARNING";
 #ifdef PLT_REINITALISATION_BP
 			if (strcmp(xptr->name, PLTs_initialized_by_here) == 0) {
 				if (lte->ehdr.e_entry) {
-					add_library_symbol (
-						opd2addr (lte, lte->ehdr.e_entry),
-						PLTs_initialized_by_here,
-						lib_tail, 1, 0);
-					fprintf (stderr, "WARNING: Using e_ent"
-						 "ry from elf header (%p) for "
-						 "address of \"%s\"\n", (void*)
-						 (long) lte->ehdr.e_entry,
-						 PLTs_initialized_by_here);
+					add_library_symbol(opd2addr
+							   (lte,
+							    lte->ehdr.
+							    e_entry),
+							   PLTs_initialized_by_here,
+							   lib_tail, 1, 0);
+					fprintf(stderr,
+						"WARNING: Using e_ent"
+						"ry from elf header (%p) for "
+						"address of \"%s\"\n", (void *)
+						(long)lte->ehdr.e_entry,
+						PLTs_initialized_by_here);
 					continue;
 				}
 				badthing = "ERROR";
 				exit_out = 1;
 			}
 #endif
-			fprintf (stderr,
-				 "%s: Couldn't find symbol \"%s\" in file \"%s"
-			         "\"\n", badthing, xptr->name, proc->filename);
+			fprintf(stderr,
+				"%s: Couldn't find symbol \"%s\" in file \"%s"
+				"\"\n", badthing, xptr->name, proc->filename);
 		}
 	if (exit_out) {
-		exit (1);
+		exit(1);
 	}
 
 	for (i = 0; i < library_num + 1; ++i)

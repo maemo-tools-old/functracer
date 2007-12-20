@@ -25,28 +25,30 @@ void trace_me(void)
 #if 0
 static int trace_pid(pid_t pid)
 {
-        if (ptrace(PTRACE_ATTACH, pid, 0, 0) < 0) {
-                return -1;
-        }
+	if (ptrace(PTRACE_ATTACH, pid, 0, 0) < 0) {
+		return -1;
+	}
 
-        /* man ptrace: PTRACE_ATTACH attaches to the process specified
-           in pid.  The child is sent a SIGSTOP, but will not
-           necessarily have stopped by the completion of this call;
-           use wait() to wait for the child to stop. */
-        if (waitpid (pid, NULL, 0) != pid) {
-                perror ("trace_pid: waitpid");
-                exit (1);
-        }
+	/* man ptrace: PTRACE_ATTACH attaches to the process specified
+	   in pid.  The child is sent a SIGSTOP, but will not
+	   necessarily have stopped by the completion of this call;
+	   use wait() to wait for the child to stop. */
+	if (waitpid(pid, NULL, 0) != pid) {
+		perror("trace_pid: waitpid");
+		exit(1);
+	}
 
-        return 0;
+	return 0;
 }
 #endif
 
 void trace_set_options(struct process *proc)
-{	
-	long options = PTRACE_O_TRACESYSGOOD | PTRACE_O_TRACEFORK | PTRACE_O_TRACEVFORK | PTRACE_O_TRACECLONE | PTRACE_O_TRACEEXEC;
-	if (ptrace(PTRACE_SETOPTIONS, proc->pid, 0, options) < 0 &&
-	    ptrace(PTRACE_OLDSETOPTIONS, proc->pid, 0, options) < 0) {
+{
+	long options =
+	    PTRACE_O_TRACESYSGOOD | PTRACE_O_TRACEFORK |
+	    PTRACE_O_TRACEVFORK | PTRACE_O_TRACECLONE | PTRACE_O_TRACEEXEC;
+	if (ptrace(PTRACE_SETOPTIONS, proc->pid, 0, options) < 0
+	    && ptrace(PTRACE_OLDSETOPTIONS, proc->pid, 0, options) < 0) {
 		perror("PTRACE_SETOPTIONS");
 		exit(EXIT_FAILURE);
 	}

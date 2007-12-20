@@ -6,7 +6,7 @@ struct opt_x_t {
 	int found;
 	struct opt_x_t *next;
 };
-extern struct opt_x_t *opt_x;   /* list of functions to break at */
+extern struct opt_x_t *opt_x;	/* list of functions to break at */
 
 #define MAX_LIBRARY     30
 extern int library_num;

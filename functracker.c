@@ -5,8 +5,8 @@
 #include <errno.h>
 #include <unistd.h>
 
-#include <asm/unistd.h> /* for syscall numbers */
-#include <linux/futex.h> /* for futex() tracing */
+#include <asm/unistd.h>		/* for syscall numbers */
+#include <linux/futex.h>	/* for futex() tracing */
 
 #include "process.h"
 #include "ptrace.h"
@@ -17,11 +17,18 @@
 void print_status(pid_t pid, int status)
 {
 	if (WIFEXITED(status))
-		fprintf(stderr, "\nProcess %d exited with status %d", pid, WEXITSTATUS(status));
+		fprintf(stderr, "\nProcess %d exited with status %d", pid,
+			WEXITSTATUS(status));
 	if (WIFSIGNALED(status))
-		fprintf(stderr, "\nProcess %d killed by signal %d", pid, WTERMSIG(status));
+		fprintf(stderr, "\nProcess %d killed by signal %d", pid,
+			WTERMSIG(status));
 	if (WIFSTOPPED(status))
-		fprintf(stderr, "\nProcess %d stopped by signal %d %s", pid, WSTOPSIG(status) & 0x80 ? WSTOPSIG(status) & ~0x80 : WSTOPSIG(status), WSTOPSIG(status) & 0x80 ? "(syscall)" : status >> 16 ? "(extended event)" : "(breakpoint)");
+		fprintf(stderr, "\nProcess %d stopped by signal %d %s",
+			pid,
+			WSTOPSIG(status) & 0x80 ? WSTOPSIG(status) & ~0x80
+			: WSTOPSIG(status),
+			WSTOPSIG(status) & 0x80 ? "(syscall)" : status >>
+			16 ? "(extended event)" : "(breakpoint)");
 	if (WIFCONTINUED(status))
 		fprintf(stderr, "\nProcess %d continued by SIGCONT", pid);
 	fprintf(stderr, ", status = 0x%x\n", status);
@@ -53,16 +60,16 @@ void wait_for_something(void)
 			exit(0);
 		} else if (errno == EINTR) {
 			fprintf(stderr, "wait received EINTR ?\n");
-		}		
+		}
 		perror("waitpid");
 		exit(1);
 	}
 	proc = pid2proc(pid);
 	if (!proc) {
 		proc = add_proc(pid);
-//		proc->list_of_symbols = read_elf(proc);
-//		insert_function_bp(proc, "printf");
-//		print_symbols(proc);
+//              proc->list_of_symbols = read_elf(proc);
+//              insert_function_bp(proc, "printf");
+//              print_symbols(proc);
 		trace_set_options(proc);
 		continue_process(proc);
 		return;
@@ -94,9 +101,11 @@ void wait_for_something(void)
 				if (in_syscall)
 					fprintf(stderr, " <unfinished ...>\n");
 #define futex_op_str(op)	(op == 0 ? "FUTEX_WAIT" : op == 1 ? "FUTEX_WAKE" : "<other>")
-				fprintf(stderr, "%d futex(%p, %s, %d", proc->pid, uaddr, futex_op_str(op), val);
+				fprintf(stderr, "%d futex(%p, %s, %d",
+					proc->pid, uaddr, futex_op_str(op), val);
 				if (op == FUTEX_WAIT) {
-					void *timeout = (void *)get_syscall_arg(proc, 3);
+					void *timeout = (void *)get_syscall_arg(proc,
+										3);
 					if (timeout)
 						fprintf(stderr, ", %p", timeout);
 					else
@@ -110,7 +119,8 @@ void wait_for_something(void)
 				int ret = get_syscall_arg(proc, -1);
 
 				if (!in_syscall)
-					fprintf(stderr, "%d <... futex resumed> ", proc->pid);
+					fprintf(stderr,
+						"%d <... futex resumed> ", proc->pid);
 				fprintf(stderr, ") = %d\n", ret);
 				in_syscall = 0;
 			}
@@ -137,7 +147,7 @@ void execute_program(char *filename, char *argv[])
 	} else if (!pid) {	/* child */
 		trace_me();
 		execvp(filename, argv);
-		fprintf(stderr, "Can't execute \"%s\": %s\n", filename,	strerror(errno));
+		fprintf(stderr, "Can't execute \"%s\": %s\n", filename, strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 }

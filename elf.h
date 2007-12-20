@@ -29,7 +29,7 @@ struct ltelf {
 	size_t pltgot_addr;
 	size_t mips_local_gotno;
 	size_t mips_gotsym;
-#endif // __mips__
+#endif				// __mips__
 };
 
 #define LTE_HASH_MALLOCED 1

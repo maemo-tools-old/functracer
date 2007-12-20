@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <ctype.h> /* for isprint() */
+#include <ctype.h>		/* for isprint() */
 #include <sys/ptrace.h>
 
 #include "process.h"
@@ -36,7 +36,7 @@ static int umovestr(struct process *proc, void *addr, int len, char *laddr)
 			}
 		}
 		offset += sizeof(long);
-	} 
+	}
 	laddr[offset] = '\0';
 	return 0;
 }

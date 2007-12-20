@@ -14,8 +14,7 @@ static void output_line(char *fmt, ...)
 	va_end(args);
 }
 
-void debug_(int level, const char *file, int line, const char *func,
-	const char *fmt, ...)
+void debug_(int level, const char *file, int line, const char *func, const char *fmt, ...)
 {
 	char buf[1024];
 	va_list args;

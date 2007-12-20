@@ -10,10 +10,10 @@
 #endif
 
 struct breakpoint {
-        void *addr;
-        unsigned char orig_value[BREAKPOINT_LENGTH];
-        int enabled;
-        struct library_symbol *libsym;
+	void *addr;
+	unsigned char orig_value[BREAKPOINT_LENGTH];
+	int enabled;
+	struct library_symbol *libsym;
 };
 
 #endif /* TT_BREAKPOINT_H */
