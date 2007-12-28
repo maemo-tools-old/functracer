@@ -16,8 +16,8 @@ struct process {
 	struct process *next;
 };
 
-extern struct process *pid2proc(pid_t pid);
-extern struct process *add_proc(pid_t pid);
-extern void remove_proc(struct process *proc);
+extern struct process *process_from_pid(pid_t pid);
+extern struct process *add_process(pid_t pid);
+extern void remove_process(struct process *proc);
 
 #endif /* TT_PROCESS_H */

@@ -9,7 +9,7 @@
 
 static struct process *list_of_processes = NULL;
 
-struct process *pid2proc(pid_t pid)
+struct process *process_from_pid(pid_t pid)
 {
 	struct process *tmp;
 
@@ -19,7 +19,7 @@ struct process *pid2proc(pid_t pid)
 	return tmp;
 }
 
-static char *pid2name(pid_t pid)
+static char *name_from_pid(pid_t pid)
 {
 	char proc_exe[1024];
 
@@ -34,11 +34,9 @@ static char *pid2name(pid_t pid)
 	return NULL;
 }
 
-struct process *add_proc(pid_t pid)
+struct process *add_process(pid_t pid)
 {
 	struct process *tmp;
-
-	debug(1, "Adding PID %d", pid);
 
 	tmp = malloc(sizeof(struct process));
 	if (!tmp) {
@@ -48,14 +46,16 @@ struct process *add_proc(pid_t pid)
 	tmp->pid = pid;
 	tmp->is_ptraced = 0;
 	tmp->in_syscall = 0;
-	tmp->filename = pid2name(pid);
+	tmp->filename = name_from_pid(pid);
 	tmp->next = list_of_processes;
 	list_of_processes = tmp;
+
+	debug(1, "Adding PID %d, filename = \"%s\"", pid, tmp->filename);
 
 	return tmp;
 }
 
-void remove_proc(struct process *proc)
+void remove_process(struct process *proc)
 {
 	struct process *tmp;
 

@@ -2,23 +2,24 @@
 #include <stdlib.h>
 #include <sys/ptrace.h>
 #include <linux/ptrace.h>
+#include <errno.h>
 
 #include "ptrace.h"
 #include "debug.h"
 
 void continue_process(struct process *proc)
 {
-	if (ptrace(PTRACE_SYSCALL, proc->pid, 0, 0) < 0) {
-		perror("ptrace: PTRACE_SYSCALL");
-		exit(EXIT_FAILURE);
+	errno = 0;
+	if (ptrace(PTRACE_SYSCALL, proc->pid, 0, 0) == -1 && errno) {
+		error_exit("ptrace: PTRACE_SYSCALL");
 	}
 }
 
 void trace_me(void)
 {
-	if (ptrace(PTRACE_TRACEME, 0, 0, 0) < 0) {
-		perror("ptrace: PTRACE_TRACEME");
-		exit(EXIT_FAILURE);
+	errno = 0;
+	if (ptrace(PTRACE_TRACEME, 0, 0, 0) == -1 && errno) {
+		error_exit("ptrace: PTRACE_TRACEME");
 	}
 }
 
@@ -47,16 +48,18 @@ void trace_set_options(struct process *proc)
 	long options =
 	    PTRACE_O_TRACESYSGOOD | PTRACE_O_TRACEFORK |
 	    PTRACE_O_TRACEVFORK | PTRACE_O_TRACECLONE | PTRACE_O_TRACEEXEC;
-	if (ptrace(PTRACE_SETOPTIONS, proc->pid, 0, options) < 0
-	    && ptrace(PTRACE_OLDSETOPTIONS, proc->pid, 0, options) < 0) {
-		perror("PTRACE_SETOPTIONS");
-		exit(EXIT_FAILURE);
+
+	errno = 0;
+	if (ptrace(PTRACE_SETOPTIONS, proc->pid, 0, options) == -1
+	    && ptrace(PTRACE_OLDSETOPTIONS, proc->pid, 0, options) == -1
+	    && errno) {
+		error_exit("ptrace: PTRACE_SETOPTIONS");
 	}
 }
 
 #define LIST_SIZE(x)	(sizeof(x) / sizeof(x[0]))
 
-int fork_event(struct process *proc, int event, pid_t *new_pid)
+int is_fork(struct process *proc, int event)
 {
 	int i;
 	struct init_fork_events {
@@ -73,10 +76,21 @@ int fork_event(struct process *proc, int event, pid_t *new_pid)
 
 		if (event == ptr->event) {
 			debug(1, "detected fork (%s)", ptr->name);
-			return ptrace(PTRACE_GETEVENTMSG, proc->pid, 0, new_pid);
+			return 1;
 		}
 	}
 
-	*new_pid = 0;
 	return 0;
+}
+
+void get_fork_pid(struct process *proc, pid_t *new_pid)
+{
+	errno = 0;
+	if (ptrace(PTRACE_GETEVENTMSG, proc->pid, 0, new_pid) == -1 && errno) {
+		error_exit("ptrace: PTRACE_GETEVENTMSG");
+	}
+	if (*new_pid <= 0) {
+		error_exit("invalid PID %d returned by PTRACE_GETEVENTMSG\n",
+		    *new_pid);
+	}
 }

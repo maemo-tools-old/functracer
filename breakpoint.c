@@ -1,3 +1,8 @@
+#include <stdio.h>
+
+#include "breakpoint.h"
+#include "process.h"
+
 #if 0
 void enable_breakpoint(pid_t pid, struct breakpoint *sbp)
 {
@@ -70,3 +75,9 @@ void insert_function_bp(struct process *proc, const char *funcname)
 	}
 }
 #endif
+
+void *get_breakpoint_address(struct process *proc)
+{
+	/* TODO: stub */
+	return NULL;
+}

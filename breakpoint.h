@@ -1,5 +1,7 @@
-#ifndef TT_BREAKPOINT_H
-#define TT_BREAKPOINT_H
+#ifndef ft_BREAKPOINT_H
+#define ft_BREAKPOINT_H
+
+#include "process.h"
 
 #ifdef __i386__
 
@@ -16,4 +18,6 @@ struct breakpoint {
 	struct library_symbol *libsym;
 };
 
-#endif /* TT_BREAKPOINT_H */
+extern void *get_breakpoint_address(struct process *proc);
+
+#endif /* ft_BREAKPOINT_H */

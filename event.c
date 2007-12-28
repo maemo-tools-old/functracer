@@ -38,7 +38,7 @@ static int wait_for_event(struct event *event)
 		   && (status >> 16)) {
 		event->type = EV_PTRACE;
 	} else if (WIFSTOPPED(status) && WSTOPSIG(status) == (SIGTRAP | 0x80)) {
-		switch (get_syscall_nr(event->proc, &event->data.sysnum)) {
+		switch (get_syscall_nr(event->proc, &event->data.sysno)) {
 		case 1:
 			event->type = EV_SYSCALL;
 			break;
@@ -48,19 +48,22 @@ static int wait_for_event(struct event *event)
 		default:
 			return -1;
 		}
+	} else if (WIFSTOPPED(status) && WSTOPSIG(status) == SIGTRAP) {
+		event->type = EV_BREAKPOINT;
+		event->data.addr = get_breakpoint_address(event->proc);
 	} else if (WIFEXITED(status)) {
 #if 0 /* sanity check */
 		if (!(kill(event->proc->pid, 0) < 0 && errno == ESRCH))
-			debug(1, "warning: dangling process %d", pid);
+			debug(1, "dangling process %d", pid);
 #endif
 		event->type = EV_PROC_EXIT;
 		event->data.retval = WEXITSTATUS(status);
 	} else if (WIFSIGNALED(status)) {
 		event->type = EV_PROC_EXIT_SIGNAL;
-		event->data.signum = WTERMSIG(status);
-	} else if (WIFSTOPPED(status) && WSTOPSIG(status) == SIGTRAP) {
-		event->type = EV_BREAKPOINT;
-		event->data.addr = get_breakpoint_address(event->proc);
+		event->data.signo = WTERMSIG(status);
+	} else if (WIFSTOPPED(status)) {
+		event->type = EV_SIGNAL;
+		event->data.signo = WSTOPSIG(status);
 	} else
 		event->type = EV_UNKNOWN;
 
@@ -74,25 +77,43 @@ static int handle_event(struct event *event)
 		debug(1, "no more children");
 		break;
 	case EV_PROC_NEW:
-		debug(1, "+++ new process (PID %d) +++", event->data.pid);
+		debug(1, "new process (PID %d)", event->data.pid);
 		event->proc = add_process(event->data.pid);
 		trace_set_options(event->proc);
 		continue_process(event->proc);
 		break;
 	case EV_PROC_EXIT:
-		debug(1, "+++ exited (status %d) +++", event->data.retval);
+		debug(1, "process exited (PID %d, status %d)",
+		    event->proc->pid, event->data.retval);
+		remove_process(event->proc);
+		break;
+	case EV_PROC_EXIT_SIGNAL:
+		debug(1, "process killed by signal (PID %d, signo %d)",
+		    event->proc->pid, event->data.signo);
 		remove_process(event->proc);
 		break;
 	case EV_SYSCALL:
-		debug(1, "syscall entry");
+		debug(1, "syscall entry (PID %d, sysno %d)", event->proc->pid,
+		    event->data.sysno);
 		continue_process(event->proc);
 		break;
 	case EV_SYSRET:
-		debug(1, "syscall exit");
+		debug(1, "syscall exit (PID %d, sysno %d)", event->proc->pid,
+		    event->data.sysno);
 		continue_process(event->proc);
 		break;
 	case EV_PTRACE:
-		debug(1, "ptrace() event");
+		debug(1, "ptrace() event (PID %d)", event->proc->pid);
+		continue_process(event->proc);
+		break;
+	case EV_BREAKPOINT:
+		debug(1, "breakpoint (PID %d, addr %p)", event->proc->pid,
+		    event->data.addr);
+		continue_process(event->proc);
+		break;
+	case EV_SIGNAL:
+		debug(1, "process received signal (PID %d, signo %d)",
+		    event->proc->pid, event->data.signo);
 		continue_process(event->proc);
 		break;
 	default:

@@ -1,5 +1,8 @@
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <error.h>
+#include <errno.h>
 
 static void output_line(char *fmt, ...)
 {
@@ -26,4 +29,13 @@ void debug_(int level, const char *file, int line, const char *func, const char 
 
 //#warning "debug message output disabled"
 	output_line("DEBUG: %s:%d: %s(): %s", file, line, func, buf);
+}
+
+void error_exit(const char *fmt, ...)
+{
+	va_list args;
+
+	va_start(args, fmt);
+	error(EXIT_FAILURE, errno, fmt, args);
+	va_end(args);
 }
