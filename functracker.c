@@ -14,6 +14,7 @@
 #include "process.h"
 #include "ptrace.h"
 #include "syscall.h"
+#include "options.h"
 
 #if 0
 void print_status(pid_t pid, int status)
@@ -66,12 +67,14 @@ pid_t execute_program(char *filename, char *argv[])
 
 int main(int argc, char *argv[])
 {
-	if (argc < 2) {
-		fprintf(stderr, "Usage: %s <program> <args>\n", argv[0]);
-		exit(EXIT_FAILURE);
-	}
+	int prog_index;
+	struct arguments arguments;
+	
+	memset(&arguments, 0, sizeof(struct arguments));
 
-	execute_program(argv[1], argv + 1);
+	process_options(argc, argv, &prog_index, &arguments);
+	
+	execute_program(argv[prog_index], argv + prog_index);
 
 	return event_loop();
 }
