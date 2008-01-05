@@ -1,83 +1,126 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "breakpoint.h"
+#include "debug.h"
+#include "dict.h"
 #include "process.h"
+#include "ptrace.h"
+#include "sysdeps.h"
 
-#if 0
-void enable_breakpoint(pid_t pid, struct breakpoint *sbp)
+static void enable_breakpoint(struct process *proc, struct breakpoint *bkpt)
 {
-	unsigned int i, j;
+	unsigned char bpkt_insn[] = BREAKPOINT_VALUE;
 
-	debug(1, "enable_breakpoint(%d,%p)", pid, sbp->addr);
+	debug(1, "enable_breakpoint(%d,%p)", proc->pid, bkpt->addr);
 
-	for (i = 0; i < 1 + ((BREAKPOINT_LENGTH - 1) / sizeof(long)); i++) {
-		long a = ptrace(PTRACE_PEEKTEXT, pid,
-				sbp->addr + i * sizeof(long),
-				0);
-		for (j = 0; j < sizeof(long)
-		     && i * sizeof(long) + j < BREAKPOINT_LENGTH; j++) {
-			unsigned char *bytes = (unsigned char *)&a;
-
-			sbp->orig_value[i * sizeof(long) + j] = bytes[j];
-			bytes[j] = break_insn[i * sizeof(long) + j];
-		}
-		ptrace(PTRACE_POKETEXT, pid, sbp->addr + i * sizeof(long), a);
-	}
+	trace_mem_io(proc, bkpt->addr, bkpt->orig_value, BREAKPOINT_LENGTH, 0);
+	trace_mem_io(proc, bkpt->addr, bpkt_insn, BREAKPOINT_LENGTH, 1);
 }
 
-void disable_breakpoint(pid_t pid, const struct breakpoint *sbp)
+static void disable_breakpoint(struct process *proc, struct breakpoint *bkpt)
 {
-	unsigned int i, j;
+	debug(1, "disable_breakpoint(%d,%p)", proc->pid, bkpt->addr);
 
-	debug(2, "disable_breakpoint(%d,%p)", pid, sbp->addr);
-
-	for (i = 0; i < 1 + ((BREAKPOINT_LENGTH - 1) / sizeof(long)); i++) {
-		long a = ptrace(PTRACE_PEEKTEXT, pid,
-				sbp->addr + i * sizeof(long),
-				0);
-		unsigned char *bytes = (unsigned char *)&a;
-		debug(1,
-		      "XXX breakpoint: pid=%d, addr=%p, current=0x%lx, orig_value=0x%lx",
-		      pid, sbp->addr, a, *(long *)&sbp->orig_value);
-		for (j = 0; j < sizeof(long)
-		     && i * sizeof(long) + j < BREAKPOINT_LENGTH; j++) {
-
-			bytes[j] = sbp->orig_value[i * sizeof(long) + j];
-		}
-		ptrace(PTRACE_POKETEXT, pid, sbp->addr + i * sizeof(long), a);
-	}
+	trace_mem_io(proc, bkpt->addr, bkpt->orig_value, BREAKPOINT_LENGTH, 1);
 }
+
+static void init_breakpoints(struct process *proc)
+{
+	debug(3, "init_breakpoints(PID %d)", proc->pid);
+#if 0 /* XXX not needed? */
+	if (proc->breakpoints) {
+		dict_apply_to_all(proc->breakpoints, free_bp_cb, NULL);
+		dict_clear(proc->breakpoints);
+		proc->breakpoints = NULL;
+	}
 #endif
+	proc->breakpoints = dict_init(dict_key2hash_int, dict_key_cmp_int);
+}
 
-#if 0
-void insert_function_bp(struct process *proc, const char *funcname)
+static struct breakpoint *register_breakpoint(struct process *proc, void *addr)
 {
-	struct library_symbol *tmp = proc->list_of_symbols;
+	struct breakpoint *bkpt;
 
+	debug(1, "addr=%p", addr);
+
+	if (proc->breakpoints == NULL) {
+		init_breakpoints(proc);
+	}
+	bkpt = dict_find_entry(proc->breakpoints, addr);
+	if (bkpt == NULL) {
+		bkpt = calloc(1, sizeof(struct breakpoint));
+		if (bkpt == NULL) {
+			perror("calloc");
+			exit(EXIT_FAILURE);
+		}
+		dict_enter(proc->breakpoints, addr, bkpt);
+		bkpt->addr = addr;
+	}
+	bkpt->enabled++;
+	if (bkpt->enabled == 1)
+		enable_breakpoint(proc, bkpt);
+
+	return bkpt;
+}
+
+int get_breakpoint_address(struct process *proc, void **addr)
+{
+	int ret;
+
+	if ((ret = get_instruction_pointer(proc, addr)) < 0)
+		return ret;
+
+	return 0;
+}
+
+int register_alloc_breakpoints(struct process *proc)
+{
+	struct library_symbol *tmp;
+	struct breakpoint *bkpt= NULL;
+
+	tmp = proc->symbols;
 	while (tmp) {
-		if (!strcmp(tmp->name, funcname)) {
-			if (proc->cur_bkpt) {
-				fprintf(stderr,
-					"ERROR: pid %d already has a breakpoint enabled!\n",
-					proc->pid);
-				return;
-			}
-			proc->cur_bkpt = calloc(1, sizeof(struct breakpoint));
-			if (!proc->cur_bkpt) {
-				perror("calloc");
-				exit(1);
-			}
-			proc->cur_bkpt->addr = tmp->enter_addr;
-			proc->cur_bkpt->libsym = tmp;
-			enable_breakpoint(proc, proc->cur_bkpt);
-			proc->cur_bkpt->enabled = 1;
+		if (strcmp(tmp->name, "malloc") == 0) {
+			bkpt = register_breakpoint(proc, tmp->enter_addr);
+			bkpt->symbol = tmp;
+			break;
 		}
+		tmp = tmp->next;
+	}
+
+	return 0;
+}
+
+static struct breakpoint *breakpoint_from_address(struct process *proc, void *addr)
+{
+	return dict_find_entry(proc->breakpoints, addr);
+}
+
+void process_breakpoint(struct process *proc, void *addr)
+{
+	struct breakpoint *bkpt = breakpoint_from_address(proc, addr);
+
+	if (proc->pending_breakpoint != NULL) {
+		enable_breakpoint(proc, proc->pending_breakpoint);
+		proc->pending_breakpoint = NULL;
+	} else if (bkpt != NULL) {
+		debug(1, "breakpoint for function \"%s\"", bkpt->symbol->name);
+		disable_breakpoint(proc, bkpt);
+		set_instruction_pointer(proc, addr);
+		proc->pending_breakpoint = bkpt;
+	} else {
+		error_exit("unknown breakpoint at address %p\n", addr);
 	}
 }
-#endif
 
-void *get_breakpoint_address(struct process *proc)
+void enable_pending_breakpoint(struct process *proc)
 {
-	/* TODO: stub */
-	return NULL;
+	enable_breakpoint(proc, proc->pending_breakpoint);
+}
+
+int pending_breakpoint(struct process *proc)
+{
+	return (proc->pending_breakpoint != NULL);
 }

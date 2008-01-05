@@ -15,9 +15,12 @@ struct breakpoint {
 	void *addr;
 	unsigned char orig_value[BREAKPOINT_LENGTH];
 	int enabled;
-	struct library_symbol *libsym;
+	struct library_symbol *symbol;
 };
 
-extern void *get_breakpoint_address(struct process *proc);
+extern int get_breakpoint_address(struct process *proc, void **addr);
+extern int register_alloc_breakpoints(struct process *proc);
+extern void process_breakpoint(struct process *proc, void *addr);
+extern int pending_breakpoint(struct process *proc);
 
 #endif /* ft_BREAKPOINT_H */

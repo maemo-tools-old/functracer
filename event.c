@@ -7,6 +7,7 @@
 #include "process.h"
 #include "ptrace.h"
 #include "syscall.h"
+#include "elf.h"
 
 static pid_t ft_wait(int *status)
 {
@@ -31,7 +32,8 @@ static int wait_for_event(struct event *event)
 		return -1;
 	}
 	event->proc = process_from_pid(pid);
-	if (!event->proc) {
+	if (WIFSTOPPED(status) && WSTOPSIG(status) == SIGTRAP
+	    && !event->proc) {
 		event->type = EV_PROC_NEW;
 		event->data.pid = pid;
 	} else if (WIFSTOPPED(status) && WSTOPSIG(status) == SIGTRAP
@@ -49,8 +51,13 @@ static int wait_for_event(struct event *event)
 			return -1;
 		}
 	} else if (WIFSTOPPED(status) && WSTOPSIG(status) == SIGTRAP) {
+		int ret;
+
 		event->type = EV_BREAKPOINT;
-		event->data.addr = get_breakpoint_address(event->proc);
+		if ((ret = get_breakpoint_address(event->proc,
+		    &event->data.addr)) < 0)
+			return ret;
+		event->data.addr -= DECR_PC_AFTER_BREAK;
 	} else if (WIFEXITED(status)) {
 #if 0 /* sanity check */
 		if (!(kill(event->proc->pid, 0) < 0 && errno == ESRCH))
@@ -79,6 +86,8 @@ static int handle_event(struct event *event)
 	case EV_PROC_NEW:
 		debug(1, "new process (PID %d)", event->data.pid);
 		event->proc = add_process(event->data.pid);
+		event->proc->symbols = read_elf(event->proc);
+		register_alloc_breakpoints(event->proc);
 		trace_set_options(event->proc);
 		continue_process(event->proc);
 		break;
@@ -109,6 +118,7 @@ static int handle_event(struct event *event)
 	case EV_BREAKPOINT:
 		debug(1, "breakpoint (PID %d, addr %p)", event->proc->pid,
 		    event->data.addr);
+		process_breakpoint(event->proc, event->data.addr);
 		continue_process(event->proc);
 		break;
 	case EV_SIGNAL:

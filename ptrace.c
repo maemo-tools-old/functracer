@@ -4,14 +4,16 @@
 #include <linux/ptrace.h>
 #include <errno.h>
 
-#include "ptrace.h"
+#include "breakpoint.h"
 #include "debug.h"
+#include "ptrace.h"
 
 void continue_process(struct process *proc)
 {
 	errno = 0;
-	if (ptrace(PTRACE_SYSCALL, proc->pid, 0, 0) == -1 && errno) {
-		error_exit("ptrace: PTRACE_SYSCALL");
+	int op = pending_breakpoint(proc) ? PTRACE_SINGLESTEP : PTRACE_SYSCALL;
+	if (ptrace(op, proc->pid, 0, 0) == -1 && errno) {
+		error_exit("ptrace: %s", pending_breakpoint(proc) ? "PTRACE_SINGLESTEP" : "PTRACE_SYSCALL" );
 	}
 }
 
@@ -92,5 +94,34 @@ void get_fork_pid(struct process *proc, pid_t *new_pid)
 	if (*new_pid <= 0) {
 		error_exit("invalid PID %d returned by PTRACE_GETEVENTMSG\n",
 		    *new_pid);
+	}
+}
+
+void trace_mem_io(struct process *proc, void *addr, void *buf, size_t count, int write)
+{
+	long w;
+	unsigned int i, j;
+	unsigned char *buf_bytes = buf;
+	unsigned char *w_bytes = (unsigned char *)&w;
+
+	debug(3, "trace_mem_io(PID %d, addr %p, buf %p, count %d, write %d", proc->pid, addr, buf, count, write);
+	for (i = 0; i < 1 + ((count - 1) / sizeof(long)); i++) {
+		errno = 0;
+		w = ptrace(PTRACE_PEEKTEXT, proc->pid, addr + i * sizeof(long), 0);
+		if (w == -1 && errno) {
+			error_exit("trace_mem_io (read): ptrace");
+		}
+		for (j = 0; j < sizeof(long) && i * sizeof(long) + j < count; j++) {
+			if (write)
+				w_bytes[j] = buf_bytes[i * sizeof(long) + j];
+			else
+				buf_bytes[i * sizeof(long) + j] = w_bytes[j];
+		}
+		if (write) {
+			errno = 0;
+			if (ptrace(PTRACE_POKETEXT, proc->pid, addr + i * sizeof(long), w) == -1 && errno) {
+				error_exit("trace_mem_io (write): ptrace");
+			}
+		}
 	}
 }

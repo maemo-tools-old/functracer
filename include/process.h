@@ -7,11 +7,12 @@
 struct process {
 	pid_t pid;
 	char *filename;
+	struct dict *breakpoints;
+	struct library_symbol *symbols;
+	struct breakpoint *pending_breakpoint;
+
 	int is_ptraced;
 	int in_syscall;
-	struct library_symbol *list_of_symbols;
-	struct breakpoint *cur_bkpt;
-
 	short e_machine;
 	struct process *next;
 };

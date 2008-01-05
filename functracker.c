@@ -9,7 +9,7 @@
 #include <linux/futex.h>	/* for futex() tracing */
 
 #include "debug.h"
-#include "elf.h"
+//#include "elf.h"
 #include "event.h"
 #include "process.h"
 #include "ptrace.h"
