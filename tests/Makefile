@@ -1,3 +1,6 @@
+CC = gcc
+CFLAGS = -g -rdynamic
+
 all: malloc_simple
 
 malloc_simple: malloc_simple.c
