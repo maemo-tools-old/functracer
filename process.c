@@ -38,14 +38,12 @@ struct process *add_process(pid_t pid)
 {
 	struct process *tmp;
 
-	tmp = malloc(sizeof(struct process));
+	tmp = calloc(1, sizeof(struct process));
 	if (!tmp) {
 		perror("malloc");
 		exit(EXIT_FAILURE);
 	}
 	tmp->pid = pid;
-	tmp->is_ptraced = 0;
-	tmp->in_syscall = 0;
 	tmp->filename = name_from_pid(pid);
 	tmp->next = list_of_processes;
 	list_of_processes = tmp;
