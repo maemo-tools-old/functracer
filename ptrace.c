@@ -97,7 +97,7 @@ void get_fork_pid(struct process *proc, pid_t *new_pid)
 	}
 }
 
-void trace_mem_io(struct process *proc, void *addr, void *buf, size_t count, int write)
+static void trace_mem_io(struct process *proc, void *addr, void *buf, size_t count, int write)
 {
 	long w;
 	unsigned int i, j;
@@ -124,4 +124,29 @@ void trace_mem_io(struct process *proc, void *addr, void *buf, size_t count, int
 			}
 		}
 	}
+}
+
+void trace_mem_read(struct process *proc, void *addr, void *buf, size_t count)
+{
+	trace_mem_io(proc, addr, buf, count, 0);
+}
+
+void trace_mem_write(struct process *proc, void *addr, void *buf, size_t count)
+{
+	trace_mem_io(proc, addr, buf, count, 1);
+}
+
+void trace_user_read(struct process *proc, int off, long *val)
+{
+	errno = 0;
+	*val = ptrace(PTRACE_PEEKUSER, proc->pid, off, 0);
+	if (*val == -1 && errno)
+		error_exit("trace_user_read: ptrace");
+}
+
+void trace_user_write(struct process *proc, int off, long val)
+{
+	errno = 0;
+	if (ptrace(PTRACE_POKEUSER, proc->pid, off, val) == -1 && errno)
+		error_exit("trace_user_write: ptrace");
 }

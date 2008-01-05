@@ -5,8 +5,10 @@
 #include "breakpoint.h"
 #include "debug.h"
 #include "dict.h"
+#include "function.h"
 #include "process.h"
 #include "ptrace.h"
+#include "report.h"
 #include "sysdeps.h"
 
 static void enable_breakpoint(struct process *proc, struct breakpoint *bkpt)
@@ -15,15 +17,15 @@ static void enable_breakpoint(struct process *proc, struct breakpoint *bkpt)
 
 	debug(1, "enable_breakpoint(%d,%p)", proc->pid, bkpt->addr);
 
-	trace_mem_io(proc, bkpt->addr, bkpt->orig_value, BREAKPOINT_LENGTH, 0);
-	trace_mem_io(proc, bkpt->addr, bpkt_insn, BREAKPOINT_LENGTH, 1);
+	trace_mem_read(proc, bkpt->addr, bkpt->orig_value, BREAKPOINT_LENGTH);
+	trace_mem_write(proc, bkpt->addr, bpkt_insn, BREAKPOINT_LENGTH);
 }
 
 static void disable_breakpoint(struct process *proc, struct breakpoint *bkpt)
 {
 	debug(1, "disable_breakpoint(%d,%p)", proc->pid, bkpt->addr);
 
-	trace_mem_io(proc, bkpt->addr, bkpt->orig_value, BREAKPOINT_LENGTH, 1);
+	trace_mem_write(proc, bkpt->addr, bkpt->orig_value, BREAKPOINT_LENGTH);
 }
 
 static void init_breakpoints(struct process *proc)
@@ -106,7 +108,10 @@ void process_breakpoint(struct process *proc, void *addr)
 		enable_breakpoint(proc, proc->pending_breakpoint);
 		proc->pending_breakpoint = NULL;
 	} else if (bkpt != NULL) {
-		debug(1, "breakpoint for function \"%s\"", bkpt->symbol->name);
+		debug(1, "breakpoint for function call \"%s(%ld)\"", bkpt->symbol->name, get_function_arg(proc, 0));
+		if (strcmp(bkpt->symbol->name, "malloc") == 0) {
+			ll_malloc(get_function_arg(proc, 0));
+		}
 		disable_breakpoint(proc, bkpt);
 		set_instruction_pointer(proc, addr);
 		proc->pending_breakpoint = bkpt;

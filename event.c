@@ -6,6 +6,7 @@
 #include "event.h"
 #include "process.h"
 #include "ptrace.h"
+#include "report.h"
 #include "syscall.h"
 #include "elf.h"
 
@@ -88,12 +89,14 @@ static int handle_event(struct event *event)
 		event->proc = add_process(event->data.pid);
 		event->proc->symbols = read_elf(event->proc);
 		register_alloc_breakpoints(event->proc);
+		ll_init();
 		trace_set_options(event->proc);
 		continue_process(event->proc);
 		break;
 	case EV_PROC_EXIT:
 		debug(1, "process exited (PID %d, status %d)",
 		    event->proc->pid, event->data.retval);
+		ll_trace_signal(-1);
 		remove_process(event->proc);
 		break;
 	case EV_PROC_EXIT_SIGNAL:

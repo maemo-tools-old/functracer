@@ -45,8 +45,8 @@ struct SINFO
 }; /* struct SINFO */
 
 extern void ll_init(void);
-extern void ll_trace_dump(void);
-extern void* calloc(size_t nmemb, size_t size);
-extern void* malloc(size_t size);
-extern void* realloc(void* ptr, size_t size);
-extern void free(void* ptr);
+extern void ll_trace_signal(int signo);
+extern void* ll_calloc(size_t nmemb, size_t size);
+extern void* ll_malloc(size_t size);
+extern void* ll_realloc(void* ptr, size_t size);
+extern void ll_free(void* ptr);

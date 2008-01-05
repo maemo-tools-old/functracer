@@ -700,7 +700,7 @@ void ll_trace_dump(void)
  * Yikes, locks etc. in signal handlers...
  * ------------------------------------------------------------------------- */
 
-static void ll_trace_signal(int signo)
+void ll_trace_signal(int signo)
 {
    int tmp = errno;
    if ( ll_trace_enabled() )
@@ -895,7 +895,7 @@ static unsigned ll_libc(void)
  * returns: requested area.
  * ------------------------------------------------------------------------- */
 
-void* calloc(size_t nmemb, size_t size)
+void* ll_calloc(size_t nmemb, size_t size)
 {
    return s_funcs_current->calloc(nmemb, size);
 } /* calloc */
@@ -906,7 +906,7 @@ void* calloc(size_t nmemb, size_t size)
  * returns: requested area.
  * ------------------------------------------------------------------------- */
 
-void* malloc(size_t size)
+void* ll_malloc(size_t size)
 {
    return s_funcs_current->malloc(size);
 } /* malloc */
@@ -917,7 +917,7 @@ void* malloc(size_t size)
  * returns: requested area.
  * ------------------------------------------------------------------------- */
 
-void* realloc(void* ptr, size_t size)
+void* ll_realloc(void* ptr, size_t size)
 {
    return s_funcs_current->realloc(ptr, size);
 } /* realloc */
@@ -928,7 +928,7 @@ void* realloc(void* ptr, size_t size)
  * returns: nothing.
  * ------------------------------------------------------------------------- */
 
-void free(void* ptr)
+void ll_free(void* ptr)
 {
    s_funcs_current->free(ptr);
 } /* free */
