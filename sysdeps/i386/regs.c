@@ -6,15 +6,13 @@
 
 #include "sysdeps.h"
 #include "process.h"
+#include "ptrace.h"
 
 int get_instruction_pointer(struct process *proc, void **addr)
 {
 	long w;
 
-	errno = 0;
-	w = ptrace(PTRACE_PEEKUSER, proc->pid, 4 * EIP, 0);
-	if (w == -1 && errno)
-		return -1;
+	trace_user_read(proc, 4 * EIP, &w);
 	*addr = (void *)w;
 
 	return 0;
@@ -22,5 +20,7 @@ int get_instruction_pointer(struct process *proc, void **addr)
 
 int set_instruction_pointer(struct process *proc, void *addr)
 {
+	trace_user_write(proc, 4 * EIP, (long)addr);
+
 	return 0;
 }

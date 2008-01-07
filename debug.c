@@ -27,7 +27,7 @@ void debug_(int level, const char *file, int line, const char *func, const char 
 	vsnprintf(buf, 1024, fmt, args);
 	va_end(args);
 
-	output_line("DEBUG: %s:%d: %s(): %s", file, line, func, buf);
+//	output_line("DEBUG: %s:%d: %s(): %s", file, line, func, buf);
 }
 
 void error_exit(const char *fmt, ...)

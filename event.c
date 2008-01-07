@@ -37,6 +37,9 @@ static int wait_for_event(struct event *event)
 	    && !event->proc) {
 		event->type = EV_PROC_NEW;
 		event->data.pid = pid;
+	} else if (!event->proc) {
+		debug(1, "PID %d not stopped, probably execve() failed", pid);
+		return -1;
 	} else if (WIFSTOPPED(status) && WSTOPSIG(status) == SIGTRAP
 		   && (status >> 16)) {
 		event->type = EV_PTRACE;
@@ -58,12 +61,7 @@ static int wait_for_event(struct event *event)
 		if ((ret = get_breakpoint_address(event->proc,
 		    &event->data.addr)) < 0)
 			return ret;
-		event->data.addr -= DECR_PC_AFTER_BREAK;
 	} else if (WIFEXITED(status)) {
-#if 0 /* sanity check */
-		if (!(kill(event->proc->pid, 0) < 0 && errno == ESRCH))
-			debug(1, "dangling process %d", pid);
-#endif
 		event->type = EV_PROC_EXIT;
 		event->data.retval = WEXITSTATUS(status);
 	} else if (WIFSIGNALED(status)) {
@@ -89,14 +87,15 @@ static int handle_event(struct event *event)
 		event->proc = add_process(event->data.pid);
 		event->proc->symbols = read_elf(event->proc);
 		register_alloc_breakpoints(event->proc);
-		ll_init();
+		event->proc->rp_data = rp_init(event->proc->pid);
 		trace_set_options(event->proc);
 		continue_process(event->proc);
 		break;
 	case EV_PROC_EXIT:
 		debug(1, "process exited (PID %d, status %d)",
 		    event->proc->pid, event->data.retval);
-		ll_trace_signal(-1);
+		rp_dump(event->proc->rp_data);
+		rp_finish(event->proc->rp_data);
 		remove_process(event->proc);
 		break;
 	case EV_PROC_EXIT_SIGNAL:
@@ -127,7 +126,7 @@ static int handle_event(struct event *event)
 	case EV_SIGNAL:
 		debug(1, "process received signal (PID %d, signo %d)",
 		    event->proc->pid, event->data.signo);
-		continue_process(event->proc);
+		continue_after_signal(event->proc, event->data.signo);
 		break;
 	default:
 		error_msg("an unknown event was returned");

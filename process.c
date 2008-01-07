@@ -4,8 +4,8 @@
 #include <signal.h>
 #include <unistd.h>
 
-#include "process.h"
 #include "debug.h"
+#include "process.h"
 
 static struct process *list_of_processes = NULL;
 
@@ -25,10 +25,8 @@ static char *name_from_pid(pid_t pid)
 
 	if (kill(pid, 0) == 0) {
 		snprintf(proc_exe, 1024, "/proc/%d/exe", pid);
-		if (access(proc_exe, F_OK) < 0) {
-			perror("access");
-			exit(EXIT_FAILURE);
-		}
+		if (access(proc_exe, F_OK) < 0)
+			error_exit("access");
 		return strdup(proc_exe);
 	}
 	return NULL;
@@ -39,10 +37,8 @@ struct process *add_process(pid_t pid)
 	struct process *tmp;
 
 	tmp = calloc(1, sizeof(struct process));
-	if (!tmp) {
-		perror("malloc");
-		exit(EXIT_FAILURE);
-	}
+	if (!tmp)
+		error_exit("malloc");
 	tmp->pid = pid;
 	tmp->filename = name_from_pid(pid);
 	tmp->next = list_of_processes;

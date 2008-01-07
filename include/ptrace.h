@@ -5,6 +5,7 @@
 #include "process.h"
 
 extern void continue_process(struct process *proc);
+extern void continue_after_signal(struct process *proc, int signo);
 extern void trace_set_options(struct process *proc);
 extern void trace_me(void);
 extern int is_fork(struct process *proc, int event);

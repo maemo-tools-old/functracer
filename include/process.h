@@ -2,7 +2,11 @@
 #define TT_PROCESS_H
 
 #include <sys/types.h>
-#include "library.h"
+
+struct dict;
+struct breakpoint;
+struct library_symbol;
+struct rp_data;
 
 struct process {
 	pid_t pid;
@@ -10,10 +14,9 @@ struct process {
 	struct dict *breakpoints;
 	struct library_symbol *symbols;
 	struct breakpoint *pending_breakpoint;
-
-	int is_ptraced;
+	struct rp_data *rp_data;
+	void *fn_arg_data;
 	int in_syscall;
-	short e_machine;
 	struct process *next;
 };
 

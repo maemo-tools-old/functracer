@@ -15,6 +15,7 @@ struct breakpoint {
 	void *addr;
 	unsigned char orig_value[BREAKPOINT_LENGTH];
 	int enabled;
+	enum { BKPT_ENTRY, BKPT_RETURN } type;
 	struct library_symbol *symbol;
 };
 
