@@ -9,8 +9,9 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "elf.h"
 #include "debug.h"
+#include "elf.h"
+#include "library.h"
 #include "options.h"
 
 static void do_init_elf(struct ltelf *lte, const char *filename);
@@ -445,7 +446,6 @@ struct library_symbol *read_elf(struct process *proc)
 	elf_version(EV_CURRENT);
 
 	do_init_elf(lte, proc->filename);
-	proc->e_machine = lte->ehdr.e_machine;
 	for (i = 0; i < library_num; ++i)
 		do_init_elf(&lte[i + 1], library[i]);
 #ifdef __mips__
