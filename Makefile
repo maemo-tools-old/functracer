@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -g -Wall
 UNW_PREFIX = /usr/local/libunwind
 CPPFLAGS = -iquote./include/ -I$(UNW_PREFIX)/include
-LDFLAGS = -lelf -L$(UNW_PREFIX)/lib -lunwind -ldl
+LDFLAGS = -lelf -ldl -L$(UNW_PREFIX)/lib -lunwind-ptrace -lunwind-generic
 
 UNAME = $(shell uname -m)
 ifneq ($(filter i%86,$(UNAME)),)
@@ -20,6 +20,7 @@ all: $(PROG)
 	$(MAKE) -C tests/ $@
 
 $(PROG): $(addsuffix .o, $(basename $(wildcard *.c sysdeps/$(ARCH)/*.c)))
+	$(CC) $(CPPFLAGS) $(CFLAGS) $^ $(LDFLAGS) -o $@
 
 tags: 
 	ctags -R
@@ -30,6 +31,6 @@ clean:
 
 distclean: clean
 	$(MAKE) -C tests/ $@
-	rm -f core tags *~
+	rm -f core tags *~ include/*~
 
 .PHONY: tags
