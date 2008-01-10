@@ -8,9 +8,13 @@
 #include "function.h"
 #include "library.h"
 #include "process.h"
-#include "ptrace.h"
 #include "report.h"
+#include "solib.h"
 #include "sysdeps.h"
+#include "target_mem.h"
+#include "util.h"
+
+static struct breakpoint_cb *current_bcb = NULL;
 
 static void enable_breakpoint(struct process *proc, struct breakpoint *bkpt)
 {
@@ -79,14 +83,16 @@ int get_breakpoint_address(struct process *proc, void **addr)
 	return 0;
 }
 
-int register_alloc_breakpoints(struct process *proc)
+int register_interesting_breakpoints(struct process *proc)
 {
 	struct library_symbol *tmp;
-	struct breakpoint *bkpt= NULL;
+	struct breakpoint *bkpt = NULL;
+	struct breakpoint_cb *bcb = current_bcb;
 
 	tmp = proc->symbols;
 	while (tmp) {
-		if (strcmp(tmp->name, "malloc") == 0) {
+		if (bcb && bcb->function.match
+		    && bcb->function.match(proc, tmp->name)) {
 			bkpt = register_breakpoint(proc, tmp->enter_addr);
 			bkpt->type = BKPT_ENTRY;
 			bkpt->symbol = tmp;
@@ -96,6 +102,11 @@ int register_alloc_breakpoints(struct process *proc)
 	}
 
 	return 0;
+}
+
+void register_dl_debug_breakpoint(struct process *proc)
+{
+	printf("dl addr = %p\n", solib_dl_debug_address(proc));
 }
 
 static void register_return_breakpoint(struct process *proc, struct breakpoint *bkpt)
@@ -114,31 +125,45 @@ static struct breakpoint *breakpoint_from_address(struct process *proc, void *ad
 	return dict_find_entry(proc->breakpoints, addr);
 }
 
-void process_breakpoint(struct process *proc, void *addr)
+#define set_pending_breakpoint(proc, bkpt) do { \
+	proc->pending_breakpoint = bkpt; \
+	} while (0)
+#define clear_pending_breakpoint(proc) do { \
+	proc->pending_breakpoint = NULL; \
+	} while (0)
+
+void handle_breakpoint(struct process *proc, void *addr)
 {
 	struct breakpoint *bkpt = breakpoint_from_address(proc, addr);
+	struct breakpoint_cb *bcb = current_bcb;
 
 	if (proc->pending_breakpoint != NULL) {
 		/* re-enable pending breakpoint */
 		enable_breakpoint(proc, proc->pending_breakpoint);
-		proc->pending_breakpoint = NULL;
+		clear_pending_breakpoint(proc);
 	} else if (bkpt != NULL) {
-		long arg0 = fn_argument(proc, 0);
-
-		debug(1, "%s breakpoint for \"%s(%ld)\"",
+		debug(1, "%s breakpoint for %s()",
 		      bkpt->type == BKPT_ENTRY ? "entry" : "return",
-		      bkpt->symbol->name, arg0);
-		if (bkpt->type == BKPT_ENTRY) {
+		      bkpt->symbol->name);
+		switch (bkpt->type) {
+		case BKPT_ENTRY:
 			register_return_breakpoint(proc, bkpt);
+			set_pending_breakpoint(proc, bkpt);
 			fn_save_arg_data(proc);
-			/* XXX only re-enable entry breakpoints? */
-			proc->pending_breakpoint = bkpt;
-		} else {
-			if (strcmp(bkpt->symbol->name, "malloc") == 0) {
-				void *retval = (void *)fn_return_value(proc);
-				rp_new_alloc(proc->rp_data, retval, arg0);
-			}
+			if (bcb && bcb->function.enter)
+				bcb->function.enter(proc, bkpt->symbol->name);
+			break;
+		case BKPT_RETURN:
+			if (bcb && bcb->function.exit)
+				bcb->function.exit(proc, bkpt->symbol->name);
 			fn_invalidate_arg_data(proc);
+			break;
+		case BKPT_SOLIB:
+			set_pending_breakpoint(proc, bkpt);
+			solib_update_list(proc);
+			break;
+		default:
+			error_exit("unknown breakpoint type");
 		}
 		/* temporarily disable breakpoint, so we can pass over it */
 		disable_breakpoint(proc, bkpt);
@@ -156,4 +181,12 @@ void enable_pending_breakpoint(struct process *proc)
 int pending_breakpoint(struct process *proc)
 {
 	return (proc->pending_breakpoint != NULL);
+}
+
+void breakpoint_register_callbacks(struct breakpoint_cb *bcb)
+{
+	if (current_bcb)
+		free(current_bcb);
+	current_bcb = xmalloc(sizeof(struct breakpoint_cb));
+	memcpy(current_bcb, bcb, sizeof(struct breakpoint_cb));
 }

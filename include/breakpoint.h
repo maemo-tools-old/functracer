@@ -15,13 +15,22 @@ struct breakpoint {
 	void *addr;
 	unsigned char orig_value[BREAKPOINT_LENGTH];
 	int enabled;
-	enum { BKPT_ENTRY, BKPT_RETURN } type;
+	enum { BKPT_ENTRY, BKPT_RETURN, BKPT_SOLIB } type;
 	struct library_symbol *symbol;
+};
+
+struct breakpoint_cb {
+	struct {
+		void (*enter)(struct process *proc, const char *name);
+		void (*exit)(struct process *proc, const char *name);
+		int (*match)(struct process *proc, const char *name);
+	} function;
 };
 
 extern int get_breakpoint_address(struct process *proc, void **addr);
 extern int register_alloc_breakpoints(struct process *proc);
-extern void process_breakpoint(struct process *proc, void *addr);
+extern void handle_breakpoint(struct process *proc, void *addr);
 extern int pending_breakpoint(struct process *proc);
+extern void breakpoint_register_callbacks(struct breakpoint_cb *bcb);
 
 #endif /* ft_BREAKPOINT_H */
