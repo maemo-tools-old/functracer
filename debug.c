@@ -27,14 +27,28 @@ void debug_(int level, const char *file, int line, const char *func, const char 
 	vsnprintf(buf, 1024, fmt, args);
 	va_end(args);
 
-//	output_line("DEBUG: %s:%d: %s(): %s", file, line, func, buf);
+	output_line("DEBUG: %s:%d: %s(): %s", file, line, func, buf);
 }
 
-void error_exit(const char *fmt, ...)
+void msg_warn(const char *fmt, ...)
+{
+	va_list args;
+
+	va_start(args, fmt);
+	error(0, 0, fmt, args);
+	va_end(args);
+}
+
+void msg_err(const char *fmt, ...)
 {
 	va_list args;
 
 	va_start(args, fmt);
 	error(EXIT_FAILURE, errno, fmt, args);
 	va_end(args);
+}
+
+void error_file(char *filename, char *msg)
+{
+	error(EXIT_FAILURE, errno, "\"%s\": %s", filename, msg);
 }

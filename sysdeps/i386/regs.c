@@ -6,7 +6,7 @@
 
 #include "sysdeps.h"
 #include "process.h"
-#include "ptrace.h"
+#include "target_mem.h"
 
 int get_instruction_pointer(struct process *proc, void **addr)
 {

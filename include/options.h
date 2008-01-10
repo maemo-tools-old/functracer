@@ -1,6 +1,8 @@
 #ifndef TT_OPTIONS_H
 #define TT_OPTIONS_H
 
+#include <sys/types.h>
+
 struct opt_x_t {
 	char *name;
 	int found;

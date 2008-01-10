@@ -6,30 +6,6 @@
 #include "debug.h"
 #include "report.h"
 
-void rp_new_alloc(struct rp_data *rd, void *addr, size_t size)
-{
-	struct rp_allocinfo *rai;
-	static int alloc_overflow = 0;
-
-	debug(3, "rp_new_alloc(pid=%d, addr=%p, size=%d)", rd->pid, addr, size);
-	if (rd->nallocs >= MAX_NALLOC) {
-		if (!alloc_overflow) {
-			debug(1, "maximum number of allocations (%d) reached, new allocations will be ignored!", MAX_NALLOC);
-			alloc_overflow = 1;
-		}
-		return;
-	}
-	rai = calloc(1, sizeof(struct rp_allocinfo));
-	if (rai == NULL)
-		error_exit("rp_new_alloc(): calloc");
-	rai->addr = addr;
-	rai->size = size;
-	rai->bt_depth = bt_backtrace(rd->btd, rai->backtrace, MAX_BT_DEPTH);
-	rai->next = rd->allocs;
-	rd->allocs = rai;
-	rd->nallocs++;
-}
-
 static void rp_copy_file(const char *src, const char *dst)
 {
 	char line[256];
@@ -78,6 +54,30 @@ void rp_dump(struct rp_data *rd)
 		rai = rai->next;
 	}
 	rp_copy_maps(rd->pid);
+}
+
+void rp_new_alloc(struct rp_data *rd, void *addr, size_t size)
+{
+	struct rp_allocinfo *rai;
+	static int alloc_overflow = 0;
+
+	debug(3, "rp_new_alloc(pid=%d, addr=%p, size=%d)", rd->pid, addr, size);
+	if (rd->nallocs >= MAX_NALLOC) {
+		if (!alloc_overflow) {
+			debug(1, "maximum number of allocations (%d) reached, new allocations will be ignored!", MAX_NALLOC);
+			alloc_overflow = 1;
+		}
+		return;
+	}
+	rai = calloc(1, sizeof(struct rp_allocinfo));
+	if (rai == NULL)
+		error_exit("rp_new_alloc(): calloc");
+	rai->addr = addr;
+	rai->size = size;
+	rai->bt_depth = bt_backtrace(rd->btd, rai->backtrace, MAX_BT_DEPTH);
+	rai->next = rd->allocs;
+	rd->allocs = rai;
+	rd->nallocs++;
 }
 
 struct rp_data *rp_init(pid_t pid)

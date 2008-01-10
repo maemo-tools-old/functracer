@@ -7,12 +7,14 @@ struct dict;
 struct breakpoint;
 struct library_symbol;
 struct rp_data;
+struct solib_list;
 
 struct process {
 	pid_t pid;
 	char *filename;
 	struct dict *breakpoints;
 	struct library_symbol *symbols;
+	struct solib_list *solib_list;
 	struct breakpoint *pending_breakpoint;
 	struct rp_data *rp_data;
 	void *fn_arg_data;

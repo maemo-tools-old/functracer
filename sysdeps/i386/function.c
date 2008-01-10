@@ -4,7 +4,7 @@
 
 #include "debug.h"
 #include "function.h"
-#include "ptrace.h"
+#include "target_mem.h"
 
 static void get_stack_pointer(struct process *proc, void **addr)
 {

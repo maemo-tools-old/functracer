@@ -1,3 +1,4 @@
+#if 0
 #include <gelf.h>
 
 #include "elf.h"
@@ -12,3 +13,4 @@ void *sym2addr(struct process *proc, struct library_symbol *sym)
 {
 	return sym->enter_addr;
 }
+#endif

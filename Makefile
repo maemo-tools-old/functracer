@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -g -Wall
 UNW_PREFIX = /usr/local/libunwind
 CPPFLAGS = -iquote./include/ -I$(UNW_PREFIX)/include
-LDFLAGS = -lelf -ldl -L$(UNW_PREFIX)/lib -lunwind-ptrace -lunwind-generic
+LDFLAGS = -lbfd -ldl -L$(UNW_PREFIX)/lib -lunwind-ptrace -lunwind-generic
 
 UNAME = $(shell uname -m)
 ifneq ($(filter i%86,$(UNAME)),)

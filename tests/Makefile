@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -g -rdynamic
+CFLAGS = -g
 
 all: malloc_simple
 
