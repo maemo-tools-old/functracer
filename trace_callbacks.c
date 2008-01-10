@@ -1,3 +1,4 @@
+#include "breakpoint.h"
 #include "debug.h"
 #include "process.h"
 #include "report.h"
@@ -7,7 +8,6 @@ static void process_create(struct process *proc)
 {
 	debug(3, "new process (pid=%d)", proc->pid);
 
-//	proc->symbols = read_elf(event->proc);
 	proc->rp_data = rp_init(proc->pid);
 }
 

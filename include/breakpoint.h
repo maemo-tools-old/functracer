@@ -27,10 +27,10 @@ struct breakpoint_cb {
 	} function;
 };
 
-extern int get_breakpoint_address(struct process *proc, void **addr);
-extern int register_alloc_breakpoints(struct process *proc);
-extern void handle_breakpoint(struct process *proc, void *addr);
-extern int pending_breakpoint(struct process *proc);
-extern void breakpoint_register_callbacks(struct breakpoint_cb *bcb);
+extern int bkpt_get_address(struct process *proc, void **addr);
+extern void bkpt_handle(struct process *proc, void *addr);
+extern int bkpt_pending(struct process *proc);
+extern void bkpt_register_callbacks(struct breakpoint_cb *bcb);
+extern void bkpt_init(struct process *proc);
 
 #endif /* ft_BREAKPOINT_H */

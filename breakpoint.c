@@ -6,7 +6,6 @@
 #include "debug.h"
 #include "dict.h"
 #include "function.h"
-#include "library.h"
 #include "process.h"
 #include "report.h"
 #include "solib.h"
@@ -20,7 +19,7 @@ static void enable_breakpoint(struct process *proc, struct breakpoint *bkpt)
 {
 	unsigned char bpkt_insn[] = BREAKPOINT_VALUE;
 
-	debug(1, "enable_breakpoint(pid=%d, addr=%p)", proc->pid, bkpt->addr);
+	debug(1, "pid=%d, addr=%p", proc->pid, bkpt->addr);
 
 	trace_mem_read(proc, bkpt->addr, bkpt->orig_value, BREAKPOINT_LENGTH);
 	trace_mem_write(proc, bkpt->addr, bpkt_insn, BREAKPOINT_LENGTH);
@@ -28,22 +27,9 @@ static void enable_breakpoint(struct process *proc, struct breakpoint *bkpt)
 
 static void disable_breakpoint(struct process *proc, struct breakpoint *bkpt)
 {
-	debug(1, "disable_breakpoint(pid=%d, addr=%p, orig_value=0x%x)", proc->pid, bkpt->addr, bkpt->orig_value[0]);
+	debug(1, "pid=%d, addr=%p, orig_value=0x%x", proc->pid, bkpt->addr, bkpt->orig_value[0]);
 
 	trace_mem_write(proc, bkpt->addr, bkpt->orig_value, BREAKPOINT_LENGTH);
-}
-
-static void init_breakpoints(struct process *proc)
-{
-	debug(3, "init_breakpoints(PID %d)", proc->pid);
-#if 0 /* XXX not needed? */
-	if (proc->breakpoints) {
-		dict_apply_to_all(proc->breakpoints, free_bp_cb, NULL);
-		dict_clear(proc->breakpoints);
-		proc->breakpoints = NULL;
-	}
-#endif
-	proc->breakpoints = dict_init(dict_key2hash_int, dict_key_cmp_int);
 }
 
 static struct breakpoint *register_breakpoint(struct process *proc, void *addr)
@@ -52,9 +38,6 @@ static struct breakpoint *register_breakpoint(struct process *proc, void *addr)
 
 	debug(1, "addr=%p", addr);
 
-	if (proc->breakpoints == NULL) {
-		init_breakpoints(proc);
-	}
 	bkpt = dict_find_entry(proc->breakpoints, addr);
 	if (bkpt == NULL) {
 		bkpt = calloc(1, sizeof(struct breakpoint));
@@ -72,7 +55,7 @@ static struct breakpoint *register_breakpoint(struct process *proc, void *addr)
 	return bkpt;
 }
 
-int get_breakpoint_address(struct process *proc, void **addr)
+int bkpt_get_address(struct process *proc, void **addr)
 {
 	int ret;
 
@@ -132,7 +115,7 @@ static struct breakpoint *breakpoint_from_address(struct process *proc, void *ad
 	proc->pending_breakpoint = NULL; \
 	} while (0)
 
-void handle_breakpoint(struct process *proc, void *addr)
+void bkpt_handle(struct process *proc, void *addr)
 {
 	struct breakpoint *bkpt = breakpoint_from_address(proc, addr);
 	struct breakpoint_cb *bcb = current_bcb;
@@ -173,20 +156,28 @@ void handle_breakpoint(struct process *proc, void *addr)
 	}
 }
 
-void enable_pending_breakpoint(struct process *proc)
-{
-	enable_breakpoint(proc, proc->pending_breakpoint);
-}
-
-int pending_breakpoint(struct process *proc)
+int bkpt_pending(struct process *proc)
 {
 	return (proc->pending_breakpoint != NULL);
 }
 
-void breakpoint_register_callbacks(struct breakpoint_cb *bcb)
+void bkpt_register_callbacks(struct breakpoint_cb *bcb)
 {
 	if (current_bcb)
 		free(current_bcb);
 	current_bcb = xmalloc(sizeof(struct breakpoint_cb));
 	memcpy(current_bcb, bcb, sizeof(struct breakpoint_cb));
+}
+
+void bkpt_init(struct process *proc)
+{
+#if 0 /* XXX not needed? */
+	if (proc->breakpoints) {
+		dict_apply_to_all(proc->breakpoints, free_bp_cb, NULL);
+		dict_clear(proc->breakpoints);
+		proc->breakpoints = NULL;
+	}
+#endif
+	proc->breakpoints = dict_init(dict_key2hash_int, dict_key_cmp_int);
+	
 }

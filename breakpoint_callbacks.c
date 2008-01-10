@@ -36,5 +36,5 @@ void bcb_init(void)
 			.match	= function_match,
 		},
 	};
-	breakpoint_register_callbacks(&bcb);
+	bkpt_register_callbacks(&bcb);
 }

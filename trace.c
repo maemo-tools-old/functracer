@@ -131,7 +131,7 @@ static int wait_for_event(struct event *event)
 		int ret;
 
 		event->type = EV_BREAKPOINT;
-		if ((ret = get_breakpoint_address(event->proc,
+		if ((ret = bkpt_get_address(event->proc,
 		    &event->data.addr)) < 0)
 			return ret;
 	} else if (WIFEXITED(status)) {
@@ -151,11 +151,11 @@ static int wait_for_event(struct event *event)
 
 static void continue_process(struct process *proc)
 {
-	int op = pending_breakpoint(proc) ? PTRACE_SINGLESTEP : PTRACE_SYSCALL;
+	int op = bkpt_pending(proc) ? PTRACE_SINGLESTEP : PTRACE_SYSCALL;
 
 	errno = 0;
 	if (ptrace(op, proc->pid, 0, 0) == -1 && errno) {
-		error_exit("ptrace: %s", pending_breakpoint(proc) ? "PTRACE_SINGLESTEP" : "PTRACE_SYSCALL");
+		error_exit("ptrace: %s", bkpt_pending(proc) ? "PTRACE_SINGLESTEP" : "PTRACE_SYSCALL");
 	}
 }
 
@@ -190,6 +190,7 @@ static int dispatch_event(struct event *event)
 		break;
 	case EV_PROC_NEW:
 		event->proc = add_process(event->data.pid);
+		bkpt_init(event->proc);
 		if (cbs && cbs->process.create)
 			cbs->process.create(event->proc);
 		trace_set_options(event->proc->pid);
@@ -220,7 +221,7 @@ static int dispatch_event(struct event *event)
 		continue_process(event->proc);
 		break;
 	case EV_BREAKPOINT:
-		handle_breakpoint(event->proc, event->data.addr);
+		bkpt_handle(event->proc, event->data.addr);
 		continue_process(event->proc);
 		break;
 	case EV_SIGNAL:
