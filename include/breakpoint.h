@@ -1,5 +1,5 @@
-#ifndef ft_BREAKPOINT_H
-#define ft_BREAKPOINT_H
+#ifndef FTK_BREAKPOINT_H
+#define FTK_BREAKPOINT_H
 
 #include "process.h"
 
@@ -19,18 +19,9 @@ struct breakpoint {
 	struct library_symbol *symbol;
 };
 
-struct breakpoint_cb {
-	struct {
-		void (*enter)(struct process *proc, const char *name);
-		void (*exit)(struct process *proc, const char *name);
-		int (*match)(struct process *proc, const char *name);
-	} function;
-};
-
 extern int bkpt_get_address(struct process *proc, void **addr);
 extern void bkpt_handle(struct process *proc, void *addr);
 extern int bkpt_pending(struct process *proc);
-extern void bkpt_register_callbacks(struct breakpoint_cb *bcb);
 extern void bkpt_init(struct process *proc);
 
-#endif /* ft_BREAKPOINT_H */
+#endif /* !FTK_BREAKPOINT_H */

@@ -4,6 +4,7 @@
 #endif
 #include <string.h>
 
+#include "callback.h"
 #include "options.h"
 #include "trace.h"
 
@@ -15,10 +16,9 @@ int main(int argc, char *argv[])
 	memset(&arguments, 0, sizeof(struct arguments));
 	process_options(argc, argv, &prog_index, &arguments);
 
-	trace_callbacks_init();
+	cb_init();
 	trace_execute(argv[prog_index], argv + prog_index);
 	ret = trace_main_loop();
-	trace_finish();
 
 	return ret;
 }

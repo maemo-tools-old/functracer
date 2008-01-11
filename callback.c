@@ -1,8 +1,14 @@
-#include "breakpoint.h"
+#include <stdlib.h>
+#include <string.h>
+
+#include "callback.h"
 #include "debug.h"
+#include "function.h"
 #include "process.h"
 #include "report.h"
-#include "trace.h"
+#include "util.h"
+
+static struct callback *current_cb = NULL;
 
 static void process_create(struct process *proc)
 {
@@ -39,9 +45,38 @@ static void syscall_exit(struct process *proc, int sysno)
 	debug(3, "syscall exit (pid=%d, sysno=%d)", proc->pid, sysno);
 }
 
-void trace_callbacks_init(void)
+static void function_enter(struct process *proc, const char *name)
 {
-	struct trace_cb tcb = {
+	debug(3, "function entry (pid=%d, name=%s)", proc->pid, name);
+}
+
+static void function_exit(struct process *proc, const char *name)
+{
+	void *retval = (void *)fn_return_value(proc);
+	long arg0 = fn_argument(proc, 0);
+
+	debug(3, "function return (pid=%d, name=%s)", proc->pid, name);
+	rp_new_alloc(proc->rp_data, retval, arg0);
+}
+
+static int library_match(const char *name)
+{
+	debug(3, "library symbol match test (name=%s)", name);
+
+	return (strcmp(name, "malloc") == 0);
+}
+
+static void cb_register(struct callback *cb)
+{
+	if (current_cb)
+		free(current_cb);
+	current_cb = xmalloc(sizeof(struct callback));
+	memcpy(current_cb, cb, sizeof(struct callback));
+}
+
+void cb_init(void)
+{
+	struct callback cb = {
 		.process = {
 			.create	= process_create,
 			.exit	= process_exit,
@@ -51,7 +86,19 @@ void trace_callbacks_init(void)
 		.syscall = {
 			.enter	= syscall_enter,
 			.exit	= syscall_exit,
-		}
+		},
+		.function = {
+			.enter	= function_enter,
+			.exit	= function_exit,
+		},
+		.library = {
+			.match = library_match,
+		},
 	};
-	trace_register_callbacks(&tcb);
+	cb_register(&cb);
+}
+
+struct callback *cb_get(void)
+{
+	return current_cb;
 }

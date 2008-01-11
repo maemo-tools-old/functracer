@@ -9,6 +9,11 @@ struct library_symbol;
 struct rp_data;
 struct solib_list;
 
+struct callstack {
+	void *fn_arg_data;
+	struct callstack *next;
+};
+
 struct process {
 	pid_t pid;
 	char *filename;
@@ -17,7 +22,7 @@ struct process {
 	struct solib_list *solib_list;
 	struct breakpoint *pending_breakpoint;
 	struct rp_data *rp_data;
-	void *fn_arg_data;
+	struct callstack *callstack;
 	int in_syscall;
 	struct process *next;
 };

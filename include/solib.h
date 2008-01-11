@@ -3,16 +3,17 @@
 
 #include "process.h"
 
-struct solib_list {
-	void *base_addr;
-	char *path;
-	struct solib_list *next;
-};
-
 struct library_symbol {
 	char *name;
 	void *enter_addr;
 	struct library_symbol *next;
+};
+
+struct solib_list {
+	void *base_addr;
+	char *path;
+	struct library_symbol *symbols;
+	struct solib_list *next;
 };
 
 extern void solib_update_list(struct process *proc);

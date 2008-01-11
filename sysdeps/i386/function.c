@@ -1,10 +1,14 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/ptrace.h>
 #include <linux/ptrace.h>
 
 #include "debug.h"
 #include "function.h"
 #include "target_mem.h"
+#include "util.h"
+
+static int callstack_depth = 0; /* XXX debug */
 
 static void get_stack_pointer(struct process *proc, void **addr)
 {
@@ -18,11 +22,16 @@ long fn_argument(struct process *proc, int arg_num)
 {
 	long w;
 	unsigned char *w_bytes = (unsigned char *)&w;
+	void *sp;
 
 	debug(3, "fn_argument(pid=%d, arg_num=%d)", proc->pid, arg_num);
-	if (proc->fn_arg_data == NULL)
-		fn_save_arg_data(proc);
-	trace_mem_read(proc, proc->fn_arg_data + 4 * (arg_num + 1), w_bytes, sizeof(long));
+	if (proc->callstack == NULL) {
+		debug(1, "calling fn_argument() when no arg data is saved");
+		get_stack_pointer(proc, &sp);
+	} else {
+		sp = proc->callstack->fn_arg_data;
+	}
+	trace_mem_read(proc, sp + 4 * (arg_num + 1), w_bytes, sizeof(long));
 
 	return w;
 }
@@ -50,10 +59,26 @@ void fn_return_address(struct process *proc, void **addr)
 
 void fn_save_arg_data(struct process *proc)
 {
-	get_stack_pointer(proc, &proc->fn_arg_data);
+	struct callstack *cs = xmalloc(sizeof(struct callstack));
+
+	debug(1, "depth = %d", ++callstack_depth);
+
+	get_stack_pointer(proc, &cs->fn_arg_data);
+	cs->next = proc->callstack;
+	proc->callstack = cs;
 }
 
 void fn_invalidate_arg_data(struct process *proc)
 {
-	proc->fn_arg_data = NULL;
+	struct callstack *cs;
+
+	debug(1, "depth = %d", callstack_depth--);
+
+	if (proc->callstack == NULL) {
+		debug(1, "trying to invalidade non-existent arg data");
+		return;
+	}
+	cs = proc->callstack->next;
+	free(proc->callstack);
+	proc->callstack = cs;
 }

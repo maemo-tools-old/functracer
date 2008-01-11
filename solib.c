@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "callback.h"
 #include "debug.h"
 #include "elf.h"
 #include "maps.h"
@@ -63,11 +64,11 @@ static unsigned long bfd_lookup_symbol(bfd *abfd, char *symname, flagword sect_f
 
 	storage_needed = bfd_get_symtab_upper_bound(abfd);
 	if (storage_needed > 0) {
-		symbol_table = (asymbol **)xmalloc(storage_needed);
+		symbol_table = xmalloc(storage_needed);
 		number_of_symbols = bfd_canonicalize_symtab(abfd, symbol_table);
 
 		for (i = 0; i < number_of_symbols; i++) {
-			sym = *symbol_table++;
+			sym = symbol_table[i];
 			if (strcmp(sym->name, symname) == 0
 			    && (sym->section->flags & sect_flags) == sect_flags) {
 				/* Bfd symbols are section relative. */
@@ -75,18 +76,18 @@ static unsigned long bfd_lookup_symbol(bfd *abfd, char *symname, flagword sect_f
 				break;
 			}
 		}
+		free(symbol_table);
 	}
 	if (symaddr)
 		return symaddr;
 
 	storage_needed = bfd_get_dynamic_symtab_upper_bound(abfd);
 	if (storage_needed > 0) {
-		symbol_table = (asymbol **)xmalloc(storage_needed);
+		symbol_table = xmalloc(storage_needed);
 		number_of_symbols = bfd_canonicalize_dynamic_symtab(abfd, symbol_table);
 
 		for (i = 0; i < number_of_symbols; i++) {
-			sym = *symbol_table++;
-
+			sym = symbol_table[i];
 			if (strcmp(sym->name, symname) == 0
 			    && (sym->section->flags & sect_flags) == sect_flags) {
 				/* Bfd symbols are section relative. */
@@ -94,10 +95,12 @@ static unsigned long bfd_lookup_symbol(bfd *abfd, char *symname, flagword sect_f
 				break;
 			}
 		}
+		free(symbol_table);
 	}
 	return symaddr;
 }
 
+/* Based on enable_break() code from GDB 6.6 (gdb/solib-svr4.c). */
 void *solib_dl_debug_address(struct process *proc)
 {
 	bfd *exec_bfd, *interp_bfd;
@@ -141,14 +144,14 @@ void *solib_dl_debug_address(struct process *proc)
 		warning_bfd(interp_file, "not in shared file format");
 		goto error_interp;
 	}
-
+#if 0 /* XXX unnecessary? */
 	/* Find the .text section in interpreter code. */
 	sect = bfd_get_section_by_name(interp_bfd, ".text");
 	if (sect == NULL) {
 		warning_bfd(interp_file, "could not read .text section");
 		goto error_interp;
 	}
-
+#endif
 	/* Now try to set a breakpoint in the dynamic linker. */
 	sym_addr = bfd_lookup_symbol(interp_bfd, "_dl_debug_state", SEC_CODE);
 	if (sym_addr == 0) {
@@ -198,6 +201,54 @@ static void free_solib(struct solib_list *solib)
 	free(solib);
 }
 
+void solib_read_library(struct library_symbol **syms, char *filename, void *base_addr)
+{
+	bfd *abfd;
+	long storage_needed;
+	asymbol *sym;
+	asymbol **symbol_table;
+	unsigned int number_of_symbols;
+	unsigned int i, n = 0;
+	void *symaddr;
+	const flagword flags = BSF_EXPORT | BSF_FUNCTION;
+	struct callback *cb = cb_get();
+
+	abfd = bfd_fopen(filename, "default", "rb", -1);
+	if (abfd == NULL)
+		error_bfd(filename, "could not open shared library file");
+	if (!bfd_check_format(abfd, bfd_object)) {
+		warning_bfd(filename, "not in shared library format");
+		goto err;
+	}
+	storage_needed = bfd_get_dynamic_symtab_upper_bound(abfd);
+	if (storage_needed > 0) {
+		symbol_table = xmalloc(storage_needed);
+		number_of_symbols = bfd_canonicalize_dynamic_symtab(abfd, symbol_table);
+
+		for (i = 0; i < number_of_symbols; i++) {
+			sym = symbol_table[i];
+			if ((sym->flags & flags) == flags && cb && cb->library.match(sym->name)) {
+				struct library_symbol *tmp;
+				n++;
+				/* Bfd symbols are section relative. */
+				symaddr = base_addr + sym->value + sym->section->vma;
+				debug(3, "new symbol: name=\"%s\", addr=%p", sym->name, symaddr);
+				tmp = xmalloc(sizeof(struct library_symbol));
+				tmp->name = strdup(sym->name);
+				tmp->enter_addr = symaddr;
+				tmp->next = *syms;
+				*syms = tmp;
+			}
+		}
+		debug(3, "read %d symbols from %s", n, filename);
+		free(symbol_table);
+	}
+err:
+	if (!bfd_close(abfd))
+		error_bfd(filename, "could not close file");
+}
+
+/* Based on update_solib_list() code from GDB 6.6 (gdb/solib.c). */
 void solib_update_list(struct process *proc)
 {
 	struct solib_list *cur_sos;
@@ -224,7 +275,7 @@ void solib_update_list(struct process *proc)
 			k = *k_link;
 		} else {
 			/* solib was unloaded */
-			printf("XXX solib unloaded: base = %p, name = %s\n", k->base_addr, k->path);
+			debug(3, "solib unloaded: base = %p, name = %s", k->base_addr, k->path);
 			*k_link = k->next;
 			free_solib(k);
 			k = *k_link;
@@ -236,7 +287,8 @@ void solib_update_list(struct process *proc)
 		*k_link = cur_sos;
 		for (c = cur_sos; c; c = c->next) {
 			/* solib was loaded */
-			printf("XXX solib loaded: base = %p, name = %s\n", c->base_addr, c->path);
+			debug(3, "solib loaded: base = %p, name = %s", c->base_addr, c->path);
+			solib_read_library(&proc->symbols, c->path, c->base_addr);
 		}
 	}
 }

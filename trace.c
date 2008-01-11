@@ -10,13 +10,12 @@
 #include <linux/ptrace.h> /* needs to come after sys/ptrace.h */
 
 #include "breakpoint.h"
+#include "callback.h"
 #include "debug.h"
 #include "process.h"
 #include "syscall.h"
 #include "trace.h"
 #include "util.h"
-
-static struct trace_cb *current_tcb = NULL;
 
 struct event {
 	struct process *proc;
@@ -182,7 +181,7 @@ static void trace_set_options(pid_t pid)
 
 static int dispatch_event(struct event *event)
 {
-	struct trace_cb *cbs = current_tcb;
+	struct callback *cb = cb_get();
 
 	switch (event->type) {
 	case EV_NOCHILD:
@@ -190,30 +189,30 @@ static int dispatch_event(struct event *event)
 		break;
 	case EV_PROC_NEW:
 		event->proc = add_process(event->data.pid);
+		if (cb && cb->process.create)
+			cb->process.create(event->proc);
 		bkpt_init(event->proc);
-		if (cbs && cbs->process.create)
-			cbs->process.create(event->proc);
 		trace_set_options(event->proc->pid);
 		continue_process(event->proc);
 		break;
 	case EV_PROC_EXIT:
-		if (cbs && cbs->process.exit)
-			cbs->process.exit(event->proc, event->data.retval);
+		if (cb && cb->process.exit)
+			cb->process.exit(event->proc, event->data.retval);
 		remove_process(event->proc);
 		break;
 	case EV_PROC_EXIT_SIGNAL:
-		if (cbs && cbs->process.kill)
-			cbs->process.kill(event->proc, event->data.signo);
+		if (cb && cb->process.kill)
+			cb->process.kill(event->proc, event->data.signo);
 		remove_process(event->proc);
 		break;
 	case EV_SYSCALL:
-		if (cbs && cbs->syscall.enter)
-			cbs->syscall.enter(event->proc, event->data.sysno);
+		if (cb && cb->syscall.enter)
+			cb->syscall.enter(event->proc, event->data.sysno);
 		continue_process(event->proc);
 		break;
 	case EV_SYSRET:
-		if (cbs && cbs->syscall.exit)
-			cbs->syscall.exit(event->proc, event->data.sysno);
+		if (cb && cb->syscall.exit)
+			cb->syscall.exit(event->proc, event->data.sysno);
 		continue_process(event->proc);
 		break;
 	case EV_PTRACE:
@@ -225,8 +224,8 @@ static int dispatch_event(struct event *event)
 		continue_process(event->proc);
 		break;
 	case EV_SIGNAL:
-		if (cbs && cbs->process.signal)
-			cbs->process.signal(event->proc, event->data.signo);
+		if (cb && cb->process.signal)
+			cb->process.signal(event->proc, event->data.signo);
 		continue_after_signal(event->proc->pid, event->data.signo);
 		break;
 	default:
@@ -280,18 +279,4 @@ int trace_attach(pid_t pid)
 	debug(1, "stub");
 
 	return 0;
-}
-
-void trace_finish(void)
-{
-	if (current_tcb)
-		free(current_tcb);
-}
-
-void trace_register_callbacks(struct trace_cb *tcb)
-{
-	if (current_tcb)
-		free(current_tcb);
-	current_tcb = xmalloc(sizeof(struct trace_cb));
-	memcpy(current_tcb, tcb, sizeof(struct trace_cb));
 }
