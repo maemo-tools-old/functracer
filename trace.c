@@ -226,7 +226,10 @@ static int dispatch_event(struct event *event)
 	case EV_SIGNAL:
 		if (cb && cb->process.signal)
 			cb->process.signal(event->proc, event->data.signo);
-		continue_after_signal(event->proc->pid, event->data.signo);
+		if (event->data.signo == SIGUSR1 || event->data.signo == SIGUSR2)
+			continue_process(event->proc);
+		else
+			continue_after_signal(event->proc->pid, event->data.signo);
 		break;
 	default:
 		msg_err("an unknown event was returned");
