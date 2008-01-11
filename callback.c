@@ -1,3 +1,4 @@
+#include <signal.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -9,6 +10,12 @@
 #include "util.h"
 
 static struct callback *current_cb = NULL;
+static int trace_control = 1;
+
+static int trace_enabled(void)
+{
+	return (trace_control != 0);
+}
 
 static void process_create(struct process *proc)
 {
@@ -33,6 +40,19 @@ static void process_kill(struct process *proc, int signo)
 static void process_signal(struct process *proc, int signo)
 {
 	debug(3, "process received signal (pid=%d, signo=%d)", proc->pid, signo);
+
+	if (signo == SIGUSR1 || signo == SIGUSR2) {
+		if (trace_enabled()) {
+			rp_dump(proc->rp_data);
+			if (signo == SIGUSR1) {
+				rp_finish(proc->rp_data);
+				trace_control = 0;
+			}
+		} else {
+			trace_control = 1;
+			proc->rp_data = rp_init(proc->pid);
+		}
+	}
 }
 
 static void syscall_enter(struct process *proc, int sysno)
