@@ -1,3 +1,4 @@
+#include <libiberty.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,7 +8,6 @@
 #include "function.h"
 #include "process.h"
 #include "report.h"
-#include "util.h"
 
 static struct callback *current_cb = NULL;
 static int trace_control = 1;

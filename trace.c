@@ -15,7 +15,6 @@
 #include "process.h"
 #include "syscall.h"
 #include "trace.h"
-#include "util.h"
 
 struct event {
 	struct process *proc;

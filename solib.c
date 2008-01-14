@@ -2,6 +2,7 @@
 #include <bfd.h>
 #include <errno.h>
 #include <error.h>
+#include <libiberty.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,7 +12,6 @@
 #include "elf.h"
 #include "maps.h"
 #include "solib.h"
-#include "util.h"
 
 static void warning_bfd(const char *filename, const char *msg)
 {

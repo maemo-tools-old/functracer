@@ -12,7 +12,6 @@
 #include "solib.h"
 #include "sysdeps.h"
 #include "target_mem.h"
-#include "util.h"
 
 static void enable_breakpoint(struct process *proc, struct breakpoint *bkpt)
 {
