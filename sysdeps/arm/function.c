@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <sys/ptrace.h>
 #include <linux/ptrace.h>
+#include <asm/ptrace.h>
 
 #include "debug.h"
 #include "function.h"
@@ -10,28 +11,45 @@
 
 static int callstack_depth = 0; /* XXX debug */
 
+#define off_lr 56
+#define off_sp 52
+#define off_r0 0
+
 static void get_stack_pointer(struct process *proc, void **addr)
 {
 	long sp;
 
-	trace_user_read(proc, 4 * UESP, &sp);
+	trace_user_read(proc, off_sp, &sp);
 	*addr = (void *)sp;
 }
+
+#define long2bytes(w)	(unsigned char *)&w
 
 long fn_argument(struct process *proc, int arg_num)
 {
 	long w;
-	unsigned char *w_bytes = (unsigned char *)&w;
 	void *sp;
+	unsigned char *w_bytes = (unsigned char *)&w;
+	struct pt_regs *regs;
 
 	debug(3, "fn_argument(pid=%d, arg_num=%d)", proc->pid, arg_num);
 	if (proc->callstack == NULL) {
 		debug(1, "no function argument data is saved");
-		get_stack_pointer(proc, &sp);
+		if (arg_num < 4)
+			trace_user_read(proc, 4 * arg_num, &w);
+		else {
+			get_stack_pointer(proc, &sp);
+			trace_mem_read(proc, sp + 4 * (arg_num - 4), w_bytes, sizeof(long));
+		}
 	} else {
-		sp = proc->callstack->fn_arg_data;
+		regs = (struct pt_regs *)proc->callstack->fn_arg_data;
+		if (arg_num < 4)
+			w = regs->uregs[arg_num];
+		else {
+			sp = (void *)regs->ARM_sp;
+			trace_mem_read(proc, sp + 4 * (arg_num - 4), w_bytes, sizeof(long));
+		}
 	}
-	trace_mem_read(proc, sp + 4 * (arg_num + 1), w_bytes, sizeof(long));
 
 	return w;
 }
@@ -40,20 +58,18 @@ long fn_return_value(struct process *proc)
 {
 	long w;
 
-	debug(3, "fn_argument(pid=%d)", proc->pid);
-	trace_user_read(proc, 4 * EAX, &w);
+	debug(3, "fn_return_value(pid=%d)", proc->pid);
+	trace_user_read(proc, off_r0, &w);
+
 	return w;
 }
 
 void fn_return_address(struct process *proc, void **addr)
 {
 	long w;
-	unsigned char *w_bytes = (unsigned char *)&w;
-	void *sp;
 
 	debug(3, "fn_return_address(pid=%d)", proc->pid);
-	get_stack_pointer(proc, &sp);
-	trace_mem_read(proc, sp, w_bytes, sizeof(long));
+	trace_user_read(proc, off_lr, &w);
 	*addr = (void *)w;
 }
 
@@ -63,7 +79,8 @@ void fn_save_arg_data(struct process *proc)
 
 	debug(1, "depth = %d", ++callstack_depth);
 
-	get_stack_pointer(proc, &cs->fn_arg_data);
+	cs->fn_arg_data = xmalloc(sizeof(struct pt_regs));
+	trace_getregs(proc, cs->fn_arg_data);
 	cs->next = proc->callstack;
 	proc->callstack = cs;
 }
@@ -79,6 +96,7 @@ void fn_invalidate_arg_data(struct process *proc)
 		return;
 	}
 	cs = proc->callstack->next;
+	free(proc->callstack->fn_arg_data);
 	free(proc->callstack);
 	proc->callstack = cs;
 }

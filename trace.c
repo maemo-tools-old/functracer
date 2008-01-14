@@ -255,6 +255,7 @@ int trace_main_loop(void)
 		if (event.type == EV_NOCHILD)
 			return 0;
 	}
+	debug(1, "error while waiting for event");
 
 	return -1;
 }
