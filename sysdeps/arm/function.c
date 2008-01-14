@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <libiberty.h>
+
 #include <sys/ptrace.h>
 #include <linux/ptrace.h>
 #include <asm/ptrace.h>
@@ -7,7 +9,6 @@
 #include "debug.h"
 #include "function.h"
 #include "target_mem.h"
-#include "util.h"
 
 static int callstack_depth = 0; /* XXX debug */
 
