@@ -12,7 +12,6 @@
 #include "solib.h"
 #include "sysdeps.h"
 #include "target_mem.h"
-#include "util.h"
 
 static void enable_breakpoint(struct process *proc, struct breakpoint *bkpt)
 {
@@ -106,6 +105,7 @@ void bkpt_handle(struct process *proc, void *addr)
 	struct breakpoint *bkpt = breakpoint_from_address(proc, addr);
 	struct callback *cb = cb_get();
 
+	debug(3, "bkpt_handle(pid=%d, addr=%p", proc->pid, addr);
 	if (proc->pending_breakpoint != NULL) {
 		/* re-enable pending breakpoint */
 		enable_breakpoint(proc, proc->pending_breakpoint);
@@ -138,7 +138,8 @@ void bkpt_handle(struct process *proc, void *addr)
 		disable_breakpoint(proc, bkpt);
 		set_instruction_pointer(proc, addr);
 	} else {
-		error_exit("unknown breakpoint at address %p\n", addr);
+		msg_err("unknown breakpoint at address %p\n", addr);
+		exit(EXIT_FAILURE);
 	}
 }
 

@@ -2,14 +2,7 @@
 #define FTK_BREAKPOINT_H
 
 #include "process.h"
-
-#ifdef __i386__
-
-#define BREAKPOINT_VALUE {0xcc}
-#define BREAKPOINT_LENGTH 1
-#define DECR_PC_AFTER_BREAK 1
-
-#endif
+#include "arch.h"
 
 struct breakpoint {
 	void *addr;
