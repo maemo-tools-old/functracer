@@ -8,6 +8,7 @@
 /* FIXME: Remove */
 struct opt_x_t *opt_x = NULL;
 
+struct arguments arguments;
 char *library[MAX_LIBRARY];
 int library_num = 0;
 
@@ -20,9 +21,11 @@ static const char doc[] = "Run PROGRAM and track selected functions.";
 /* definitions of arguments for argp functions */
 static const struct argp_option options[] = {
 	{"track-pid", 'p', "PID", 0, "which PID to track", 0},
-	{"track-function", 'e', "FUNCTION", 0, "which function to track", 0},
-	{"num", 'n', "NUMBER", 0, "maximum number of allocations", 0},
-	{"depth", 'd', "NUMBER", 0, "maximum backtrace depth", 0},
+	{"track-function", 'e', "FUNCTION", 0,
+	 "which function to track (NOT IMPLEMENTED)", 0},
+	{"alloc-number", 'n', "NUMBER", 0, "maximum number of allocations", 0},
+	{"debug", 'd', 0, 0, "maximum debug level", 0},
+	{"depth", 't', "NUMBER", 0, "maximum backtrace depth", 0},
 	{NULL, 0, NULL, 0, NULL, 0},
 };
 
@@ -47,14 +50,15 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 	case 'n':
 		arguments->nalloc = atoi(arg);
 		if (arguments->nalloc <= 0 || arguments->nalloc > MAX_NALLOC)
-			argp_error(state,
-				   "Number of allocations must be between 1 and %dK",
-				   MAX_NALLOC);
+			argp_error(state, "Number of allocations must be between 1 and %dK", MAX_NALLOC);
 		break;
-	case 'd':
+	case 't':
 		arguments->depth = atoi(arg);
 		if (arguments->depth <= 0 || arguments->depth > MAX_BT_DEPTH)
 			argp_error(state, "Depth must be between 1 and %d", MAX_BT_DEPTH);
+		break;
+	case 'd':
+		arguments->debug++;
 		break;
 	case 'e':
 		argp_error(state, "Warning: -e option no implemented");
@@ -73,6 +77,13 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 
 void process_options(int argc, char *argv[], int *remaining, struct arguments *arguments)
 {
+	/* Initial values */
+	arguments->pid = 0;
+	arguments->nalloc = MAX_NALLOC;
+	arguments->depth = MAX_BT_DEPTH;
+	arguments->debug = 0;
+
 	/* parse and process arguments */
+
 	argp_parse(&argp, argc, argv, 0, remaining, arguments);
 }
