@@ -12,8 +12,7 @@ int main(int argc, char *argv[])
 {
 	int prog_index, ret;
 
-	memset(&arguments, 0, sizeof(struct arguments));
-	process_options(argc, argv, &prog_index, &arguments);
+	process_options(argc, argv, &prog_index);
 
 	cb_init();
 	trace_execute(argv[prog_index], argv + prog_index);

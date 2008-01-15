@@ -23,7 +23,6 @@ extern struct arguments arguments;
 extern int library_num;
 extern char *library[MAX_LIBRARY];
 
-extern void process_options(int argc, char *argv[], int *remaining,
-			    struct arguments *arguments);
+extern void process_options(int argc, char *argv[], int *remaining);
 
 #endif /* TT_OPTIONS_H */

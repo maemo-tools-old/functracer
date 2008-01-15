@@ -38,33 +38,33 @@ static struct argp argp = { options, parse_opt, args_doc, doc, NULL, NULL, NULL 
 /* handle program arguments */
 static error_t parse_opt(int key, char *arg, struct argp_state *state)
 {
-	struct arguments *arguments = state->input;
+	struct arguments *arg_data = state->input;
 
 	switch (key) {
 	case 'p':
 		argp_error(state, "Warning: -p option no implemented");
-		arguments->pid = atoi(arg);
-		if (arguments->pid <= 0)
+		arg_data->pid = atoi(arg);
+		if (arg_data->pid <= 0)
 			argp_error(state, "PID must be positive");
 		break;
 	case 'n':
-		arguments->nalloc = atoi(arg);
-		if (arguments->nalloc <= 0 || arguments->nalloc > MAX_NALLOC)
+		arg_data->nalloc = atoi(arg);
+		if (arg_data->nalloc <= 0 || arg_data->nalloc > MAX_NALLOC)
 			argp_error(state, "Number of allocations must be between 1 and %dK", MAX_NALLOC);
 		break;
 	case 't':
-		arguments->depth = atoi(arg);
-		if (arguments->depth <= 0 || arguments->depth > MAX_BT_DEPTH)
+		arg_data->depth = atoi(arg);
+		if (arg_data->depth <= 0 || arg_data->depth > MAX_BT_DEPTH)
 			argp_error(state, "Depth must be between 1 and %d", MAX_BT_DEPTH);
 		break;
 	case 'd':
-		arguments->debug++;
+		arg_data->debug++;
 		break;
 	case 'e':
 		argp_error(state, "Warning: -e option no implemented");
 		break;
 	case ARGP_KEY_END:
-		if (arguments->pid == 0 && state->arg_num < 1)
+		if (arg_data->pid == 0 && state->arg_num < 1)
 			/* Not enough arguments. */
 			argp_usage(state);
 		break;
@@ -75,15 +75,13 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 	return 0;
 }
 
-void process_options(int argc, char *argv[], int *remaining, struct arguments *arguments)
+void process_options(int argc, char *argv[], int *remaining)
 {
 	/* Initial values */
-	arguments->pid = 0;
-	arguments->nalloc = MAX_NALLOC;
-	arguments->depth = MAX_BT_DEPTH;
-	arguments->debug = 0;
+	memset(&arguments, 0, sizeof(struct arguments));
+	arguments.nalloc = MAX_NALLOC;
+	arguments.depth = MAX_BT_DEPTH;
 
 	/* parse and process arguments */
-
-	argp_parse(&argp, argc, argv, 0, remaining, arguments);
+	argp_parse(&argp, argc, argv, 0, remaining, &arguments);
 }
