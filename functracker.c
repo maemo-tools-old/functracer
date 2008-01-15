@@ -11,7 +11,6 @@
 int main(int argc, char *argv[])
 {
 	int prog_index, ret;
-	struct arguments arguments;
 
 	memset(&arguments, 0, sizeof(struct arguments));
 	process_options(argc, argv, &prog_index, &arguments);
