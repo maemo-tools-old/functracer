@@ -15,9 +15,11 @@ struct arguments {
 	pid_t pid;
 	int nalloc;
 	int depth;
+	int debug;
 };
 
 #define MAX_LIBRARY     30
+extern struct arguments arguments;
 extern int library_num;
 extern char *library[MAX_LIBRARY];
 

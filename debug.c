@@ -4,6 +4,8 @@
 #include <error.h>
 #include <errno.h>
 
+#include "options.h"
+
 static void output_line(char *fmt, ...)
 {
 	va_list args;
@@ -22,7 +24,10 @@ void debug_(int level, const char *file, int line, const char *func, const char 
 	char buf[1024];
 	va_list args;
 
-	/* TODO: handle debug level argument */
+	if (arguments.debug < level) {
+		return;
+	}
+
 	va_start(args, fmt);
 	vsnprintf(buf, 1024, fmt, args);
 	va_end(args);

@@ -5,6 +5,7 @@
 #include "backtrace.h"
 #include "debug.h"
 #include "report.h"
+#include "options.h"
 
 static unsigned step = 0;
  
@@ -72,9 +73,9 @@ void rp_new_alloc(struct rp_data *rd, void *addr, size_t size)
 	static int alloc_overflow = 0;
 
 	debug(3, "rp_new_alloc(pid=%d, addr=%p, size=%d)", rd->pid, addr, size);
-	if (rd->nallocs >= MAX_NALLOC) {
+	if (rd->nallocs >= arguments.nalloc) {
 		if (!alloc_overflow) {
-			debug(1, "maximum number of allocations (%d) reached, new allocations will be ignored!", MAX_NALLOC);
+			debug(1, "maximum number of allocations (%d) reached, new allocations will be ignored!", arguments.nalloc);
 			alloc_overflow = 1;
 		}
 		return;
@@ -84,7 +85,7 @@ void rp_new_alloc(struct rp_data *rd, void *addr, size_t size)
 		error_exit("rp_new_alloc(): calloc");
 	rai->addr = addr;
 	rai->size = size;
-	rai->bt_depth = bt_backtrace(rd->btd, rai->backtrace, MAX_BT_DEPTH);
+	rai->bt_depth = bt_backtrace(rd->btd, rai->backtrace, arguments.depth);
 	rai->next = rd->allocs;
 	rd->allocs = rai;
 	rd->nallocs++;
