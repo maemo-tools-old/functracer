@@ -1,3 +1,7 @@
 *.o
+*~
 functracker
 tests/malloc_simple
+tests/malloc_recursive
+core
+tags
