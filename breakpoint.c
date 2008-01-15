@@ -30,13 +30,32 @@ static void disable_breakpoint(struct process *proc, struct breakpoint *bkpt)
 	trace_mem_write(proc, bkpt->addr, bkpt->orig_value, BREAKPOINT_LENGTH);
 }
 
+static struct breakpoint *breakpoint_from_address(struct process *proc, void *addr)
+{
+	return dict_find_entry(proc->breakpoints, addr);
+}
+
+static void breakpoint_get(struct process *proc, struct breakpoint *bkpt)
+{
+	bkpt->enabled++;
+	if (bkpt->enabled == 1)
+		enable_breakpoint(proc, bkpt);
+}
+
+static void breakpoint_put(struct process *proc, struct breakpoint *bkpt)
+{
+	bkpt->enabled--;
+	if (bkpt->enabled == 0)
+		disable_breakpoint(proc, bkpt);
+}
+
 static struct breakpoint *register_breakpoint(struct process *proc, void *addr)
 {
 	struct breakpoint *bkpt;
 
 	debug(1, "addr=%p", addr);
 
-	bkpt = dict_find_entry(proc->breakpoints, addr);
+	bkpt = breakpoint_from_address(proc, addr);
 	if (bkpt == NULL) {
 		bkpt = calloc(1, sizeof(struct breakpoint));
 		if (bkpt == NULL) {
@@ -46,9 +65,7 @@ static struct breakpoint *register_breakpoint(struct process *proc, void *addr)
 		dict_enter(proc->breakpoints, addr, bkpt);
 		bkpt->addr = addr;
 	}
-	bkpt->enabled++;
-	if (bkpt->enabled == 1)
-		enable_breakpoint(proc, bkpt);
+	breakpoint_get(proc, bkpt);
 
 	return bkpt;
 }
@@ -88,11 +105,6 @@ static void register_dl_debug_breakpoint(struct process *proc)
 	dl_bkpt->type = BKPT_SOLIB;
 }
 
-static struct breakpoint *breakpoint_from_address(struct process *proc, void *addr)
-{
-	return dict_find_entry(proc->breakpoints, addr);
-}
-
 #define set_pending_breakpoint(proc, bkpt) do { \
 	proc->pending_breakpoint = bkpt; \
 	} while (0)
@@ -115,7 +127,6 @@ void bkpt_handle(struct process *proc, void *addr)
 		case BKPT_ENTRY:
 			debug(1, "entry breakpoint for %s()", bkpt->symbol->name);
 			register_return_breakpoint(proc, bkpt);
-			set_pending_breakpoint(proc, bkpt);
 			fn_save_arg_data(proc);
 			if (cb && cb->function.enter)
 				cb->function.enter(proc, bkpt->symbol->name);
@@ -124,10 +135,10 @@ void bkpt_handle(struct process *proc, void *addr)
 			debug(1, "return breakpoint for %s()", bkpt->symbol->name);
 			if (cb && cb->function.exit)
 				cb->function.exit(proc, bkpt->symbol->name);
+			breakpoint_put(proc, bkpt);
 			fn_invalidate_arg_data(proc);
 			break;
 		case BKPT_SOLIB:
-			set_pending_breakpoint(proc, bkpt);
 			solib_update_list(proc);
 			register_proc_breakpoints(proc);
 			break;
@@ -135,7 +146,10 @@ void bkpt_handle(struct process *proc, void *addr)
 			error_exit("unknown breakpoint type");
 		}
 		/* temporarily disable breakpoint, so we can pass over it */
-		disable_breakpoint(proc, bkpt);
+		if (bkpt->enabled) {
+			disable_breakpoint(proc, bkpt);
+			set_pending_breakpoint(proc, bkpt);
+		}
 		set_instruction_pointer(proc, addr);
 	} else {
 		msg_err("unknown breakpoint at address %p\n", addr);
