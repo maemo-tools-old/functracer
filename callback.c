@@ -21,15 +21,18 @@ static void process_create(struct process *proc)
 {
 	debug(3, "new process (pid=%d)", proc->pid);
 
-	proc->rp_data = rp_init(proc->pid);
+	if (trace_enabled())
+		proc->rp_data = rp_init(proc->pid);
 }
 
 static void process_exit(struct process *proc, int exit_code)
 {
 	debug(3, "process exited (pid=%d, exit_code=%d)", proc->pid, exit_code);
 
-	rp_dump(proc->rp_data);
-	rp_finish(proc->rp_data);
+	if (trace_enabled()) {
+		rp_dump(proc->rp_data);
+		rp_finish(proc->rp_data);
+	}
 }
 
 static void process_kill(struct process *proc, int signo)
@@ -76,14 +79,25 @@ static void function_exit(struct process *proc, const char *name)
 	long arg0 = fn_argument(proc, 0);
 
 	debug(3, "function return (pid=%d, name=%s)", proc->pid, name);
-	rp_new_alloc(proc->rp_data, retval, arg0);
+	
+	if (strcmp(name, "malloc") == 0) {
+		rp_new_alloc(proc->rp_data, retval, arg0);
+	} else if (strcmp(name, "calloc") == 0) {
+		long arg1 = fn_argument(proc, 1);
+		rp_new_alloc(proc->rp_data, retval, arg0*arg1);
+	} else if (strcmp(name, "realloc") == 0) {
+		long arg1 = fn_argument(proc, 1);
+		rp_new_alloc(proc->rp_data, retval, arg1);
+	}	
 }
 
 static int library_match(const char *name)
 {
 	debug(3, "library symbol match test (name=%s)", name);
 
-	return (strcmp(name, "malloc") == 0);
+	return (strcmp(name, "calloc") == 0
+		|| strcmp(name, "malloc") == 0 
+		|| strcmp(name, "realloc") == 0);
 }
 
 static void cb_register(struct callback *cb)
