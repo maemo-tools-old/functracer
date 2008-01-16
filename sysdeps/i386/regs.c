@@ -1,26 +1,17 @@
-#include <stdio.h>
-#include <sys/types.h>
-#include <sys/ptrace.h>
-#include <asm/ptrace.h>
-#include <errno.h>
+#include <linux/ptrace.h>
 
 #include "sysdeps.h"
-#include "process.h"
-#include "target_mem.h"
 
-int get_instruction_pointer(struct process *proc, void **addr)
+int get_instruction_pointer(struct process *proc, addr_t *addr)
 {
-	long w;
-
-	trace_user_read(proc, 4 * EIP, &w);
-	*addr = (void *)w;
+	*addr = trace_user_readw(proc, 4 * EIP);
 
 	return 0;
 }
 
-int set_instruction_pointer(struct process *proc, void *addr)
+int set_instruction_pointer(struct process *proc, addr_t addr)
 {
-	trace_user_write(proc, 4 * EIP, (long)addr);
+	trace_user_writew(proc, 4 * EIP, (long)addr);
 
 	return 0;
 }

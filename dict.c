@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -92,7 +93,7 @@ int dict_enter(struct dict *d, void *key, void *value)
 	else
 		d->buckets[bucketpos] = newentry;
 
-	debug(3, "new dict entry at %p[%d]: (%p,%p)", d, bucketpos, key, value);
+	debug(3, "new dict entry at %p[%d]: (%p,%p)", (void *)d, bucketpos, key, value);
 	return 0;
 }
 
@@ -164,5 +165,5 @@ unsigned int dict_key2hash_int(void *key)
 
 int dict_key_cmp_int(void *key1, void *key2)
 {
-	return key1 - key2;
+	return (uintptr_t)key1 - (uintptr_t)key2;
 }

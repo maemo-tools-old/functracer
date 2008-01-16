@@ -4,9 +4,10 @@
 #include <error.h>
 #include <errno.h>
 
+#include "debug.h"
 #include "options.h"
 
-static void output_line(char *fmt, ...)
+static void output_line(const char *fmt, ...)
 {
 	va_list args;
 
@@ -53,7 +54,7 @@ void msg_err(const char *fmt, ...)
 	va_end(args);
 }
 
-void error_file(char *filename, char *msg)
+void error_file(const char *filename, const char *msg)
 {
 	error(EXIT_FAILURE, errno, "\"%s\": %s", filename, msg);
 }

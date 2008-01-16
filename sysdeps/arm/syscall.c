@@ -3,6 +3,7 @@
 
 #include "debug.h"
 #include "syscall.h"
+#include "target_mem.h"
 
 #define off_r0 0
 #define off_r7 28
@@ -12,14 +13,14 @@
 int get_syscall_nr(struct process *proc, int *nr)
 {
 	/* get the user's pc (plus 8) */
-	int pc = ptrace(PTRACE_PEEKUSER, proc->pid, off_pc, 0);
+	int pc = trace_user_readw(proc, off_pc);
 	/* fetch the SWI instruction */
-	int insn = ptrace(PTRACE_PEEKTEXT, proc->pid, pc - 4, 0);
-	int ip = ptrace(PTRACE_PEEKUSER, proc->pid, off_ip, 0);
+	int insn = trace_mem_readw(proc, (addr_t)pc - 4);
+	int ip = trace_user_readw(proc, off_ip);
 
 	if (insn == 0xef000000 || insn == 0x0f000000) {
 		/* EABI syscall */
-		*nr = ptrace(PTRACE_PEEKUSER, proc->pid, off_r7, 0);
+		*nr = trace_user_readw(proc, off_r7);
 	} else if ((insn & 0xfff00000) == 0xef900000) {
 		/* old ABI syscall */
 		*nr = insn & 0xfffff;
@@ -44,7 +45,7 @@ int get_syscall_nr(struct process *proc, int *nr)
 long get_syscall_arg(struct process *proc, int arg_num)
 {
 	if (arg_num == -1)	/* return value */
-		return ptrace(PTRACE_PEEKUSER, proc->pid, off_r0, 0);
+		return trace_user_readw(proc, off_r0);
 
-	return ptrace(PTRACE_PEEKUSER, proc->pid, 4 * arg_num, 0);
+	return trace_user_readw(proc, 4 * arg_num);
 }

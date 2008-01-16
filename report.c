@@ -57,7 +57,7 @@ void rp_dump(struct rp_data *rd)
 	fprintf(rd->fp, "information about %ld allocations\n", rd->nallocs);
 	rai = rd->allocs;
 	while (rai) {
-		fprintf(rd->fp, "%d. block at %p with size %d\n", i++, rai->addr, rai->size);
+		fprintf(rd->fp, "%d. block at 0x%x with size %d\n", i++, rai->addr, rai->size);
 		for (j = 0; j < rai->bt_depth; j++) {
 			fprintf(rd->fp, "   %s\n", rai->backtrace[j]);
 			free(rai->backtrace[j]);
@@ -69,12 +69,12 @@ void rp_dump(struct rp_data *rd)
 	step++;
 }
 
-void rp_new_alloc(struct rp_data *rd, void *addr, size_t size)
+void rp_new_alloc(struct rp_data *rd, addr_t addr, size_t size)
 {
 	struct rp_allocinfo *rai;
 	static int alloc_overflow = 0;
 
-	debug(3, "rp_new_alloc(pid=%d, addr=%p, size=%d)", rd->pid, addr, size);
+	debug(3, "rp_new_alloc(pid=%d, addr=0x%x, size=%d)", rd->pid, addr, size);
 	if (rd->nallocs >= arguments.nalloc) {
 		if (!alloc_overflow) {
 			debug(1, "maximum number of allocations (%d) reached, new allocations will be ignored!", arguments.nalloc);
@@ -97,6 +97,7 @@ struct rp_data *rp_init(pid_t pid)
 {
 	struct rp_data *rd;
 
+	debug(3, "pid=%d", pid);
 	rd = calloc(1, sizeof(struct rp_data));
 	if (rd == NULL)
 		error_exit("rp_init(): calloc");

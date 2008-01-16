@@ -6,64 +6,51 @@
 
 #include "debug.h"
 #include "function.h"
-#include "target_mem.h"
 
 static int callstack_depth = 0; /* XXX debug */
 
-static void get_stack_pointer(struct process *proc, void **addr)
+static addr_t get_stack_pointer(struct process *proc)
 {
-	long sp;
-
-	trace_user_read(proc, 4 * UESP, &sp);
-	*addr = (void *)sp;
+	return trace_user_readw(proc, 4 * UESP);
 }
 
 long fn_argument(struct process *proc, int arg_num)
 {
-	long w;
-	unsigned char *w_bytes = (unsigned char *)&w;
-	void *sp;
+	addr_t sp;
 
 	debug(3, "fn_argument(pid=%d, arg_num=%d)", proc->pid, arg_num);
 	if (proc->callstack == NULL) {
 		debug(1, "no function argument data is saved");
-		get_stack_pointer(proc, &sp);
+		sp = get_stack_pointer(proc);
 	} else {
-		sp = proc->callstack->fn_arg_data;
+		sp = (addr_t)proc->callstack->fn_arg_data;
 	}
-	trace_mem_read(proc, sp + 4 * (arg_num + 1), w_bytes, sizeof(long));
-
-	return w;
+	return trace_mem_readw(proc, sp + 4 * (arg_num + 1));
 }
 
 long fn_return_value(struct process *proc)
 {
-	long w;
-
 	debug(3, "fn_argument(pid=%d)", proc->pid);
-	trace_user_read(proc, 4 * EAX, &w);
-	return w;
+
+	return trace_user_readw(proc, 4 * EAX);
 }
 
-void fn_return_address(struct process *proc, void **addr)
+void fn_return_address(struct process *proc, addr_t *addr)
 {
-	long w;
-	unsigned char *w_bytes = (unsigned char *)&w;
-	void *sp;
+	addr_t sp;
 
 	debug(3, "fn_return_address(pid=%d)", proc->pid);
-	get_stack_pointer(proc, &sp);
-	trace_mem_read(proc, sp, w_bytes, sizeof(long));
-	*addr = (void *)w;
+	sp = get_stack_pointer(proc);
+	*addr = trace_mem_readw(proc, sp);
 }
 
 void fn_save_arg_data(struct process *proc)
 {
-	struct callstack *cs = xmalloc(sizeof(struct callstack));
+	struct callstack *cs;
 
 	debug(1, "depth = %d", ++callstack_depth);
-
-	get_stack_pointer(proc, &cs->fn_arg_data);
+	cs = xmalloc(sizeof(struct callstack));
+	cs->fn_arg_data = (void *)get_stack_pointer(proc);
 	cs->next = proc->callstack;
 	proc->callstack = cs;
 }

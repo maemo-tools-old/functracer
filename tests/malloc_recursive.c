@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void malloc_recursive(int i)
+static void malloc_recursive(int i)
 {
 	size_t size = i * 1024 * sizeof(char);
 	void *ptr;

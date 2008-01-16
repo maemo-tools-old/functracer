@@ -8,6 +8,7 @@
 #include "function.h"
 #include "process.h"
 #include "report.h"
+#include "target_mem.h"
 
 static struct callback *current_cb = NULL;
 static int trace_control = 1;
@@ -75,18 +76,18 @@ static void function_enter(struct process *proc, const char *name)
 
 static void function_exit(struct process *proc, const char *name)
 {
-	void *retval = (void *)fn_return_value(proc);
-	long arg0 = fn_argument(proc, 0);
+	addr_t retval = fn_return_value(proc);
+	size_t arg0 = fn_argument(proc, 0);
 
 	debug(3, "function return (pid=%d, name=%s)", proc->pid, name);
 	
 	if (strcmp(name, "malloc") == 0) {
 		rp_new_alloc(proc->rp_data, retval, arg0);
 	} else if (strcmp(name, "calloc") == 0) {
-		long arg1 = fn_argument(proc, 1);
-		rp_new_alloc(proc->rp_data, retval, arg0*arg1);
+		size_t arg1 = fn_argument(proc, 1);
+		rp_new_alloc(proc->rp_data, retval, arg0 * arg1);
 	} else if (strcmp(name, "realloc") == 0) {
-		long arg1 = fn_argument(proc, 1);
+		size_t arg1 = fn_argument(proc, 1);
 		rp_new_alloc(proc->rp_data, retval, arg1);
 	}	
 }

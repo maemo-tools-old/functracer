@@ -1,11 +1,11 @@
-#include <sys/ptrace.h>
 #include <linux/ptrace.h>
 
 #include "syscall.h"
+#include "target_mem.h"
 
 int get_syscall_nr(struct process *proc, int *nr)
 {
-	*nr = ptrace(PTRACE_PEEKUSER, proc->pid, 4 * ORIG_EAX, 0);
+	*nr = trace_user_readw(proc, 4 * ORIG_EAX);
 	if (proc->in_syscall) {
 		proc->in_syscall = 0;
 		return 2;
@@ -20,7 +20,7 @@ int get_syscall_nr(struct process *proc, int *nr)
 long get_syscall_arg(struct process *proc, int arg_num)
 {
 	if (arg_num == -1)	/* return value */
-		return ptrace(PTRACE_PEEKUSER, proc->pid, 4 * EAX, 0);
+		return trace_user_readw(proc, 4 * EAX);
 
-	return ptrace(PTRACE_PEEKUSER, proc->pid, 4 * arg_num, 0);
+	return trace_user_readw(proc, 4 * arg_num);
 }

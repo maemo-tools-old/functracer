@@ -10,19 +10,16 @@
 
 #define off_pc 60
 
-int get_instruction_pointer(struct process *proc, void **addr)
+int get_instruction_pointer(struct process *proc, addr_t *addr)
 {
-	long w;
-
-	trace_user_read(proc, off_pc, &w);
-	*addr = (void *)w;
+	*addr = trace_user_readw(proc, off_pc);
 
 	return 0;
 }
 
-int set_instruction_pointer(struct process *proc, void *addr)
+int set_instruction_pointer(struct process *proc, addr_t addr)
 {
-	trace_user_write(proc, off_pc, (long)addr);
+	trace_user_writew(proc, off_pc, (long)addr);
 
 	return 0;
 }

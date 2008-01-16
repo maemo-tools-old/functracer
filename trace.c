@@ -1,13 +1,10 @@
 #include <errno.h>
-#include <error.h> /* TODO use our error functions */
+#include <linux/ptrace.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/wait.h>
 #include <unistd.h>
-
-#include <sys/ptrace.h>
-#include <linux/ptrace.h> /* needs to come after sys/ptrace.h */
 
 #include "breakpoint.h"
 #include "callback.h"
@@ -15,6 +12,7 @@
 #include "process.h"
 #include "syscall.h"
 #include "trace.h"
+#include "util.h"
 
 struct event {
 	struct process *proc;
@@ -34,7 +32,7 @@ struct event {
 		int retval;	/* EV_PROC_EXIT */
 		int signo;	/* EV_SIGNAL, EV_PROC_EXIT_SIGNAL */
 		int sysno;	/* EV_SYSCALL, EV_SYSRET */
-		void *addr;	/* EV_BREAKPOINT */
+		addr_t addr;	/* EV_BREAKPOINT */
 		pid_t pid;	/* EV_PROC_NEW */
 	} data;
 };
@@ -79,12 +77,12 @@ void get_fork_pid(struct process *proc, pid_t *new_pid)
 }
 #endif
 
-
-
 static pid_t ft_wait(int *status)
 {
+	pid_t pid;
+
 	errno = 0;
-	pid_t pid = waitpid(-1, status, __WALL);
+	pid = waitpid(-1, status, __WALL);
 	if (pid == -1 && errno != ECHILD)
 		error_exit("waitpid");
 	return pid;
@@ -149,19 +147,17 @@ static int wait_for_event(struct event *event)
 
 static void continue_process(struct process *proc)
 {
-	int op = bkpt_pending(proc) ? PTRACE_SINGLESTEP : PTRACE_SYSCALL;
+	debug(3, "pid=%d", proc->pid);
 
-	errno = 0;
-	if (ptrace(op, proc->pid, 0, 0) == -1 && errno) {
-		error_exit("ptrace: %s", bkpt_pending(proc) ? "PTRACE_SINGLESTEP" : "PTRACE_SYSCALL");
-	}
+	if (bkpt_pending(proc))
+		xptrace(PTRACE_SINGLESTEP, proc->pid, NULL, NULL);
+	else
+		xptrace(PTRACE_SYSCALL, proc->pid, NULL, NULL);
 }
 
 static void continue_after_signal(pid_t pid, int signo)
 {
-	if (ptrace(PTRACE_SYSCALL, pid, 0, signo) == -1 && errno) {
-		error_exit("ptrace: PTRACE_SYSCALL");
-	}
+	xptrace(PTRACE_SYSCALL, pid, NULL, (void *)signo);
 }
 
 static void trace_set_options(pid_t pid)
@@ -170,12 +166,8 @@ static void trace_set_options(pid_t pid)
 	    PTRACE_O_TRACESYSGOOD | PTRACE_O_TRACEFORK |
 	    PTRACE_O_TRACEVFORK | PTRACE_O_TRACECLONE | PTRACE_O_TRACEEXEC;
 
-	errno = 0;
-	if (ptrace(PTRACE_SETOPTIONS, pid, 0, options) == -1
-	    && ptrace(PTRACE_OLDSETOPTIONS, pid, 0, options) == -1
-	    && errno) {
-		error_exit("ptrace: PTRACE_SETOPTIONS");
-	}
+	debug(3, "pid=%d", pid);
+	xptrace(PTRACE_SETOPTIONS, pid, NULL, (void *)options);
 }
 
 static int dispatch_event(struct event *event)
@@ -238,14 +230,6 @@ static int dispatch_event(struct event *event)
 	return 0;
 }
 
-static void trace_me(void)
-{
-	errno = 0;
-	if (ptrace(PTRACE_TRACEME, 0, 0, 0) == -1 && errno) {
-		error_exit("ptrace: PTRACE_TRACEME");
-	}
-}
-
 int trace_main_loop(void)
 {
 	struct event event;
@@ -268,7 +252,7 @@ int trace_execute(char *filename, char *argv[])
 		error_file(filename, "could not execute program");
 		return -1;
 	} else if (pid == 0) {	/* child */
-		trace_me();
+		xptrace(PTRACE_TRACEME, 0, NULL, NULL);
 		execvp(filename, argv);
 		error_file(filename, "could not execute program");
 		return -1;
