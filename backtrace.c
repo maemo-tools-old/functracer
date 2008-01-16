@@ -23,7 +23,7 @@ struct bt_data *bt_init(pid_t pid)
 	return btd;
 }
 
-int bt_backtrace(struct bt_data *btd, void **buffer, int size)
+int bt_backtrace(struct bt_data *btd, char **buffer, int size)
 {
 	unw_cursor_t c;
 	unw_word_t ip, off;
@@ -43,12 +43,11 @@ int bt_backtrace(struct bt_data *btd, void **buffer, int size)
 		unw_get_proc_name(&c, buf, sizeof(buf), &off);
 		if (off) {
 			size_t len = strlen(buf);
-			if (len >= sizeof(buf) - 32)
-				len = sizeof(buf) - 32;
-			sprintf(buf + len, "+0x%lx", (unsigned long)off);
+			if (len >= sizeof(buf) - 64)
+				len = sizeof(buf) - 64;
+			sprintf(buf + len, "+0x%lx [0x%x]", (unsigned long)off, (uintptr_t)ip);
 		}
-		printf("XXX DEBUG: name = \"%s\", addr = %p\n", buf,(void *)(uintptr_t)ip);
-		buffer[n++] = (void *)(uintptr_t)ip;
+		buffer[n++] = strdup(buf);
 
 		if ((ret = unw_step(&c)) < 0) {
 			debug(1, "bt_backtrace(): unw_step() failed, ret=%d", ret);

@@ -58,8 +58,10 @@ void rp_dump(struct rp_data *rd)
 	rai = rd->allocs;
 	while (rai) {
 		fprintf(rd->fp, "%d. block at %p with size %d\n", i++, rai->addr, rai->size);
-		for (j = 0; j < rai->bt_depth; j++)
-			fprintf(rd->fp, "   [%p]\n", rai->backtrace[j]);
+		for (j = 0; j < rai->bt_depth; j++) {
+			fprintf(rd->fp, "   %s\n", rai->backtrace[j]);
+			free(rai->backtrace[j]);
+		}
 		rai = rai->next;
 	}
 	fclose(rd->fp);

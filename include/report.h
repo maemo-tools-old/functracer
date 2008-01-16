@@ -8,7 +8,7 @@ struct rp_allocinfo {
 	struct rp_allocinfo *next;
 	void *addr;
 	size_t size;
-	void *backtrace[MAX_BT_DEPTH];
+	char *backtrace[MAX_BT_DEPTH];
 	int bt_depth;
 };
 

@@ -10,7 +10,7 @@ struct bt_data {
 };
 
 extern struct bt_data *bt_init(pid_t pid);
-extern int bt_backtrace(struct bt_data *btd, void **buffer, int size);
+extern int bt_backtrace(struct bt_data *btd, char **buffer, int size);
 extern void bt_finish(struct bt_data *btd);
 
 #endif /* FTK_BACKTRACE_H */
