@@ -3,9 +3,11 @@
 
 #include <sys/types.h>
 
+#define MAX_NPIDS 20
+
 struct arguments {
-	char *args[2];		/* ARG1 & ARG2 */
-	pid_t pid;
+	pid_t pid[MAX_NPIDS];
+	int npids;
 	int nalloc;
 	int depth;
 	int debug;

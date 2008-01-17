@@ -38,9 +38,12 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 
 	switch (key) {
 	case 'p':
-		arg_data->pid = atoi(arg);
-		if (arg_data->pid <= 0)
-			argp_error(state, "PID must be positive");
+		if (arg_data->npids >= MAX_NPIDS)
+			argp_error(state, "Maximum number of PID exceeded (%d)", MAX_NPIDS);
+		arg_data->pid[arg_data->npids] = atoi(arg);
+		if (arg_data->pid[arg_data->npids] <= 0)
+			argp_error(state, "invalid PID");
+		arg_data->npids++;
 		break;
 	case 'n':
 		arg_data->nalloc = atoi(arg);
@@ -54,9 +57,6 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 		break;
 	case 'd':
 		arg_data->debug++;
-		break;
-	case 'e':
-		argp_error(state, "Warning: -e option no implemented");
 		break;
 	case ARGP_KEY_END:
 		if (arg_data->pid == 0 && state->arg_num < 1)
