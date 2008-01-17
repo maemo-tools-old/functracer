@@ -6,12 +6,7 @@
 #include "options.h"
 #include "report.h"
 
-/* FIXME: Remove */
-struct opt_x_t *opt_x = NULL;
-
 struct arguments arguments;
-char *library[MAX_LIBRARY];
-int library_num = 0;
 
 /* strings for arguments in help texts */
 static const char args_doc[] = "PROGRAM [ARGS...]";
