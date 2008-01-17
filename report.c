@@ -6,8 +6,6 @@
 #include "debug.h"
 #include "report.h"
 #include "options.h"
-
-static unsigned step = 0;
  
 static void rp_copy_file(const char *src, const char *dst)
 {
@@ -34,12 +32,12 @@ static void rp_copy_file(const char *src, const char *dst)
 	fclose(fpi);
 }
 
-static void rp_copy_maps(pid_t pid)
+static void rp_copy_maps(struct rp_data *rd)
 {
 	char src[256], dst[256];
 
-	snprintf(src, sizeof(src), "/proc/%d/maps", pid);
-	snprintf(dst, sizeof(dst), "%s/allocs-%d.%d.map", getenv("HOME"), pid, step);
+	snprintf(src, sizeof(src), "/proc/%d/maps", rd->pid);
+	snprintf(dst, sizeof(dst), "%s/allocs-%d.%d.map", getenv("HOME"), rd->pid, rd->step);
 	rp_copy_file(src, dst);
 }
 
@@ -49,7 +47,7 @@ void rp_dump(struct rp_data *rd)
 	int i = 0, j;
 	char path[256];
 	
-	snprintf(path, sizeof(path), "%s/allocs-%d.%d.trace", getenv("HOME"), rd->pid, step);
+	snprintf(path, sizeof(path), "%s/allocs-%d.%d.trace", getenv("HOME"), rd->pid, rd->step);
 	rd->fp = fopen(path, "w");
 	if (rd->fp == NULL)
 		error_exit("rp_dump(): fopen");
@@ -65,8 +63,8 @@ void rp_dump(struct rp_data *rd)
 		rai = rai->next;
 	}
 	fclose(rd->fp);
-	rp_copy_maps(rd->pid);
-	step++;
+	rp_copy_maps(rd);
+	rd->step++;
 }
 
 void rp_new_alloc(struct rp_data *rd, addr_t addr, size_t size)
@@ -103,7 +101,7 @@ struct rp_data *rp_init(pid_t pid)
 		error_exit("rp_init(): calloc");
 	rd->pid = pid;
 	rd->btd = bt_init(pid);
-	
+
 	return rd;
 }
 

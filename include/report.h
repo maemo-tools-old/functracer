@@ -22,6 +22,7 @@ struct rp_data {
 	struct bt_data *btd;
 	struct rp_allocinfo *allocs;
 	long nallocs;
+	int step;
 };
 
 extern struct rp_data *rp_init(pid_t pid);
