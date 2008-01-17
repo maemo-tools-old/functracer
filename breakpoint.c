@@ -173,6 +173,8 @@ void bkpt_init(struct process *proc)
 #endif
 	proc->breakpoints = dict_init(dict_key2hash_int, dict_key_cmp_int);
 	register_dl_debug_breakpoint(proc);
+	solib_update_list(proc);
+	register_proc_breakpoints(proc);
 }
 
 int bkpt_get_address(struct process *proc, addr_t *addr)

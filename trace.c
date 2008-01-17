@@ -32,6 +32,7 @@ struct event {
 		int retval;	/* EV_PROC_EXIT */
 		int signo;	/* EV_SIGNAL, EV_PROC_EXIT_SIGNAL */
 		int sysno;	/* EV_SYSCALL, EV_SYSRET */
+		int event;	/* EV_PTRACE */
 		addr_t addr;	/* EV_BREAKPOINT */
 		pid_t pid;	/* EV_PROC_NEW */
 	} data;
@@ -83,6 +84,7 @@ static pid_t ft_wait(int *status)
 
 	errno = 0;
 	pid = waitpid(-1, status, __WALL);
+	debug(5, "waitpid: pid=%d, status=0x%x", pid, *status);
 	if (pid == -1 && errno != ECHILD)
 		error_exit("waitpid");
 	return pid;
@@ -102,8 +104,8 @@ static int wait_for_event(struct event *event)
 		return -1;
 	}
 	event->proc = process_from_pid(pid);
-	if (WIFSTOPPED(status) && WSTOPSIG(status) == SIGTRAP
-	    && !event->proc) {
+	if (WIFSTOPPED(status) && (WSTOPSIG(status) == SIGTRAP
+	    || WSTOPSIG(status) == SIGSTOP) && !event->proc) {
 		event->type = EV_PROC_NEW;
 		event->data.pid = pid;
 	} else if (!event->proc) {
@@ -112,6 +114,7 @@ static int wait_for_event(struct event *event)
 	} else if (WIFSTOPPED(status) && WSTOPSIG(status) == SIGTRAP
 		   && (status >> 16)) {
 		event->type = EV_PTRACE;
+		event->data.event = status >> 16;
 	} else if (WIFSTOPPED(status) && WSTOPSIG(status) == (SIGTRAP | 0x80)) {
 		switch (get_syscall_nr(event->proc, &event->data.sysno)) {
 		case 1:
@@ -162,9 +165,9 @@ static void continue_after_signal(pid_t pid, int signo)
 
 static void trace_set_options(pid_t pid)
 {
-	long options =
-	    PTRACE_O_TRACESYSGOOD | PTRACE_O_TRACEFORK |
-	    PTRACE_O_TRACEVFORK | PTRACE_O_TRACECLONE | PTRACE_O_TRACEEXEC;
+	long options = PTRACE_O_TRACESYSGOOD | PTRACE_O_TRACEFORK
+	    | PTRACE_O_TRACEVFORK | PTRACE_O_TRACECLONE | PTRACE_O_TRACEEXEC
+	    | PTRACE_O_TRACEEXIT;
 
 	debug(3, "pid=%d", pid);
 	xptrace(PTRACE_SETOPTIONS, pid, NULL, (void *)options);
@@ -187,8 +190,6 @@ static int dispatch_event(struct event *event)
 		continue_process(event->proc);
 		break;
 	case EV_PROC_EXIT:
-		if (cb && cb->process.exit)
-			cb->process.exit(event->proc, event->data.retval);
 		remove_process(event->proc);
 		break;
 	case EV_PROC_EXIT_SIGNAL:
@@ -207,7 +208,16 @@ static int dispatch_event(struct event *event)
 		continue_process(event->proc);
 		break;
 	case EV_PTRACE:
-		debug(2, "ptrace() event (pid=%d)", event->proc->pid);
+		debug(2, "ptrace() event (pid=%d, event=%d)", event->proc->pid, event->data.event);
+		/* Run process.exit() callback on a ptrace() EXIT event,
+ 		 * because at this time /proc/PID/maps is still available for
+ 		 * the process. */
+		if (event->data.event == PTRACE_EVENT_EXIT
+		    && cb && cb->process.exit) {
+			int retval;
+			xptrace(PTRACE_GETEVENTMSG, event->proc->pid, NULL, &retval);
+			cb->process.exit(event->proc, retval);
+		}
 		continue_process(event->proc);
 		break;
 	case EV_BREAKPOINT:
@@ -261,9 +271,7 @@ int trace_execute(char *filename, char *argv[])
 	return 0;
 }
 
-int trace_attach(pid_t pid)
+void trace_attach(pid_t pid)
 {
-	debug(1, "stub");
-
-	return 0;
+	xptrace(PTRACE_ATTACH, pid, NULL, NULL);
 }

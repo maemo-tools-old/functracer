@@ -89,7 +89,7 @@ static void function_exit(struct process *proc, const char *name)
 	} else if (strcmp(name, "realloc") == 0) {
 		size_t arg1 = fn_argument(proc, 1);
 		rp_new_alloc(proc->rp_data, retval, arg1);
-	}	
+	}
 }
 
 static int library_match(const char *name)

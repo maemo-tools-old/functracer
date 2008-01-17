@@ -15,7 +15,10 @@ int main(int argc, char *argv[])
 	process_options(argc, argv, &prog_index);
 
 	cb_init();
-	trace_execute(argv[prog_index], argv + prog_index);
+	if (arguments.pid != 0)
+		trace_attach(arguments.pid);
+	if (prog_index < argc)
+		trace_execute(argv[prog_index], argv + prog_index);
 	ret = trace_main_loop();
 
 	return ret;

@@ -43,7 +43,6 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 
 	switch (key) {
 	case 'p':
-		argp_error(state, "Warning: -p option no implemented");
 		arg_data->pid = atoi(arg);
 		if (arg_data->pid <= 0)
 			argp_error(state, "PID must be positive");
