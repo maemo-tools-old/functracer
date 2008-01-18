@@ -9,6 +9,11 @@
 
 static struct process *list_of_processes = NULL;
 
+struct process *get_list_of_processes(void)
+{
+	return list_of_processes;
+}
+
 struct process *process_from_pid(pid_t pid)
 {
 	struct process *tmp;

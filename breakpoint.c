@@ -189,3 +189,16 @@ int bkpt_get_address(struct process *proc, addr_t *addr)
 
 	return 0;
 }
+
+static void disable_bkpt_cb(void *addr, void *bkpt, void *proc)
+{
+	if (((struct breakpoint *)bkpt)->enabled) {
+		disable_breakpoint((struct process *)proc, bkpt);
+	}
+}
+
+void disable_all_breakpoints(struct process *proc)
+{
+	debug(1, "Disabling breakpoints for pid %d...", proc->pid);
+	dict_apply_to_all(proc->breakpoints, disable_bkpt_cb, proc);
+}
