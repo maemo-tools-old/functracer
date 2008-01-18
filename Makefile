@@ -10,14 +10,14 @@ UNAME = $(shell uname -m)
 ifneq ($(filter i%86,$(UNAME)),)
 
 ARCH = $(UNAME:i%86=i386)
-CPPFLAGS = -iquote ./include -iquote ./sysdeps/$(ARCH)
+CPPFLAGS = -iquote ./include
 
 else
 ifneq ($(filter arm%,$(UNAME)),)
 
 ARCH = $(UNAME:arm%=arm)
 # gcc-3.4 does not support "-iquote"
-CPPFLAGS = -I./include/ -I./sysdeps/$(ARCH)/ -I-
+CPPFLAGS = -I./include/ -I-
 # workaround for BFD linking issue in Scratchbox
 LDFLAGS += /usr/lib/libiberty.a
 

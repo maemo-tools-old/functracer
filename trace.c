@@ -100,12 +100,8 @@ static int wait_for_event(struct event *event)
 			return -1;
 		}
 	} else if (WIFSTOPPED(status) && WSTOPSIG(status) == SIGTRAP) {
-		int ret;
-
 		event->type = EV_BREAKPOINT;
-		if ((ret = bkpt_get_address(event->proc,
-		    &event->data.addr)) < 0)
-			return ret;
+		event->data.addr = bkpt_get_address(event->proc);
 	} else if (WIFEXITED(status)) {
 		event->type = EV_POST_EXIT;
 		event->data.retval = WEXITSTATUS(status);
