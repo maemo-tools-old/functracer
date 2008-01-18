@@ -28,5 +28,6 @@ extern addr_t fixup_address(addr_t addr);
 extern void bkpt_handle(struct process *proc, addr_t addr);
 extern int bkpt_pending(struct process *proc);
 extern void bkpt_init(struct process *proc);
+extern void disable_all_breakpoints(struct process *proc);
 
 #endif /* !FTK_BREAKPOINT_H */

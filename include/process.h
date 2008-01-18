@@ -27,6 +27,7 @@ struct process {
 	struct process *next;
 };
 
+extern struct process *get_list_of_processes(void);
 extern struct process *process_from_pid(pid_t pid);
 extern struct process *add_process(pid_t pid);
 extern void remove_process(struct process *proc);

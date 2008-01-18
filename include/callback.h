@@ -13,6 +13,7 @@ struct callback {
 		void (*exit)(struct process *proc, int exit_code);
 		void (*kill)(struct process *proc, int signo);
 		void (*signal)(struct process *proc, int signo);
+		void (*interrupt)(struct process *proc);
 	} process;
 	struct {
 		void (*enter)(struct process *proc, int sysno);

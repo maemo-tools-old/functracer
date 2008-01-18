@@ -14,6 +14,8 @@
 #include "trace.h"
 #include "util.h"
 
+int exiting = 0;
+
 struct event {
 	struct process *proc;
 	enum {
@@ -45,7 +47,7 @@ static pid_t ft_wait(int *status)
 	errno = 0;
 	pid = waitpid(-1, status, __WALL);
 	debug(5, "waitpid: pid=%d, status=0x%x", pid, *status);
-	if (pid == -1 && errno != ECHILD)
+	if (pid == -1 && errno != ECHILD && errno != EINTR)
 		error_exit("waitpid");
 	return pid;
 }
@@ -57,7 +59,7 @@ static int wait_for_event(struct event *event)
 
 	pid = ft_wait(&status);
 	if (pid == -1) {
-		if (errno == ECHILD) {
+		if (errno == ECHILD || errno == EINTR) {
 			event->type = EV_NOCHILD;
 			return 0;
 		}
@@ -171,6 +173,23 @@ static int handle_child_process(struct process *parent_proc, pid_t child_pid)
 	return 0;
 }
 
+static void trace_detach(pid_t pid)
+{
+	xptrace(PTRACE_DETACH, pid, NULL, NULL);
+}
+
+static int handle_interrupt(struct process *proc, int signo)
+{
+	if (exiting && signo == SIGSTOP) {
+		pid_t pid = proc->pid;
+		disable_all_breakpoints(proc);
+		trace_detach(pid);
+		remove_process(proc);
+		return 1;
+	}
+	return 0;
+}
+
 static int dispatch_event(struct event *event)
 {
 	struct callback *cb = cb_get();
@@ -222,6 +241,11 @@ static int dispatch_event(struct event *event)
 		continue_process(event->proc);
 		break;
 	case EV_SIGNAL:
+		if (handle_interrupt(event->proc, event->data.signo)) {
+			if (cb && cb->process.interrupt)
+				cb->process.interrupt(event->proc);
+			return 0;
+		}
 		if (cb && cb->process.signal)
 			cb->process.signal(event->proc, event->data.signo);
 		if (event->data.signo == SIGUSR1 || event->data.signo == SIGUSR2)

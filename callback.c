@@ -59,6 +59,15 @@ static void process_signal(struct process *proc, int signo)
 	}
 }
 
+static void process_interrupt(struct process *proc)
+{
+	debug(3, "process interrupted (pid=%d)", proc->pid);
+	if (trace_enabled()) {
+		rp_dump(proc->rp_data);
+		rp_finish(proc->rp_data);
+	}
+}
+
 static void syscall_enter(struct process *proc, int sysno)
 {
 	debug(3, "syscall entry (pid=%d, sysno=%d)", proc->pid, sysno);
@@ -113,21 +122,22 @@ void cb_init(void)
 {
 	struct callback cb = {
 		.process = {
-			.create	= process_create,
-			.exit	= process_exit,
-			.kill	= process_kill,
-			.signal	= process_signal,
+			.create	   = process_create,
+			.exit	   = process_exit,
+			.kill	   = process_kill,
+			.signal	   = process_signal,
+			.interrupt = process_interrupt,
 		},
 		.syscall = {
-			.enter	= syscall_enter,
-			.exit	= syscall_exit,
+			.enter	   = syscall_enter,
+			.exit	   = syscall_exit,
 		},
 		.function = {
-			.enter	= function_enter,
-			.exit	= function_exit,
+			.enter	   = function_enter,
+			.exit	   = function_exit,
 		},
 		.library = {
-			.match = library_match,
+			.match     = library_match,
 		},
 	};
 	cb_register(&cb);
