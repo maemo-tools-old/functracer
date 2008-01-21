@@ -25,6 +25,7 @@ struct event {
 		EV_PRE_EXIT,	/* process is exiting and process data is still
 				 * available */
 		EV_EXIT_SIGNAL,	/* process killed by a signal */
+		EV_EXEC,	/* process called exec*() */
 		EV_FORK,	/* process forked a child */
 		EV_NEW_PROC,	/* new process created or attached */
 		EV_SIGNAL,	/* process received a signal */
@@ -85,6 +86,9 @@ static int wait_for_event(struct event *event)
 		case PTRACE_EVENT_CLONE:
 			event->type = EV_FORK;
 			xptrace(PTRACE_GETEVENTMSG, pid, NULL, &event->data.pid);
+			break;
+		case PTRACE_EVENT_EXEC:
+			event->type = EV_EXEC;
 			break;
 		default:
 			msg_err("unexpected ptrace() event %d", status >> 16);
@@ -209,6 +213,11 @@ static int dispatch_event(struct event *event)
 		bkpt_init(event->proc);
 		trace_set_options(event->proc->pid);
 		continue_process(event->proc);
+		break;
+	case EV_EXEC:
+		msg_warn("exec() not supported yet");
+		event->proc->breakpoints = NULL;
+		trace_detach(event->proc->pid);
 		break;
 	case EV_FORK:
 		handle_child_process(event->proc, event->data.pid);
