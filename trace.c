@@ -180,13 +180,17 @@ static void trace_detach(pid_t pid)
 
 static int handle_interrupt(struct process *proc, int signo)
 {
+	struct callback *cb = cb_get();
+
 	if (exiting && signo == SIGSTOP) {
-		pid_t pid = proc->pid;
+		if (cb && cb->process.interrupt)
+			cb->process.interrupt(proc);
 		disable_all_breakpoints(proc);
-		trace_detach(pid);
-		remove_process(proc);
+		trace_detach(proc->pid);
+
 		return 1;
 	}
+
 	return 0;
 }
 
@@ -241,11 +245,8 @@ static int dispatch_event(struct event *event)
 		continue_process(event->proc);
 		break;
 	case EV_SIGNAL:
-		if (handle_interrupt(event->proc, event->data.signo)) {
-			if (cb && cb->process.interrupt)
-				cb->process.interrupt(event->proc);
+		if (handle_interrupt(event->proc, event->data.signo))
 			return 0;
-		}
 		if (cb && cb->process.signal)
 			cb->process.signal(event->proc, event->data.signo);
 		if (event->data.signo == SIGUSR1 || event->data.signo == SIGUSR2)
