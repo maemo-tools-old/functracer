@@ -59,7 +59,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 		arg_data->debug++;
 		break;
 	case ARGP_KEY_END:
-		if (arg_data->pid == 0 && state->arg_num < 1)
+		if (arg_data->npids == 0 && state->arg_num < 1)
 			/* Not enough arguments. */
 			argp_usage(state);
 		break;
