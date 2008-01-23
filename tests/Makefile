@@ -3,7 +3,6 @@ CC = gcc
 CFLAGS = -g -std=gnu99 -pedantic -Wall -Wconversion -Wshadow \
 	-Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings \
 	-Waggregate-return -Wstrict-prototypes
-CFLAGS += -mthumb
 
 all: malloc_simple malloc_recursive fork clone gthreads
 
