@@ -6,3 +6,21 @@ tests/malloc_simple
 tests/malloc_recursive
 core
 tags
+
+# autoconf/automake generated files
+autom4te.cache
+configure
+config.guess
+config.log
+config.status
+config.sub
+Makefile.in
+Makefile
+aclocal.m4
+include/config.h.in
+include/config.h
+include/stamp-h1
+depcomp
+missing
+install-sh
+.deps
