@@ -78,5 +78,5 @@ void process_options(int argc, char *argv[], int *remaining)
 	arguments.depth = MAX_BT_DEPTH;
 
 	/* parse and process arguments */
-	argp_parse(&argp, argc, argv, 0, remaining, &arguments);
+	argp_parse(&argp, argc, argv, ARGP_IN_ORDER, remaining, &arguments);
 }
