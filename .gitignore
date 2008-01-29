@@ -2,10 +2,15 @@
 *~
 *.swp
 functracker
-tests/malloc_simple
-tests/malloc_recursive
 core
 tags
+
+# tests
+tests/clone
+tests/fork
+tests/gthreads
+tests/malloc_simple
+tests/malloc_recursive
 
 # autoconf/automake generated files
 autom4te.cache

@@ -27,6 +27,16 @@ AC_CHECK_LIB([bfd], [bfd_fopen],
   /usr/lib/libiberty.a
 )
 
+# Check for glib-2.0 availability (used for gthreads test)
+PKG_PROG_PKG_CONFIG
+AS_IF([test "x$PKG_CONFIG" != "x"],
+  [PKG_CHECK_MODULES(GLIB, gthread-2.0,
+    [AC_SUBST(GLIB_CFLAGS) AC_SUBST(GLIB_LIBS)],
+    [AC_MSG_WARN(glib-2.0 not found, gthreads test will not be compiled)])],
+  [AC_MSG_WARN(pkg-config not found, gthreads test will not be compiled)]
+)
+AM_CONDITIONAL(GLIB_FOUND, [test "x$GLIB_CFLAGS" != "x"])
+
 # Detect architecture
 AC_CANONICAL_HOST
 case $host_cpu in
@@ -39,6 +49,7 @@ AC_SUBST([ARCH])
 AC_CONFIG_FILES([
   Makefile
   src/Makefile
+  tests/Makefile
 ])
 
 AC_OUTPUT
