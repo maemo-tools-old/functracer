@@ -217,9 +217,13 @@ static int dispatch_event(struct event *event)
 		continue_process(event->proc);
 		break;
 	case EV_EXEC:
-		msg_warn("exec() not supported yet");
+		event->proc->filename = name_from_pid(event->proc->pid);
+		/* FIXME: free resources properly (may cause memory leaks) */
 		event->proc->breakpoints = NULL;
-		trace_detach(event->proc->pid);
+		event->proc->solib_list = NULL;
+		event->proc->symbols = NULL;
+		bkpt_init(event->proc);
+		continue_process(event->proc);
 		break;
 	case EV_FORK:
 		handle_child_process(event->proc, event->data.pid);

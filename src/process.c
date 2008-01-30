@@ -24,7 +24,7 @@ struct process *process_from_pid(pid_t pid)
 	return tmp;
 }
 
-static char *name_from_pid(pid_t pid)
+char *name_from_pid(pid_t pid)
 {
 	char proc_exe[1024];
 
