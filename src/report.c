@@ -1,3 +1,4 @@
+#include <libiberty.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
@@ -6,7 +7,7 @@
 #include "debug.h"
 #include "report.h"
 #include "options.h"
- 
+
 static void rp_copy_file(const char *src, const char *dst)
 {
 	char line[256];
@@ -58,7 +59,6 @@ void rp_dump(struct rp_data *rd)
 		fprintf(rd->fp, "%d. block at 0x%x with size %d\n", i++, rai->addr, rai->size);
 		for (j = 0; j < rai->bt_depth; j++) {
 			fprintf(rd->fp, "   %s\n", rai->backtrace[j]);
-			free(rai->backtrace[j]);
 		}
 		rai = rai->next;
 	}
@@ -80,9 +80,7 @@ void rp_new_alloc(struct rp_data *rd, addr_t addr, size_t size)
 		}
 		return;
 	}
-	rai = calloc(1, sizeof(struct rp_allocinfo));
-	if (rai == NULL)
-		error_exit("rp_new_alloc(): calloc");
+	rai = xcalloc(1, sizeof(struct rp_allocinfo));
 	rai->addr = addr;
 	rai->size = size;
 	rai->bt_depth = bt_backtrace(rd->btd, rai->backtrace, arguments.depth);
@@ -91,22 +89,38 @@ void rp_new_alloc(struct rp_data *rd, addr_t addr, size_t size)
 	rd->nallocs++;
 }
 
-struct rp_data *rp_init(pid_t pid)
+void rp_init(struct process *proc)
 {
-	struct rp_data *rd;
+	struct rp_data *rd = proc->rp_data;
 
-	debug(3, "pid=%d", pid);
-	rd = calloc(1, sizeof(struct rp_data));
+	debug(3, "pid=%d", proc->pid);
+
 	if (rd == NULL)
-		error_exit("rp_init(): calloc");
-	rd->pid = pid;
-	rd->btd = bt_init(pid);
+		rd = xcalloc(1, sizeof(struct rp_data));
+	rd->pid = proc->pid;
+	rd->btd = bt_init(proc->pid);
+	proc->rp_data = rd;
+}
 
-	return rd;
+void rp_reset_data(struct rp_data *rd)
+{
+	struct rp_allocinfo *rai, *tmp;
+	int j;
+
+	rai = rd->allocs;
+	while (rai != NULL) {
+		for (j = 0; j < rai->bt_depth; j++)
+			free(rai->backtrace[j]);
+		tmp = rai;
+		rai = rai->next;
+		free(tmp);
+	}
+	rd->allocs = NULL;
+	rd->nallocs = 0;
 }
 
 void rp_finish(struct rp_data *rd)
 {
 	bt_finish(rd->btd);
-	free(rd);
+	rp_reset_data(rd);
 }

@@ -1,3 +1,5 @@
+#define NDEBUG
+#include <assert.h>
 #include <libiberty.h>
 #include <signal.h>
 #include <stdlib.h>
@@ -6,12 +8,13 @@
 #include "callback.h"
 #include "debug.h"
 #include "function.h"
+#include "options.h"
 #include "process.h"
 #include "report.h"
 #include "target_mem.h"
 
 static struct callback *current_cb = NULL;
-static int trace_control = 1;
+static int trace_control = 0;
 
 static int trace_enabled(void)
 {
@@ -22,8 +25,10 @@ static void process_create(struct process *proc)
 {
 	debug(3, "new process (pid=%d)", proc->pid);
 
-	if (trace_enabled())
-		proc->rp_data = rp_init(proc->pid);
+	if (trace_enabled()) {
+		assert(proc->rp_data == NULL);
+		rp_init(proc);
+	}
 }
 
 static void process_exit(struct process *proc, int exit_code)
@@ -31,6 +36,7 @@ static void process_exit(struct process *proc, int exit_code)
 	debug(3, "process exited (pid=%d, exit_code=%d)", proc->pid, exit_code);
 
 	if (trace_enabled()) {
+		assert(proc->rp_data != NULL);
 		rp_dump(proc->rp_data);
 		rp_finish(proc->rp_data);
 	}
@@ -47,14 +53,16 @@ static void process_signal(struct process *proc, int signo)
 
 	if (signo == SIGUSR1 || signo == SIGUSR2) {
 		if (trace_enabled()) {
+			assert(proc->rp_data != NULL);
 			rp_dump(proc->rp_data);
 			if (signo == SIGUSR1) {
 				rp_finish(proc->rp_data);
 				trace_control = 0;
 			}
 		} else {
+			assert(proc->rp_data == NULL);
+			rp_init(proc);
 			trace_control = 1;
-			proc->rp_data = rp_init(proc->pid);
 		}
 	}
 }
@@ -63,6 +71,7 @@ static void process_interrupt(struct process *proc)
 {
 	debug(3, "process interrupted (pid=%d)", proc->pid);
 	if (trace_enabled()) {
+		assert(proc->rp_data != NULL);
 		rp_dump(proc->rp_data);
 		rp_finish(proc->rp_data);
 	}
@@ -85,19 +94,23 @@ static void function_enter(struct process *proc, const char *name)
 
 static void function_exit(struct process *proc, const char *name)
 {
-	addr_t retval = fn_return_value(proc);
-	size_t arg0 = fn_argument(proc, 0);
 
 	debug(3, "function return (pid=%d, name=%s)", proc->pid, name);
 	
-	if (strcmp(name, "malloc") == 0) {
-		rp_new_alloc(proc->rp_data, retval, arg0);
-	} else if (strcmp(name, "calloc") == 0) {
-		size_t arg1 = fn_argument(proc, 1);
-		rp_new_alloc(proc->rp_data, retval, arg0 * arg1);
-	} else if (strcmp(name, "realloc") == 0) {
-		size_t arg1 = fn_argument(proc, 1);
-		rp_new_alloc(proc->rp_data, retval, arg1);
+	if (trace_enabled()) {
+		addr_t retval = fn_return_value(proc);
+		size_t arg0 = fn_argument(proc, 0);
+
+		assert(proc->rp_data != NULL);
+		if (strcmp(name, "malloc") == 0) {
+			rp_new_alloc(proc->rp_data, retval, arg0);
+		} else if (strcmp(name, "calloc") == 0) {
+			size_t arg1 = fn_argument(proc, 1);
+			rp_new_alloc(proc->rp_data, retval, arg0 * arg1);
+		} else if (strcmp(name, "realloc") == 0) {
+			size_t arg1 = fn_argument(proc, 1);
+			rp_new_alloc(proc->rp_data, retval, arg1);
+		}
 	}
 }
 
@@ -141,6 +154,8 @@ void cb_init(void)
 		},
 	};
 	cb_register(&cb);
+	if (arguments.enabled != 0)
+		trace_control = 1;
 }
 
 struct callback *cb_get(void)

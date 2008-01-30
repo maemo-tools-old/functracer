@@ -11,6 +11,7 @@ struct arguments {
 	int nalloc;
 	int depth;
 	int debug;
+	int enabled;
 };
 
 extern struct arguments arguments;

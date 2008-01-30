@@ -21,6 +21,7 @@ static const struct argp_option options[] = {
 	 "which function to track (NOT IMPLEMENTED)", 0},
 	{"alloc-number", 'n', "NUMBER", 0, "maximum number of allocations", 0},
 	{"debug", 'd', NULL, 0, "maximum debug level", 0},
+	{"start", 's', NULL, 0, "enable tracking memory from beginning", 0},
 	{"depth", 't', "NUMBER", 0, "maximum backtrace depth", 0},
 	{NULL, 0, NULL, 0, NULL, 0},
 };
@@ -57,6 +58,9 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 		break;
 	case 'd':
 		arg_data->debug++;
+		break;
+	case 's':
+		arg_data->enabled++;
 		break;
 	case ARGP_KEY_END:
 		if (arg_data->npids == 0 && state->arg_num < 1)
