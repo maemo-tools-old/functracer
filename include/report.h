@@ -1,11 +1,9 @@
 #include <stdio.h>
 #include <sys/types.h>
 
+#include "config.h"
 #include "process.h"
 #include "target_mem.h"
-
-#define MAX_NALLOC	(32 * 1024)	/* maximum number of allocations */
-#define MAX_BT_DEPTH	7		/* maximum backtrace depth */
 
 struct rp_allocinfo {
 	struct rp_allocinfo *next;
