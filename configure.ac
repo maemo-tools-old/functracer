@@ -56,11 +56,11 @@ AM_CONDITIONAL(GLIB_FOUND, [test "x${GLIB_CFLAGS}" != "x"])
 
 # Detect architecture
 AC_CANONICAL_HOST
-case $host_cpu in
-  arm*) ARCH=arm ;;
-  i?86) ARCH=i386 ;;
-  *) AC_MSG_ERROR([host CPU $host_cpu is not supported]) ;;
-esac
+AS_CASE($host_cpu,
+  [arm*], [ARCH=arm],
+  [i?86], [ARCH=i386],
+  [AC_MSG_ERROR([host CPU $host_cpu is not supported])]
+)
 AC_SUBST([ARCH])
 
 AC_CONFIG_FILES([
