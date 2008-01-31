@@ -28,6 +28,7 @@ AC_ARG_WITH(libunwind,
   [UNW_FLAGS=""]
 )
 CFLAGS="${CFLAGS} ${UNW_FLAGS}"
+CPPFLAGS="${CPPFLAGS} -D_GNU_SOURCE"
 
 # Check for libunwind availability
 AC_CHECK_LIB([unwind-ptrace], [_UPT_access_mem],
