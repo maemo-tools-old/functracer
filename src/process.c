@@ -32,7 +32,7 @@ char *name_from_pid(pid_t pid)
 		snprintf(proc_exe, 1024, "/proc/%d/exe", pid);
 		if (access(proc_exe, F_OK) < 0)
 			error_exit("access");
-		return strdup(proc_exe);
+		return realpath(proc_exe, NULL);
 	}
 	return NULL;
 }
