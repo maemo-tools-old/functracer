@@ -58,14 +58,28 @@ AC_CHECK_LIB([bfd], [bfd_fopen],
 
 else
 
+# Check for libreadline availability
+AC_CHECK_LIB([readline], [tilde_expand],
+  [LIBS="${LIBS} -lreadline"],
+  [AC_MSG_ERROR([libreadline is required for backtracing on ARM])],
+  dnl empty
+)
+
+# Check for libexpat availability
+AC_CHECK_LIB([expat], [XML_ParserCreateNS],
+  [LIBS="${LIBS} -lexpat"],
+  [AC_MSG_ERROR([libexpat is required for backtracing on ARM])],
+  dnl empty
+)
+
 CFLAGS="${CFLAGS} -L${GDB_SRCDIR}/gdb -L${GDB_SRCDIR}/bfd -L${GDB_SRCDIR}/opcodes"
-CPPFLAGS="${CPPFLAGS} -I${GDB_SRCDIR}/readline"
+CPPFLAGS="${CPPFLAGS} -I${GDB_SRCDIR} -I${GDB_SRCDIR}/include -I${GDB_SRCDIR}/gdb/config"
 
 # Check for libgdb.a availability
 AC_CHECK_LIB([gdb], [get_current_frame],
-  [LIBS="${LIBS} -lgdb -lbfd -lreadline -ldl -lexpat -lopcodes -lm /usr/lib/libiberty.a"],
+  [LIBS="${LIBS} -lgdb -lbfd -lopcodes -lm -ldl /usr/lib/libiberty.a"],
   [AC_MSG_ERROR([libgdb.a is required for backtracing on ARM])],
-  -lbfd -lreadline -ldl -lexpat -lopcodes -lm /usr/lib/libiberty.a
+  -lbfd -lopcodes -lm -ldl /usr/lib/libiberty.a
 )
 
 fi
