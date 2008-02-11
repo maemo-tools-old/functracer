@@ -120,7 +120,10 @@ static int library_match(const char *name)
 
 	return (strcmp(name, "calloc") == 0
 		|| strcmp(name, "malloc") == 0 
-		|| strcmp(name, "realloc") == 0);
+		/* FIXME: realloc() tracking does not work on ARM (causes
+		 * recursive loop). */
+		/*|| strcmp(name, "realloc") == 0*/
+	);
 }
 
 static void cb_register(struct callback *cb)
