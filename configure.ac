@@ -20,15 +20,26 @@ AC_TYPE_PID_T
 AC_TYPE_SIGNAL
 AC_TYPE_SIZE_T
 
+CPPFLAGS="${CPPFLAGS} -D_GNU_SOURCE"
+
 # Ask user for path to libunwind
 AC_ARG_WITH(libunwind,
   [AS_HELP_STRING([--with-libunwind],
-    [prefix of libunwind installation, e.g. /usr/local or /usr])],
+    [prefix of libunwind installation (required for backtracing on x86)])],
   [UNW_FLAGS="-I$withval/include -L$withval/lib"],
   [UNW_FLAGS=""]
 )
 CFLAGS="${CFLAGS} ${UNW_FLAGS}"
-CPPFLAGS="${CPPFLAGS} -D_GNU_SOURCE"
+
+# Ask user for path to GDB sources
+AC_ARG_WITH(gdb,
+  [AS_HELP_STRING([--with-gdb],
+    [location of compiled GDB sources (required for backtracing on ARM)])],
+  [GDB_SRCDIR="`readlink -f $withval`"],
+  [GDB_SRCDIR=""]
+)
+
+if test -z "${GDB_SRCDIR}"; then
 
 # Check for libunwind availability
 AC_CHECK_LIB([unwind-ptrace], [_UPT_access_mem],
@@ -44,6 +55,23 @@ AC_CHECK_LIB([bfd], [bfd_fopen],
   [AC_MSG_ERROR([BFD library is required])],
   /usr/lib/libiberty.a
 )
+
+else
+
+CFLAGS="${CFLAGS} -L${GDB_SRCDIR}/gdb -L${GDB_SRCDIR}/bfd -L${GDB_SRCDIR}/opcodes"
+CPPFLAGS="${CPPFLAGS} -I${GDB_SRCDIR}/readline"
+
+# Check for libgdb.a availability
+AC_CHECK_LIB([gdb], [get_current_frame],
+  [LIBS="${LIBS} -lgdb -lbfd -lreadline -ldl -lexpat -lopcodes -lm /usr/lib/libiberty.a"],
+  [AC_MSG_ERROR([libgdb.a is required for backtracing on ARM])],
+  -lbfd -lreadline -ldl -lexpat -lopcodes -lm /usr/lib/libiberty.a
+)
+
+fi
+
+AM_CONDITIONAL(BACKTRACE_GDB, [test "x${GDB_SRCDIR}" != "x"])
+AC_SUBST([GDB_SRCDIR])
 
 # Check for glib-2.0 availability (used for gthreads test)
 PKG_PROG_PKG_CONFIG

@@ -7,6 +7,11 @@
 #include "backtrace.h"
 #include "debug.h"
 
+struct bt_data {
+	unw_addr_space_t as;
+	struct UPT_info *ui;
+};
+
 struct bt_data *bt_init(pid_t pid)
 {
 	struct bt_data *btd;

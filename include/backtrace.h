@@ -2,12 +2,8 @@
 #define FTK_BACKTRACE_H
 
 #include <sys/types.h>
-#include <libunwind.h>
 
-struct bt_data {
-	unw_addr_space_t as;
-	struct UPT_info *ui;
-};
+struct bt_data;
 
 extern struct bt_data *bt_init(pid_t pid);
 extern int bt_backtrace(struct bt_data *btd, char **buffer, int size);
