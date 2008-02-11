@@ -11,6 +11,8 @@ tests/fork
 tests/gthreads
 tests/malloc_simple
 tests/malloc_recursive
+tests/callchain
+tests/libcallchain.so
 
 # autoconf/automake generated files
 autom4te.cache
@@ -27,5 +29,6 @@ include/config.h
 include/stamp-h1
 depcomp
 missing
+compile
 install-sh
 .deps
