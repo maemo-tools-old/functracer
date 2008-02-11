@@ -1,7 +1,7 @@
+#include <signal.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <error.h>
 #include <errno.h>
 
 #include "debug.h"
@@ -41,20 +41,23 @@ void msg_warn(const char *fmt, ...)
 	va_list args;
 
 	va_start(args, fmt);
-	error(0, 0, fmt, args);
+	vfprintf(stderr, fmt, args);
 	va_end(args);
 }
 
 void msg_err(const char *fmt, ...)
 {
+	char buf[1024];
 	va_list args;
 
 	va_start(args, fmt);
-	error(EXIT_FAILURE, errno, fmt, args);
+	vsnprintf(buf, sizeof(buf), fmt, args);
 	va_end(args);
+	perror(buf);
+	raise(SIGINT);
 }
 
 void error_file(const char *filename, const char *msg)
 {
-	error(EXIT_FAILURE, errno, "\"%s\": %s", filename, msg);
+	msg_err("\"%s\": %s", filename, msg);
 }

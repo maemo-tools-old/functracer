@@ -1,6 +1,5 @@
 #include <bfd.h>
 #include <errno.h>
-#include <error.h>
 #include <libiberty.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,16 +18,15 @@ static void warning_bfd(const char *filename, const char *msg)
 
 static void error_bfd(const char *filename, const char *msg)
 {
-	error(EXIT_FAILURE, 0, "\"%s\": %s: %s", filename, msg,
-	      bfd_errmsg(bfd_get_error()));
+	msg_warn("\"%s\": %s: %s", filename, msg, bfd_errmsg(bfd_get_error()));
+	exit(EXIT_FAILURE);
 }
 
 static void resolve_path(char *filename, char **real_filename)
 {
 	*real_filename = canonicalize_file_name(filename);
 	if (*real_filename == NULL)
-		error(EXIT_FAILURE, errno, "\"%s\": could not resolve file path",
-		      filename);
+		error_file(filename, "could not resolve file path");
 }
 
 static void find_solib(char *filename, char **real_filename)
@@ -41,7 +39,8 @@ static void lib_base_address(pid_t pid, char *filename, addr_t *addr)
 	struct maps_data md;
 
 	*addr = (addr_t)NULL;
-	maps_init(&md, pid);
+	if (maps_init(&md, pid) == -1)
+		return;
 	while (maps_next(&md) == 1) {
 		if (MAP_EXEC(&md) && strcmp(md.path, filename) == 0) {
 			*addr = md.lo;
@@ -97,6 +96,19 @@ static unsigned long bfd_lookup_symbol(bfd *abfd, const char *symname, flagword 
 		free(symbol_table);
 	}
 	return symaddr;
+}
+
+int solib_is_prelinked(bfd *abfd)
+{
+	asection *sect;
+	const bfd_format bfd_fmt = bfd_object;
+	int prelinked = 0;
+
+	sect = bfd_get_section_by_name(abfd, ".gnu.prelink_undo");
+	if (sect != NULL)
+		prelinked = 1;
+
+	return prelinked;
 }
 
 /* Based on enable_break() code from GDB 6.6 (gdb/solib-svr4.c). */
@@ -161,7 +173,8 @@ addr_t solib_dl_debug_address(struct process *proc)
 		warning_bfd(interp_file, "could not find _dl_debug_state symbol");
 		goto close_abfd;
 	}
-	lib_base_address(proc->pid, interp_file, &base_addr);
+	if (!solib_is_prelinked(abfd))
+		lib_base_address(proc->pid, interp_file, &base_addr);
 
 close_abfd:
 	if (!bfd_close(abfd))
@@ -176,8 +189,10 @@ static void current_solibs(struct process *proc, struct solib_list **solist)
 	struct solib_list *so = NULL;
 	char *exec_path;
 
+	*solist = NULL;
+	if (maps_init(&md, proc->pid) == -1)
+		return;
 	resolve_path(proc->filename, &exec_path);
-	maps_init(&md, proc->pid);
 	while (maps_next(&md) == 1) {
 		if (MAP_EXEC(&md) && md.off == 0 && md.inum != 0
 		    && strcmp(md.path, exec_path) != 0) {
@@ -228,8 +243,12 @@ static void solib_read_library(struct library_symbol **syms, char *filename, add
 			if ((sym->flags & flags) == flags && cb && cb->library.match(sym->name)) {
 				struct library_symbol *tmp;
 
+				if (!solib_is_prelinked(abfd))
+					symaddr = base_addr;
+				else
+					symaddr = 0;
 				/* Bfd symbols are section relative. */
-				symaddr = base_addr + sym->value + sym->section->vma;
+				symaddr += sym->value + sym->section->vma;
 				debug(3, "new symbol: name=\"%s\", addr=0x%x", sym->name, symaddr);
 				tmp = xmalloc(sizeof(struct library_symbol));
 				tmp->name = strdup(sym->name);
