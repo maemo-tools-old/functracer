@@ -1,7 +1,3 @@
-#if 0
-#include <stdlib.h>
-#include <unistd.h>
-#endif
 #include <errno.h>
 #include <signal.h>
 #include <string.h>
@@ -48,25 +44,16 @@ static void signal_exit(int sig)
 
 static void signal_attach(void)
 {
-  /*
-   * These signals shall be tracked by default, application
-   * can override them as these are set at library init
-   */
-   static const int signals[] =
-   {
-	SIGINT, SIGTERM
-   };
-   struct sigaction sa;
-   unsigned ind;
+	const int signals[] = { SIGINT, SIGTERM };
+	struct sigaction sa;
+	int i;
 
-   sigemptyset(&sa.sa_mask);
-   sa.sa_flags = 0;
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = 0;
+	sa.sa_handler = signal_exit;
 
-   for (ind = 0; ind < CAPACITY(signals); ind++)
-   {
-      sa.sa_handler = signal_exit;
-      sigaction(signals[ind], &sa, NULL);
-   }
+	for (i = 0; i < CAPACITY(signals); i++)
+		sigaction(signals[i], &sa, NULL);
 }
 
 int main(int argc, char *argv[])

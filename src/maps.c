@@ -15,7 +15,7 @@ int maps_init(struct maps_data *md, pid_t pid)
 	snprintf(path, sizeof(path), "/proc/%d/maps", pid);
 	fp = fopen(path, "r");
 	if (fp == NULL) {
-		msg_err("fopen");
+		msg_err("fopen: %s", path);
 		return -1;
 	}
 	md->fp = fp;
