@@ -1,0 +1,43 @@
+Functracker installation instructions
+=====================================
+
+1. Compiling from sources
+-------------------------
+
+1.1 Dependencies
+----------------
+
+For x86, libunwind has to be compiled and installed prior to Functracker. 
+To compile and install libunwind, issue:
+
+# ./configure --prefix=/usr/local/libunwind && make && make install
+
+Add libunwind to the dynamic linker's links and cache:
+
+# echo "/usr/local/libunwind/lib" >> /etc/ld.so.conf
+# ldconfig
+
+
+For ARM, GDB (V6.6) has to be compiled prior to Functracker. The packages
+libreadline4-dev, libexpat1-dev, libc6-dev and binutils-dev must be 
+installed on scratchbox environment.
+
+Inside scratchbox:
+[sbox-ARMEL] > apt-get install libreadline4-dev libexpat1-dev libc6-dev binutils-dev
+
+To GDB, just type:
+[sbox-ARMEL] > ./configure && make
+
+
+1.2 Compiling Functracker
+--------------------------
+
+On x86, to compile and install Functracker, issue:
+
+./configure --with-libunwind=<PATH_TO_LIBUNWIND>
+make
+
+On ARM, to compile and install Functracker, issue:
+
+./configure --with-gdb=<PATH_TO_GDB>
+make

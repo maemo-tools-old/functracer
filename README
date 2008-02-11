@@ -1,0 +1,99 @@
+                                Functracker
+
+                        An Allocation Backtrace Tool
+
+                  Copyright (C) 2008 by Nokia Corporation
+
+Contents
+--------
+ 0. Authors
+ 1. Introduction
+ 2. Where can I find it
+ 3. How does it work
+ 4. How to use
+ 5. Where does it work
+ 6. Bugs
+ 7. License
+
+
+0. Authors
+----------
+Functracker has been developed by:
+
+Anderson Lizardo <anderson.lizardo@indt.org.br>
+Bruna Moreira <bruna.moreira@indt.org.br>
+
+1. Introduction
+---------------
+Functracker is a debugging tool. It gets backtraces of all allocations done in
+ARM/x86 processes. It works with optimized (-O2) code, where debugging symbols
+are available either in the application  binaries themselves, or in separate
+debug files.
+
+2. Where can I find it
+----------------------
+FIXME: there is no website setup for it yet.
+
+3. How does it work
+-------------------
+Using software breakpoints, just like GDB and ltrace. Breakpoints are inserted
+on entrypoint of Glibc allocation functions (malloc, calloc and realloc) and
+when one of them is called, the breakpoint is hit and the allocation address,
+size and callchain backtrace are reported.
+
+Two output files are created by Functracker in $HOME:
+- allocs-PID.n.map: /proc/PID/maps of traced process
+- allocs-PID.n.trace: allocation backtraces of traced process
+
+Output files are in libleaks compatible format so that its post-processing
+tools can be reused. For generating backtraces, libunwind[1] is used on x86.
+Libunwind ARM support for processes traced using ptrace() is currently broken,
+therefore on ARM Functracker has to be linked with libgdb.a from GDB sources
+(see INSTALL for detailed compilation instructions).
+
+4. How to use
+--------------
+
+Output from "functracker --help":
+
+Usage: functracker [OPTION...] PROGRAM [ARGS...]
+Run PROGRAM and track selected functions.
+
+  -d, --debug                maximum debug level
+  -e, --track-function=FUNCTION   which function to track (NOT IMPLEMENTED)
+  -n, --alloc-number=NUMBER  maximum number of allocations
+  -p, --track-pid=PID        which PID to track
+  -s, --start                enable tracking memory from beginning
+  -t, --depth=NUMBER         maximum backtrace depth
+  -?, --help                 Give this help list
+      --usage                Give a short usage message
+
+You can control when dumping output files. To use it, just send SIGUSR1/SIGUSR2
+to the tracked application (NOT functracker itself). Tracing is not enabled by
+default on application start (use -s to enable this). The control logic is:
+  - If not tracing:
+    - both SIGUSR1 and SIGUSR2 start tracing
+  - If tracing:
+    - SIGUSR2: dump backtraces
+    - SIGUSR1: stop tracing, dump backtraces and clear them
+
+5. Where does it work
+---------------------
+It works with ELF based Linux systems running on x86 or ARM architecture.
+
+6. Bugs
+-------
+- incomplete threads support ("unexpected breakpoint" error message might
+  appear)
+- recursive calls in realloc() on ARM causes lot of overhead (realloc()
+  backtraces are DISABLED for now)
+
+To do:
+- better documentation, source code comments
+- testsuite framework infrastructure (just some basic tests are available) 
+
+7. License
+----------
+This program is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License version 2 as published by the Free
+Software Foundation.
