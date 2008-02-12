@@ -139,7 +139,7 @@ void bkpt_handle(struct process *proc, addr_t addr)
 	struct breakpoint *bkpt = breakpoint_from_address(proc, addr);
 	struct callback *cb = cb_get();
 
-	debug(3, "bkpt_handle(pid=%d, addr=0x%x", proc->pid, addr);
+	debug(3, "pid=%d, addr=0x%x", proc->pid, addr);
 	if (proc->pending_breakpoint != NULL) {
 		/* re-enable pending breakpoint */
 		enable_breakpoint(proc, proc->pending_breakpoint);

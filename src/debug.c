@@ -2,6 +2,7 @@
  * This file is part of Functracker.
  *
  * Copyright (C) 2008 by Nokia Corporation
+ * Copyright (C) 1997-2007 Juan Cespedes <cespedes@debian.org>
  *
  * Contact: Eero Tamminen <eero.tamminen@nokia.com>
  *
@@ -19,6 +20,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA
  *
+ * Based on debug code from ltrace.
  */
 
 #include <signal.h>
@@ -30,42 +32,33 @@
 #include "debug.h"
 #include "options.h"
 
-static void output_line(const char *fmt, ...)
-{
-	va_list args;
-
-	if (!fmt) {
-		return;
-	}
-	va_start(args, fmt);
-	vfprintf(stderr, fmt, args);
-	fprintf(stderr, "\n");
-	va_end(args);
-}
-
 void debug_(int level, const char *file, int line, const char *func, const char *fmt, ...)
 {
 	char buf[1024];
 	va_list args;
 
-	if (arguments.debug < level) {
+	if (arguments.debug < level)
 		return;
-	}
 
 	va_start(args, fmt);
-	vsnprintf(buf, 1024, fmt, args);
+	vsnprintf(buf, sizeof(buf), fmt, args);
 	va_end(args);
 
-	output_line("DEBUG: %s:%d: %s(): %s", file, line, func, buf);
+	fprintf(stderr, "DEBUG: %s:%d: %s(): %s\n", file, line, func, buf);
 }
 
 void msg_warn(const char *fmt, ...)
 {
+	char buf[1024];
 	va_list args;
 
 	va_start(args, fmt);
-	vfprintf(stderr, fmt, args);
+	vsnprintf(buf, sizeof(buf), fmt, args);
 	va_end(args);
+	if (errno)
+		perror(buf);
+	else
+		fprintf(stderr, "Warning: %s\n", buf);
 }
 
 void msg_err(const char *fmt, ...)
@@ -76,7 +69,12 @@ void msg_err(const char *fmt, ...)
 	va_start(args, fmt);
 	vsnprintf(buf, sizeof(buf), fmt, args);
 	va_end(args);
-	perror(buf);
+	if (errno)
+		perror(buf);
+	else
+		fprintf(stderr, "Error: %s\n", buf);
+
+	/* Gracefully dettach from traced processes. */
 	raise(SIGINT);
 }
 
