@@ -265,7 +265,8 @@ static void solib_read_library(struct library_symbol **syms, char *filename, add
 		number_of_symbols = bfd_canonicalize_dynamic_symtab(abfd, symbol_table);
 		for (i = 0; i < number_of_symbols; i++) {
 			sym = symbol_table[i];
-			if ((sym->flags & flags) == flags && cb && cb->library.match(sym->name)) {
+			if ((sym->flags & flags) == flags && cb
+			    && cb->library.match(filename, sym->name)) {
 				struct library_symbol *tmp;
 
 				if (!solib_is_prelinked(abfd))

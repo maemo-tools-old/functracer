@@ -43,7 +43,7 @@ struct callback {
 		void (*exit)(struct process *proc, int sysno);
 	} syscall;
 	struct {
-		int (*match)(const char *name);
+		int (*match)(const char *libname, const char *symname);
 	} library;
 };
 

@@ -137,15 +137,17 @@ static void function_exit(struct process *proc, const char *name)
 	}
 }
 
-static int library_match(const char *name)
+static int library_match(const char *libname, const char *symname)
 {
-	debug(3, "library symbol match test (name=%s)", name);
+	debug(3, "library symbol match test (libname=\"%s\", symname=\"%s\")",
+	      libname, symname);
 
-	return (strcmp(name, "calloc") == 0
-		|| strcmp(name, "malloc") == 0 
-		/* FIXME: realloc() tracking does not work on ARM (causes
-		 * recursive loop). */
-		/*|| strcmp(name, "realloc") == 0*/
+	return /*strcmp(libname, "/lib/libc-2.5.so") == 0
+		&&*/ (strcmp(symname, "calloc") == 0
+		    || strcmp(symname, "malloc") == 0 
+		    /* FIXME: realloc() tracking does not work on ARM (causes
+		     * recursive loop). */
+		    /*|| strcmp(symname, "realloc") == 0*/
 	);
 }
 
