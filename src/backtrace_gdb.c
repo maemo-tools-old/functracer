@@ -30,6 +30,7 @@
 
 // GDB includes
 #include "gdb/defs.h"
+#include "gdb/block.h"
 #include "gdb/call-cmds.h"
 #include "gdb/exceptions.h"
 #include "gdb/frame.h"
@@ -47,17 +48,21 @@
 #include "gdb/solist.h"
 #include "gdb/objfiles.h"
 #include "gdb/exec.h"
+//#include "gdb/cli/cli-decode.h" // for struct cmd_list_element
+//#include "gdb/cli/cli-cmds.h"   // for setdebuglist
 
 #include "backtrace.h"
 #include "debug.h"
 #include "maps.h"
 
-static void indt_gdb_init(void)
+#define FROM_TTY	0
+
+static void local_gdb_init(void)
 {
 	getcwd(gdb_dirbuf, sizeof(gdb_dirbuf));
 	current_directory = gdb_dirbuf;
 
-	/* INdT hacks */
+	/* Set defaults for some global variables. */
 	gdb_sysroot = "";
 	gdb_stdout = stdio_fileopen(stdout);
 	gdb_stderr = stdio_fileopen(stderr);
@@ -73,12 +78,6 @@ static void indt_gdb_init(void)
 	//initialize_current_architecture ();
 }
 
-/* On GNU/Linux, threads are implemented as pseudo-processes, in which
-   case we may be tracing more than one process at a time.  In that
-   case, inferior_ptid will contain the main process ID and the
-   individual thread (process) ID.  get_thread_id () is used to get
-   the thread id if it's available, and the process id otherwise.  */
-
 static int get_thread_id(ptid_t ptid)
 {
 	int tid = TIDGET(ptid);
@@ -86,7 +85,6 @@ static int get_thread_id(ptid_t ptid)
 		tid = PIDGET(ptid);
 	return tid;
 }
-
 #define GET_THREAD_ID(PTID)	get_thread_id ((PTID));
 
 /* Get the value of a particular register from the floating point
@@ -176,7 +174,6 @@ static void fetch_register(int regno)
 
 /* Fetch all general registers of the process and store into
    regcache.  */
-
 static void fetch_regs(void)
 {
 	int ret, regno, tid;
@@ -203,9 +200,8 @@ static void fetch_regs(void)
 	regcache_raw_supply(current_regcache, ARM_PC_REGNUM, (char *)&regs[ARM_PC_REGNUM]);
 }
 
-static void get_indt_registers(int regno)
+static void local_get_registers(int regno)
 {
-//      fprintf(stderr, "XXX DEBUG: %s(regno=%d)\n", __FUNCTION__, regno);
 	if (-1 == regno) {
 		fetch_regs();
 		fetch_fpregs();
@@ -218,12 +214,11 @@ static void get_indt_registers(int regno)
 	}
 }
 
-static LONGEST indt_xfer_partial(struct target_ops *ops, enum target_object
+static LONGEST local_xfer_partial(struct target_ops *ops, enum target_object
 		object, const char *annex, gdb_byte *readbuf,
 		const gdb_byte *writebuf, ULONGEST offset, LONGEST len)
 {
 	pid_t pid = ptid_get_pid(inferior_ptid);
-//      fprintf(stderr, "XXX DEBUG: %s(pid=%d, object=%d, offset=%llx, len=%lld)\n", __FUNCTION__, pid, object, offset, len);
 
 	switch (object) {
 	case TARGET_OBJECT_MEMORY:
@@ -302,62 +297,22 @@ static LONGEST indt_xfer_partial(struct target_ops *ops, enum target_object
 	return 0;
 }
 
-static struct target_ops indt_ops;
+static struct target_ops local_ops;
 
-static void indt_ops_init(void)
+static void local_ops_init(void)
 {
-	indt_ops.to_shortname = "FIXME";
-	indt_ops.to_longname = "FIXME";
-	indt_ops.to_doc = "FIXME";
-	indt_ops.to_fetch_registers = get_indt_registers;
-	indt_ops.to_xfer_partial = indt_xfer_partial;
-	indt_ops.to_stratum = dummy_stratum;
-	indt_ops.to_has_memory = 1;
-	indt_ops.to_has_stack = 1;
-	indt_ops.to_has_registers = 1;
-	indt_ops.to_magic = OPS_MAGIC;
+	local_ops.to_shortname = "FIXME";
+	local_ops.to_longname = "FIXME";
+	local_ops.to_doc = "FIXME";
+	local_ops.to_fetch_registers = local_get_registers;
+	local_ops.to_xfer_partial = local_xfer_partial;
+	local_ops.to_stratum = dummy_stratum;
+	local_ops.to_has_memory = 1;
+	local_ops.to_has_stack = 1;
+	local_ops.to_has_registers = 1;
+	local_ops.to_magic = OPS_MAGIC;
 
-	push_target(&indt_ops);
-}
-
-static const char *function_name(struct frame_info *fi)
-{
-	struct minimal_symbol *msymbol = lookup_minimal_symbol_by_pc(get_frame_address_in_block(fi));
-
-	if (msymbol != NULL)
-		return DEPRECATED_SYMBOL_NAME(msymbol);
-	return "";
-}
-
-static int missing_symbols(struct frame_info *trailing, int size)
-{
-	struct objfile *ofp;
-#if 0
-	struct partial_symtab *ps;
-	struct frame_info *fi;
-	int n;
-#endif
-	fprintf(stderr, "-----------------------\n");
-	ALL_OBJFILES(ofp) {
-		if (ofp->psymtabs == NULL && ofp->symtabs == NULL) {
-			fprintf(stderr, "Warning: missing debug symbols for \"%s\", backtrace will not be generated\n", ofp->name);
-//      return 1;
-		}
-	}
-	fprintf(stderr, "-----------------------\n");
-#if 0
-	/* Read in symbols for all of the frames.  Need to do this in a
-	   separate pass so that "Reading in symbols for xxx" messages
-	   don't screw up the appearance of the backtrace.  Also if
-	   people have strong opinions against reading symbols for
-	   backtrace this may have to be an option.  */
-	for (fi = trailing, n = 0; fi && n < size; fi = get_prev_frame(fi), n++) {
-		ps = find_pc_psymtab(get_frame_address_in_block(fi));
-		if (ps)
-			PSYMTAB_TO_SYMTAB(ps);	/* Force syms to come in.  */
-	}
-#endif
-	return 0;
+	push_target(&local_ops);
 }
 
 /* Link map info to include in an allocated so_list entry */
@@ -396,15 +351,10 @@ static int is_prelinked(const char *filename)
 	abfd = bfd_fopen(filename, "default", "rb", -1);
 	if (abfd == NULL)
 		error_bfd(filename, "could not open as an executable file");
-#if 0
-	fprintf(stderr, "XXX DEBUG 1\n");
 	if (!bfd_check_format(abfd, bfd_fmt)) {
-		fprintf(stderr, "XXX DEBUG 1.5\n");
 		warning_bfd(filename, "not in executable format");
 		goto close_abfd;
 	}
-	fprintf(stderr, "XXX DEBUG 2\n");
-#endif
 	sect = bfd_get_section_by_name(abfd, ".gnu.prelink_undo");
 	if (sect != NULL)
 		prelinked = 1;
@@ -433,7 +383,6 @@ static struct so_list *maps_current_sos(void)
 
 			memset(tmp, 0, sizeof(struct so_list));
 			tmp->lm_info = xmalloc(sizeof(struct lm_info));
-			fprintf(stderr, "XXX DEBUG: maps_current_sos(): md.path=\"%s\"\n", md.path);
 			if (is_prelinked(md.path))
 				tmp->lm_info->l_addr = 0;
 			else
@@ -443,6 +392,8 @@ static struct so_list *maps_current_sos(void)
 			tmp->lm_info->lm = NULL;
 			strncpy(tmp->so_name, md.path, SO_NAME_MAX_PATH_SIZE - 1);
 			tmp->so_name[SO_NAME_MAX_PATH_SIZE - 1] = '\0';
+			strncpy(tmp->so_original_name, md.path, SO_NAME_MAX_PATH_SIZE - 1);
+			tmp->so_original_name[SO_NAME_MAX_PATH_SIZE - 1] = '\0';
 			tmp->next = head;
 			head = tmp;
 		}
@@ -475,6 +426,76 @@ static void restore_gdb_context(struct bt_data *btd)
 	current_btd = btd;
 }
 
+#if 0
+/* XXX Debugging only function. */
+static void print_sharedlibraries(void)
+{
+  struct so_list *so = NULL;	/* link map state variable */
+  int header_done = 0;
+  int addr_width;
+
+  /* "0x", a little whitespace, and two hex digits per byte of pointers.  */
+  addr_width = 4 + (TARGET_PTR_BIT / 4);
+
+  printf_unfiltered("-----------------------------------------------\n");
+  for (so = master_so_list(); so; so = so->next)
+    {
+      if (so->so_name[0])
+	{
+	  if (!header_done)
+	    {
+	      printf_unfiltered ("%-*s%-*s%-12s%s\n", addr_width, "From",
+				 addr_width, "To", "Syms Read",
+				 "Shared Object Library");
+	      header_done++;
+	    }
+
+	  printf_unfiltered ("%-*s", addr_width,
+			     so->textsection != NULL 
+			       ? hex_string_custom (
+			           (LONGEST) so->textsection->addr,
+	                           addr_width - 4)
+			       : "");
+	  printf_unfiltered ("%-*s", addr_width,
+			     so->textsection != NULL 
+			       ? hex_string_custom (
+			           (LONGEST) so->textsection->endaddr,
+	                           addr_width - 4)
+			       : "");
+	  printf_unfiltered ("%-12s", so->symbols_loaded ? "Yes" : "No");
+	  printf_unfiltered ("%s\n", so->so_name);
+	}
+    }
+  if (master_so_list() == NULL)
+    {
+      printf_unfiltered (_("No shared libraries loaded at this time.\n"));
+    }
+  printf_unfiltered("-----------------------------------------------\n");
+}
+#endif
+
+static const char *function_name(struct frame_info *fi)
+{
+	struct symbol *func;
+	struct minimal_symbol *msymbol;
+	CORE_ADDR addr;
+
+	addr = get_frame_address_in_block(fi);
+	msymbol = lookup_minimal_symbol_by_pc(addr);
+	func = find_pc_function(addr);
+	if (func) {
+		if (msymbol != NULL
+		    && (SYMBOL_VALUE_ADDRESS(msymbol)
+			> BLOCK_START(SYMBOL_BLOCK_VALUE(func))))
+			return DEPRECATED_SYMBOL_NAME(msymbol);
+		else
+			return DEPRECATED_SYMBOL_NAME(func);
+	} else if (msymbol != NULL)
+		return DEPRECATED_SYMBOL_NAME(msymbol);
+
+	return "??";
+}
+
 int bt_backtrace(struct bt_data *btd, char **buffer, int size)
 {
 	struct frame_info *fi, *trailing;
@@ -482,9 +503,11 @@ int bt_backtrace(struct bt_data *btd, char **buffer, int size)
 	int n;
 
 	restore_gdb_context(btd);
-	fprintf(stderr, "XXX DEBUG: bt_backtrace(): pid=%d\n", ptid_get_pid(inferior_ptid));
-	solib_add(NULL, 0, NULL, 1);
-	// XXX use flush_cached_frames() instead of reinit_frame_cache() ?
+	solib_add(NULL, FROM_TTY, NULL, 1);
+
+//	print_sharedlibraries();
+
+	/* XXX Use flush_cached_frames() instead of reinit_frame_cache() ? */
 	reinit_frame_cache();
 	registers_changed();
 
@@ -492,22 +515,31 @@ int bt_backtrace(struct bt_data *btd, char **buffer, int size)
 	if (!trailing)
 		/* No stack. */
 		return 0;
-//      if (missing_symbols(trailing, size))
-//              return 0;
 
 	for (fi = trailing, n = 0; fi && n < size; fi = get_prev_frame(fi), n++) {
-//      fprintf(stderr, "XXX DEBUG: func_addr = 0x%s\n", paddr_nz(frame_func_unwind(fi)));
-//      if (!frame_func_unwind(fi))
-//              fprintf(stderr, "XXX DEBUG: no symbols!\n");
-
-		snprintf(buf, sizeof(buf), "%s [0x%s]", function_name(fi), paddr_nz(get_frame_pc(fi)));
+		char *frame_pc = paddr_nz(get_frame_pc(fi));
+		const char *fn_name = function_name(fi);
+		snprintf(buf, sizeof(buf), "%s [0x%s]", fn_name, frame_pc);
 		buffer[n] = strdup(buf);
 	}
 
 	return n;
 }
 
-extern int frame_debug;
+#if 0
+/* XXX Debugging only function. */
+void set_frame_debug(int n)
+{
+	struct cmd_list_element *cl;
+
+	for (cl = setdebuglist; cl; cl = cl->next) {
+		if (strcmp(cl->name, "frame") == 0 && cl->var) {
+			int *frame_debug = cl->var;
+			*frame_debug = 1;
+		}
+	}
+}
+#endif
 
 struct bt_data *bt_init(pid_t pid)
 {
@@ -519,13 +551,13 @@ struct bt_data *bt_init(pid_t pid)
 	btd = xmalloc(sizeof(struct bt_data));
 	btd->inferior_ptid = pid_to_ptid(pid);
 
-//      frame_debug = 1;
 	if (!gdb_initialized) {
-		indt_gdb_init();
-		indt_ops_init();
+		local_gdb_init();
+		local_ops_init();
+		//set_frame_debug(1);
 		filename = name_from_pid(pid);
-		if (catch_command_errors(exec_file_attach, filename, 0, RETURN_MASK_ALL))
-			catch_command_errors(symbol_file_add_main, filename, 0, RETURN_MASK_ALL);
+		if (catch_command_errors(exec_file_attach, filename, FROM_TTY, RETURN_MASK_ALL))
+			catch_command_errors(symbol_file_add_main, filename, FROM_TTY, RETURN_MASK_ALL);
 		free(filename);
 		current_target_so_ops->current_sos = maps_current_sos;
 		gdb_initialized = 1;
