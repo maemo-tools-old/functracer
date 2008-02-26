@@ -32,3 +32,10 @@ extern void error_file(const char *filename, const char *msg);
 /* XXX deprecated */
 #define error_exit(...)		msg_err(__VA_ARGS__)
 #define debug(level, ...)	msg_dbg(level, __VA_ARGS__)
+
+#if __GNUC__ >= 3
+#define __unused	__attribute__ ((unused))
+#else
+#define __unused
+#endif
+

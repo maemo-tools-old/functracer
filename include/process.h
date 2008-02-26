@@ -50,7 +50,6 @@ struct process {
 	struct process *next;
 };
 
-extern char *name_from_pid(pid_t pid);
 extern struct process *get_list_of_processes(void);
 extern struct process *process_from_pid(pid_t pid);
 extern char *name_from_pid(pid_t pid);

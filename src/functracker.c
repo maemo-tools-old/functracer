@@ -53,7 +53,7 @@ static int my_kill(int pid, int signo)
 	return kill(pid, signo);
 }
 
-static void signal_exit(int sig)
+static void signal_exit(int sig __unused)
 {
 	exiting = 1;
 	debug(1, "Received interrupt signal; exiting...");
@@ -69,7 +69,7 @@ static void signal_attach(void)
 {
 	const int signals[] = { SIGINT, SIGTERM };
 	struct sigaction sa;
-	int i;
+	unsigned int i;
 
 	sigemptyset(&sa.sa_mask);
 	sa.sa_flags = 0;

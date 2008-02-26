@@ -123,10 +123,9 @@ static unsigned long bfd_lookup_symbol(bfd *abfd, const char *symname, flagword 
 	return symaddr;
 }
 
-int solib_is_prelinked(bfd *abfd)
+static int solib_is_prelinked(bfd *abfd)
 {
 	asection *sect;
-	const bfd_format bfd_fmt = bfd_object;
 	int prelinked = 0;
 
 	sect = bfd_get_section_by_name(abfd, ".gnu.prelink_undo");

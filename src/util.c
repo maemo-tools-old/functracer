@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <sys/ptrace.h>
 
+#include "debug.h"
 #include "util.h"
 
 long xptrace(int request, pid_t pid, void *addr, void *data)

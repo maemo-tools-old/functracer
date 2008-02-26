@@ -199,7 +199,7 @@ void bkpt_init(struct process *proc)
 	register_proc_breakpoints(proc);
 }
 
-static void disable_bkpt_cb(void *addr, void *bkpt, void *proc)
+static void disable_bkpt_cb(void *addr __unused, void *bkpt, void *proc)
 {
 	if (((struct breakpoint *)bkpt)->enabled) {
 		disable_breakpoint((struct process *)proc, bkpt);

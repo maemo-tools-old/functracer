@@ -73,7 +73,7 @@ void fn_save_arg_data(struct process *proc)
 
 	debug(1, "depth = %d", ++callstack_depth);
 	cs = xmalloc(sizeof(struct callstack));
-	cs->fn_arg_data = (void *)get_stack_pointer(proc);
+	cs->fn_arg_data = (void *) get_stack_pointer(proc);
 	cs->next = proc->callstack;
 	proc->callstack = cs;
 }

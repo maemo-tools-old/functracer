@@ -44,7 +44,7 @@ void set_instruction_pointer(struct process *proc, addr_t addr)
 	trace_user_writew(proc, 4 * EIP, (long)addr);
 }
 
-struct bkpt_insn *breakpoint_instruction(addr_t addr)
+struct bkpt_insn *breakpoint_instruction(addr_t addr __unused)
 {
 	static struct bkpt_insn insn = {
 		.value = { 0xcc },

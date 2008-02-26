@@ -121,7 +121,7 @@ void rp_init(struct process *proc)
 	proc->rp_data = rd;
 }
 
-void rp_reset_data(struct rp_data *rd)
+static void rp_reset_data(struct rp_data *rd)
 {
 	struct rp_allocinfo *rai, *tmp;
 	int j;
