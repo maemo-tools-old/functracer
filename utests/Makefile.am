@@ -4,7 +4,7 @@ AM_CFLAGS = -fprofile-arcs -ftest-coverage
 MOSTLYCLEANFILES = *.bb *.bbg *.gcno
 CLEANFILES = *.da *.gcda *.lcov
 
-noinst_PROGRAMS = utest
+check_PROGRAMS = utest
 utest_SOURCES = utest.c \
 		utest_options.c \
 		utest_options.h
