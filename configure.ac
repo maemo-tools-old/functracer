@@ -1,5 +1,6 @@
 AC_INIT([functracker], [0.3])
 AC_CONFIG_HEADERS(include/config.h)
+AC_CONFIG_SRCDIR(src/functracker.c)
 AM_INIT_AUTOMAKE([-Wall -Werror foreign no-define])
 AC_PROG_CC
 
@@ -37,6 +38,14 @@ AC_ARG_WITH(gdb,
     [location of compiled GDB sources (required for backtracing on ARM)])],
   [GDB_SRCDIR="`readlink -f $withval`"],
   [GDB_SRCDIR=""]
+)
+
+# Ask user for enable utests with check (http://check.sourceforge.net)
+AC_ARG_ENABLE(check,
+  [AS_HELP_STRING([--enable-check],
+    [enable utests with Check utest framework])],
+    [enable_check=yes],
+    [enable_check=no]
 )
 
 if test -z "${GDB_SRCDIR}"; then
@@ -95,6 +104,19 @@ AS_IF([test "x${PKG_CONFIG}" != "x"],
     [AC_MSG_WARN(glib-2.0 not found, gthreads test will not be compiled)])],
   [AC_MSG_WARN(pkg-config not found, gthreads test will not be compiled)]
 )
+
+if test "x$enable_check" = "xyes"; then
+
+AS_IF([test "x${PKG_CONFIG}" != "x"],
+  [PKG_CHECK_MODULES(CHECK, check,
+    [AC_SUBST(CHECK_CFLAGS) AC_SUBST(CHECK_LIBS) AC_SUBST(csourcedir, ../$srcdir/src)],
+    [AC_MSG_WARN(check not found, utests will not be compiled)])],
+  [AC_MSG_WARN(pkg-config not found, utests will not be compiled)],
+)
+
+fi
+
+AM_CONDITIONAL(CHECK_FOUND, [test "x${CHECK_CFLAGS}" != "x"])
 AM_CONDITIONAL(GLIB_FOUND, [test "x${GLIB_CFLAGS}" != "x"])
 
 # Detect architecture
@@ -114,6 +136,7 @@ AC_CONFIG_FILES([
   Makefile
   src/Makefile
   tests/Makefile
+  utests/Makefile
 ])
 
 AC_OUTPUT
