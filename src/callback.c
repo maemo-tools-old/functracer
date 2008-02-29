@@ -60,7 +60,6 @@ static void process_exit(struct process *proc, int exit_code)
 
 	if (trace_enabled()) {
 		assert(proc->rp_data != NULL);
-		rp_dump(proc->rp_data);
 		rp_finish(proc->rp_data);
 	}
 }
@@ -77,7 +76,6 @@ static void process_signal(struct process *proc, int signo)
 	if (signo == SIGUSR1 || signo == SIGUSR2) {
 		if (trace_enabled()) {
 			assert(proc->rp_data != NULL);
-			rp_dump(proc->rp_data);
 			if (signo == SIGUSR1) {
 				rp_finish(proc->rp_data);
 				trace_control = 0;
@@ -95,7 +93,6 @@ static void process_interrupt(struct process *proc)
 	debug(3, "process interrupted (pid=%d)", proc->pid);
 	if (trace_enabled()) {
 		assert(proc->rp_data != NULL);
-		rp_dump(proc->rp_data);
 		rp_finish(proc->rp_data);
 	}
 }
@@ -117,22 +114,28 @@ static void function_enter(struct process *proc, const char *name)
 
 static void function_exit(struct process *proc, const char *name)
 {
+	struct rp_allocinfo *rai;
 
 	debug(3, "function return (pid=%d, name=%s)", proc->pid, name);
-	
+
 	if (trace_enabled()) {
 		addr_t retval = fn_return_value(proc);
 		size_t arg0 = fn_argument(proc, 0);
 
 		assert(proc->rp_data != NULL);
 		if (strcmp(name, "malloc") == 0) {
-			rp_new_alloc(proc->rp_data, retval, arg0);
+			rai = rp_new_alloc(proc->rp_data, retval, arg0);
 		} else if (strcmp(name, "calloc") == 0) {
 			size_t arg1 = fn_argument(proc, 1);
-			rp_new_alloc(proc->rp_data, retval, arg0 * arg1);
+			rai = rp_new_alloc(proc->rp_data, retval, arg0 * arg1);
 		} else if (strcmp(name, "realloc") == 0) {
 			size_t arg1 = fn_argument(proc, 1);
-			rp_new_alloc(proc->rp_data, retval, arg1);
+			rai = rp_new_alloc(proc->rp_data, retval, arg1);
+		}
+
+		if (rai) {
+			rp_dump_alloc(rai);
+			rp_delete_alloc(rai);
 		}
 	}
 }

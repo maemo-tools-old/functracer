@@ -25,11 +25,11 @@
 #include "target_mem.h"
 
 struct rp_allocinfo {
-	struct rp_allocinfo *next;
 	addr_t addr;
 	size_t size;
 	char *backtrace[MAX_BT_DEPTH];
 	int bt_depth;
+	struct rp_data *rd;
 };
 
 struct bt_data;
@@ -38,12 +38,10 @@ struct rp_data {
 	pid_t pid;
 	FILE *fp;
 	struct bt_data *btd;
-	struct rp_allocinfo *allocs;
-	long nallocs;
-	int step;
 };
 
 extern void rp_init(struct process *proc);
-extern void rp_new_alloc(struct rp_data *rd, addr_t addr, size_t size);
-extern void rp_dump(struct rp_data *rd);
+extern struct rp_allocinfo *rp_new_alloc(struct rp_data *rd, addr_t addr, size_t size);
+extern void rp_delete_alloc(struct rp_allocinfo *rai);
+extern void rp_dump_alloc(struct rp_allocinfo *rai);
 extern void rp_finish(struct rp_data *rd);
