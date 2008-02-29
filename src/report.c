@@ -65,21 +65,14 @@ void rp_dump_alloc(struct rp_allocinfo *rai)
 {
 	static int i = 0;
 	int j;
-	char path[256];
 	struct rp_data *rd;
 
 	rd = rai->rd;
-
-	snprintf(path, sizeof(path), "%s/allocs-%d.trace", getenv("HOME"), rd->pid);
-	rd->fp = fopen(path, "a");
-	if (rd->fp == NULL)
-		error_exit("rp_dump_alloc(): fopen");
 
 	fprintf(rd->fp, "%d. block at 0x%x with size %d\n", i++, rai->addr, rai->size);
 	for (j = 0; j < rai->bt_depth; j++) {
 		fprintf(rd->fp, "   %s\n", rai->backtrace[j]);
 	}
-	fclose(rd->fp);
 	rp_copy_maps(rd);
 }
 
@@ -111,6 +104,7 @@ void rp_delete_alloc(struct rp_allocinfo *rai)
 void rp_init(struct process *proc)
 {
 	struct rp_data *rd = proc->rp_data;
+	char path[256];
 
 	debug(3, "pid=%d", proc->pid);
 
@@ -119,9 +113,22 @@ void rp_init(struct process *proc)
 	rd->pid = proc->pid;
 	rd->btd = bt_init(proc->pid);
 	proc->rp_data = rd;
+
+	if (arguments.save_to_file) {
+		snprintf(path, sizeof(path), "%s/allocs-%d.trace", getenv("HOME"), rd->pid);
+
+		rd->fp = fopen(path, "a");
+		if (rd->fp == NULL)
+			error_exit("rp_init(): fopen");
+	} else
+		rd->fp = stdout;
+
 }
 
 void rp_finish(struct rp_data *rd)
 {
 	bt_finish(rd->btd);
+
+	if (arguments.save_to_file)
+		fclose(rd->fp);
 }

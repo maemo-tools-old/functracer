@@ -35,6 +35,7 @@ struct arguments {
 	int depth;
 	int debug;
 	int enabled;
+	int save_to_file;
 };
 
 extern struct arguments arguments;

@@ -46,6 +46,8 @@ static const struct argp_option options[] = {
 	{"debug", 'd', NULL, 0, "maximum debug level", 0},
 	{"start", 's', NULL, 0, "enable tracking memory from beginning", 0},
 	{"depth", 't', "NUMBER", 0, "maximum backtrace depth", 0},
+	{"file",  'f', NULL, 0,
+	 "use a file to save backtraces instead of dump to stdout", 0},
 	{NULL, 0, NULL, 0, NULL, 0},
 };
 
@@ -84,6 +86,9 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 		break;
 	case 's':
 		arg_data->enabled++;
+		break;
+	case 'f':
+		arg_data->save_to_file++;
 		break;
 	case ARGP_KEY_END:
 		if (arg_data->npids == 0 && state->arg_num < 1)
