@@ -36,6 +36,7 @@ struct arguments {
 	int debug;
 	int enabled;
 	int save_to_file;
+	char *path;
 };
 
 extern struct arguments arguments;

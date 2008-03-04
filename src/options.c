@@ -25,6 +25,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <argp.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #include "options.h"
 #include "report.h"
@@ -48,6 +51,8 @@ static const struct argp_option options[] = {
 	{"depth", 't', "NUMBER", 0, "maximum backtrace depth", 0},
 	{"file",  'f', NULL, 0,
 	 "use a file to save backtraces instead of dump to stdout", 0},
+	{"path",  'l', "DIR", 0,
+         "dump reports to a custom location (defaults to homedir)", 0},
 	{NULL, 0, NULL, 0, NULL, 0},
 };
 
@@ -61,6 +66,7 @@ static struct argp argp = { options, parse_opt, args_doc, doc, NULL, NULL, NULL 
 static error_t parse_opt(int key, char *arg, struct argp_state *state)
 {
 	struct arguments *arg_data = state->input;
+	struct stat buf;
 
 	switch (key) {
 	case 'p':
@@ -89,6 +95,12 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 		break;
 	case 'f':
 		arg_data->save_to_file++;
+		break;
+	case 'l':
+		arg_data->path = arg;
+		stat(arg_data->path, &buf);
+		if (!S_ISDIR(buf.st_mode))
+			argp_error(state, "Path must be a valid directory path");
 		break;
 	case ARGP_KEY_END:
 		if (arg_data->npids == 0 && state->arg_num < 1)
