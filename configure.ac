@@ -122,15 +122,14 @@ AM_CONDITIONAL(GLIB_FOUND, [test "x${GLIB_CFLAGS}" != "x"])
 # Detect architecture
 AC_CANONICAL_HOST
 AS_CASE($host_cpu,
-  [arm*], [ARCH=arm; max_bt_depth=12; max_nalloc=32768],
-  [i?86], [ARCH=i386; max_bt_depth=64; max_nalloc=65536],
+  [arm*], [ARCH=arm; max_bt_depth=12],
+  [i?86], [ARCH=i386; max_bt_depth=64],
   [AC_MSG_ERROR([host CPU $host_cpu is not supported])]
 )
 AC_SUBST([ARCH])
 
 # Define architecture-specific constants used in include/report.h
 AC_DEFINE_UNQUOTED([MAX_BT_DEPTH], [$max_bt_depth], Define maximum backtrace depth.)
-AC_DEFINE_UNQUOTED([MAX_NALLOC], [$max_nalloc], Define maximum number of allocations.)
 
 AC_CONFIG_FILES([
   Makefile

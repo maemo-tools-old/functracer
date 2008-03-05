@@ -45,7 +45,6 @@ static const struct argp_option options[] = {
 	{"track-pid", 'p', "PID", 0, "which PID to track", 0},
 	{"track-function", 'e', "FUNCTION", 0,
 	 "which function to track (NOT IMPLEMENTED)", 0},
-	{"alloc-number", 'n', "NUMBER", 0, "maximum number of allocations", 0},
 	{"debug", 'd', NULL, 0, "maximum debug level", 0},
 	{"start", 's', NULL, 0, "enable tracking memory from beginning", 0},
 	{"depth", 't', "NUMBER", 0, "maximum backtrace depth", 0},
@@ -76,11 +75,6 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 		if (arg_data->pid[arg_data->npids] <= 0)
 			argp_error(state, "invalid PID");
 		arg_data->npids++;
-		break;
-	case 'n':
-		arg_data->nalloc = atoi(arg);
-		if (arg_data->nalloc <= 0 || arg_data->nalloc > MAX_NALLOC)
-			argp_error(state, "Number of allocations must be between 1 and %dK", MAX_NALLOC);
 		break;
 	case 't':
 		arg_data->depth = atoi(arg);
@@ -118,7 +112,6 @@ void process_options(int argc, char *argv[], int *remaining)
 {
 	/* Initial values */
 	memset(&arguments, 0, sizeof(struct arguments));
-	arguments.nalloc = MAX_NALLOC;
 	arguments.depth = MAX_BT_DEPTH;
 
 	/* parse and process arguments */

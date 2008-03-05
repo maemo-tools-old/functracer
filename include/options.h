@@ -31,7 +31,6 @@
 struct arguments {
 	pid_t pid[MAX_NPIDS];
 	int npids;
-	int nalloc;
 	int depth;
 	int debug;
 	int enabled;
