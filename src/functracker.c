@@ -23,6 +23,7 @@
 
 #include <errno.h>
 #include <signal.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/syscall.h>
@@ -84,7 +85,8 @@ int main(int argc, char *argv[])
 	int prog_index, ret, i;
 
 	signal_attach();
-	process_options(argc, argv, &prog_index);
+	if ((ret = process_options(argc, argv, &prog_index)))
+		exit(ret);
 
 	cb_init();
 	for (i = 0; i < arguments.npids; i++)

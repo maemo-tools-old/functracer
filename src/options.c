@@ -69,17 +69,23 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 
 	switch (key) {
 	case 'p':
-		if (arg_data->npids >= MAX_NPIDS)
+		if (arg_data->npids >= MAX_NPIDS) {
 			argp_error(state, "Maximum number of PID exceeded (%d)", MAX_NPIDS);
+			return EINVAL;
+		}
 		arg_data->pid[arg_data->npids] = atoi(arg);
-		if (arg_data->pid[arg_data->npids] <= 0)
+		if (arg_data->pid[arg_data->npids] <= 0) {
 			argp_error(state, "invalid PID");
+			return EINVAL;
+		}
 		arg_data->npids++;
 		break;
 	case 't':
 		arg_data->depth = atoi(arg);
-		if (arg_data->depth <= 0 || arg_data->depth > MAX_BT_DEPTH)
+		if (arg_data->depth <= 0 || arg_data->depth > MAX_BT_DEPTH) {
 			argp_error(state, "Depth must be between 1 and %d", MAX_BT_DEPTH);
+			return EINVAL;
+		}
 		break;
 	case 'd':
 		arg_data->debug++;
@@ -93,8 +99,10 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 	case 'l':
 		arg_data->path = arg;
 		stat(arg_data->path, &buf);
-		if (!S_ISDIR(buf.st_mode))
+		if (!S_ISDIR(buf.st_mode)) {
 			argp_error(state, "Path must be a valid directory path");
+			return ENOENT;
+		}
 		break;
 	case ARGP_KEY_END:
 		if (arg_data->npids == 0 && state->arg_num < 1)
@@ -108,12 +116,17 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 	return 0;
 }
 
-void process_options(int argc, char *argv[], int *remaining)
+int process_options(int argc, char *argv[], int *remaining)
 {
+	error_t ret;
+
 	/* Initial values */
 	memset(&arguments, 0, sizeof(struct arguments));
 	arguments.depth = MAX_BT_DEPTH;
 
 	/* parse and process arguments */
-	argp_parse(&argp, argc, argv, ARGP_IN_ORDER, remaining, &arguments);
+	ret = argp_parse(&argp, argc, argv,
+			ARGP_IN_ORDER | ARGP_NO_EXIT, remaining, &arguments);
+
+	return ret;
 }

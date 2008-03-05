@@ -40,6 +40,6 @@ struct arguments {
 
 extern struct arguments arguments;
 
-extern void process_options(int argc, char *argv[], int *remaining);
+extern int process_options(int argc, char *argv[], int *remaining);
 
 #endif /* TT_OPTIONS_H */
