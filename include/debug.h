@@ -21,6 +21,9 @@
  *
  */
 
+#ifndef FTK_DEBUG_H
+#define FTK_DEBUG_H
+
 extern void debug_(int level, const char *file, int line, const char *func,
 	    const char *fmt, ...) __attribute__ ((format(printf, 5, 6)));
 #define msg_dbg(level, ...) debug_(level, __FILE__, __LINE__, __PRETTY_FUNCTION__, __VA_ARGS__)
@@ -39,3 +42,4 @@ extern void error_file(const char *filename, const char *msg);
 #define __unused
 #endif
 
+#endif  /* !FTK_DEBUG_H */

@@ -17,6 +17,9 @@
  * Based on code from libleaks.
  */
 
+#ifndef FTK_REPORT_H
+#define FTK_REPORT_H
+
 #include <stdio.h>
 #include <sys/types.h>
 
@@ -45,3 +48,5 @@ extern struct rp_allocinfo *rp_new_alloc(struct rp_data *rd, addr_t addr, size_t
 extern void rp_delete_alloc(struct rp_allocinfo *rai);
 extern void rp_dump_alloc(struct rp_allocinfo *rai);
 extern void rp_finish(struct rp_data *rd);
+
+#endif /* !FTK_REPORT_H */
