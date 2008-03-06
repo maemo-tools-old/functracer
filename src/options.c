@@ -98,8 +98,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 		break;
 	case 'l':
 		arg_data->path = arg;
-		stat(arg_data->path, &buf);
-		if (!S_ISDIR(buf.st_mode)) {
+		if (stat(arg_data->path, &buf) || !S_ISDIR(buf.st_mode)) {
 			argp_error(state, "Path must be a valid directory path");
 			return ENOENT;
 		}

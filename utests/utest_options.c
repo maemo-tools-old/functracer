@@ -174,6 +174,10 @@ START_TEST (test_process_options_l)
 	uargv[9] = "/invalid_path/";
 	ret = process_options(uargc, uargv, &remaining);
 	fail_unless(ret == ENOENT, "Accepting invalid path");
+
+	uargv[9] = "/proc/meminfo";
+	ret = process_options(uargc, uargv, &remaining);
+	fail_unless(ret == ENOENT, "Accepting a file as path");
 }
 END_TEST
 
