@@ -31,42 +31,24 @@
 #include "options.c"
 
 
-static char **uargv;
-static int uargc, remaining;
+static char *uargv[] = {
+	"utest",
+	"-p", "100",
+	"-t", "2",
+	"-d",
+	"-s",
+	"-f",
+	"-l", "/tmp/",
+	"ls",
+	NULL,
+};
 
-
-static void setup(void)
-{
-	int i;
-
-	char *argv_def[] = {
-		"utest",
-		"-p", "100",
-		"-t", "2",
-		"-d",
-		"-s",
-		"-f",
-		"-l", "/tmp/",
-		"ls",
-	};
-
-	uargc = sizeof(argv_def) / sizeof(char *);
-	uargv = malloc(sizeof(argv_def));
-
-	for (i = 0; i < uargc; i++)
-		uargv[i] = argv_def[i];
-}
-
-
-static void teardown(void)
-{
-	free(uargv);
-}
+static int uargc = sizeof(uargv) / sizeof(char *);
 
 
 START_TEST (test_process_options_p)
 {
-	int ret, argc, i;
+	int remaining, ret, argc, i;
 	char **argv;
 
 	process_options(uargc, uargv, &remaining);
@@ -100,7 +82,7 @@ END_TEST
 
 START_TEST (test_process_options_t)
 {
-	int ret;
+	int remaining, ret;
 	char buffer[20];
 
 	process_options(uargc, uargv, &remaining);
@@ -125,7 +107,7 @@ END_TEST
 
 START_TEST (test_process_options_d)
 {
-	int ret;
+	int remaining, ret;
 
 	process_options(uargc, uargv, &remaining);
 	ret = process_options(uargc, uargv, &remaining);
@@ -142,7 +124,7 @@ END_TEST
 
 START_TEST (test_process_options_s)
 {
-	int ret;
+	int remaining, ret;
 
 	process_options(uargc, uargv, &remaining);
 	ret = process_options(uargc, uargv, &remaining);
@@ -154,7 +136,7 @@ END_TEST
 
 START_TEST (test_process_options_f)
 {
-	int ret;
+	int remaining, ret;
 
 	process_options(uargc, uargv, &remaining);
 	ret = process_options(uargc, uargv, &remaining);
@@ -166,7 +148,7 @@ END_TEST
 
 START_TEST (test_process_options_l)
 {
-	int ret;
+	int remaining, ret;
 
 	ret = process_options(uargc, uargv, &remaining);
 	fail_unless(ret == 0, "Failing with basic arguments");
@@ -185,7 +167,6 @@ END_TEST
 TCase *options_tcase_create(void)
 {
 	TCase *tc = tcase_create("options");
-	tcase_add_checked_fixture(tc, setup, teardown);
 
 	tcase_add_test(tc, test_process_options_p);
 	tcase_add_test(tc, test_process_options_t);
