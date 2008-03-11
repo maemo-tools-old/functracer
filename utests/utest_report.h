@@ -21,37 +21,14 @@
  *
  */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#ifndef __UTEST_REPORT_H__
+#define __UTEST_REPORT_H__
 
 #include <check.h>
-#include <stdlib.h>
-
-#include "utest_options.h"
-#include "utest_report.h"
 
 
-static Suite *core_suite(void)
-{
-	Suite *s = suite_create("functracker");
+TCase *report_tcase_create(void);
 
-	suite_add_tcase(s, options_tcase_create());
-	suite_add_tcase(s, report_tcase_create());
 
-	return s;
-}
+#endif /* __UTEST_REPORT_H__ */
 
-int main(void)
-{
-	int number_failed;
-	Suite *s = core_suite();
-	SRunner *sr = srunner_create(s);
-
-	srunner_run_all(sr, CK_VERBOSE);
-	number_failed = srunner_ntests_failed(sr);
-
-	srunner_free(sr);
-
-	return (number_failed == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
-}

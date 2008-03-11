@@ -328,7 +328,7 @@ int trace_execute(char *filename, char *argv[])
 		return -1;
 	}
 
-	return 0;
+	return pid;
 }
 
 void trace_attach(pid_t pid)
