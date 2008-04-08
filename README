@@ -1,4 +1,4 @@
-                                Functracker
+                                Functracer
 
                         An Allocation Backtrace Tool
 
@@ -18,14 +18,14 @@ Contents
 
 0. Authors
 ----------
-Functracker has been developed by:
+Functracer has been developed by:
 
 Anderson Lizardo <anderson.lizardo@indt.org.br>
 Bruna Moreira <bruna.moreira@indt.org.br>
 
 1. Introduction
 ---------------
-Functracker is a debugging tool. It gets backtraces of all allocations done in
+Functracer is a debugging tool. It gets backtraces of all allocations done in
 ARM/x86 processes. It works with optimized (-O2) code, where debugging symbols
 are available either in the application  binaries themselves, or in separate
 debug files.
@@ -41,22 +41,22 @@ on entrypoint of Glibc allocation functions (malloc, calloc and realloc) and
 when one of them is called, the breakpoint is hit and the allocation address,
 size and callchain backtrace are reported.
 
-Two output files are created by Functracker in $HOME:
+Two output files are created by Functracer in $HOME:
 - allocs-PID.n.map: /proc/PID/maps of traced process
 - allocs-PID.n.trace: allocation backtraces of traced process
 
 Output files are in libleaks compatible format so that its post-processing
 tools can be reused. For generating backtraces, libunwind[1] is used on x86.
 Libunwind ARM support for processes traced using ptrace() is currently broken,
-therefore on ARM Functracker has to be linked with libgdb.a from GDB sources
+therefore on ARM Functracer has to be linked with libgdb.a from GDB sources
 (see INSTALL for detailed compilation instructions).
 
 4. How to use
 --------------
 
-Output from "functracker --help":
+Output from "functracer --help":
 
-Usage: functracker [OPTION...] PROGRAM [ARGS...]
+Usage: functracer [OPTION...] PROGRAM [ARGS...]
 Run PROGRAM and track selected functions.
 
   -d, --debug                maximum debug level
@@ -69,7 +69,7 @@ Run PROGRAM and track selected functions.
       --usage                Give a short usage message
 
 You can control when dumping output files. To use it, just send SIGUSR1/SIGUSR2
-to the tracked application (NOT functracker itself). Tracing is not enabled by
+to the tracked application (NOT functracer itself). Tracing is not enabled by
 default on application start (use -s to enable this). The control logic is:
   - If not tracing:
     - both SIGUSR1 and SIGUSR2 start tracing

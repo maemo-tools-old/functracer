@@ -1,5 +1,5 @@
 /*
- * This file is part of Functracker.
+ * This file is part of Functracer.
  *
  * Copyright (C) 2008 by Nokia Corporation
  *
@@ -36,9 +36,9 @@
 #include "report.c"
 
 /* XXX: Ubber-hack to don't mess with the linker */
-#define main main_functracker
-int main_functracker(int argc, char *argv[]);
-#include "functracker.c"
+#define main main_functracer
+int main_functracer(int argc, char *argv[]);
+#include "functracer.c"
 
 #define STDOUTFILE "/tmp/utest_report.txt"
 

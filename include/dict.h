@@ -1,5 +1,5 @@
 /*
- * This file is part of Functracker.
+ * This file is part of Functracer.
  *
  * Copyright (C) 1997-2007 Juan Cespedes <cespedes@debian.org>
  *

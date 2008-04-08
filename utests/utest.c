@@ -1,5 +1,5 @@
 /*
- * This file is part of Functracker.
+ * This file is part of Functracer.
  *
  * Copyright (C) 2008 by Nokia Corporation
  *
@@ -34,7 +34,7 @@
 
 static Suite *core_suite(void)
 {
-	Suite *s = suite_create("functracker");
+	Suite *s = suite_create("functracer");
 
 	suite_add_tcase(s, options_tcase_create());
 	suite_add_tcase(s, report_tcase_create());

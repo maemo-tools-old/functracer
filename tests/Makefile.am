@@ -1,4 +1,4 @@
-# Reset compiler/linker variables so that tests do not link with Functracker
+# Reset compiler/linker variables so that tests do not link with Functracer
 # dependencies
 # FIXME: temporary solution while dejagnu test framework is not integrated
 
