@@ -70,7 +70,11 @@ void rp_dump_alloc(struct rp_allocinfo *rai)
 
 	rd = rai->rd;
 
-	fprintf(rd->fp, "%d. block at 0x%x with size %d\n", i++, rai->addr, rai->size);
+	if ( (int) rai->size > 0)
+		fprintf(rd->fp, "%d. malloc: block at 0x%x with size %d\n", i++, rai->addr, rai->size);
+	else
+		fprintf(rd->fp, "%d. free: block at 0x%x\n", i++, rai->addr);
+
 	for (j = 0; j < rai->bt_depth; j++) {
 		fprintf(rd->fp, "   %s\n", rai->backtrace[j]);
 	}

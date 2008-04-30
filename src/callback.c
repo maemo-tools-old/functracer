@@ -131,6 +131,9 @@ static void function_exit(struct process *proc, const char *name)
 		} else if (strcmp(name, "realloc") == 0) {
 			size_t arg1 = fn_argument(proc, 1);
 			rai = rp_new_alloc(proc->rp_data, retval, arg1);
+		} else if (strcmp(name, "free") == 0 ) {
+			retval = -1;
+			rai = rp_new_alloc(proc->rp_data, arg0, retval);
 		}
 
 		if (rai) {
@@ -145,13 +148,16 @@ static int library_match(const char *libname, const char *symname)
 	debug(3, "library symbol match test (libname=\"%s\", symname=\"%s\")",
 	      libname, symname);
 
-	return /*strcmp(libname, "/lib/libc-2.5.so") == 0
-		&&*/ (strcmp(symname, "calloc") == 0
-		    || strcmp(symname, "malloc") == 0 
-		    /* FIXME: realloc() tracking does not work on ARM (causes
-		     * recursive loop). */
-		    /*|| strcmp(symname, "realloc") == 0*/
-	);
+	return (strcmp(symname, "calloc") == 0
+		|| strcmp(symname, "malloc") == 0
+		|| strcmp(symname, "free") == 0
+		/* 
+		   FIXME: realloc() tracking does not work on ARM (causes
+	     	   recursive loop).
+		|| strcmp(symname, "realloc") == 0
+		|| strcmp(libname, "/lib/libc-2.5.so") == 0
+		*/
+		);
 }
 
 static void cb_register(struct callback *cb)
