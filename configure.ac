@@ -26,19 +26,12 @@ CPPFLAGS="${CPPFLAGS} -D_GNU_SOURCE"
 # Ask user for path to libunwind
 AC_ARG_WITH(libunwind,
   [AS_HELP_STRING([--with-libunwind],
-    [prefix of libunwind installation (required for backtracing on x86)])],
+    [prefix of libunwind installation (required for backtracing)])],
   [UNW_FLAGS="-I$withval/include -L$withval/lib"],
   [UNW_FLAGS=""]
 )
 CFLAGS="${CFLAGS} ${UNW_FLAGS}"
 
-# Ask user for path to GDB sources
-AC_ARG_WITH(gdb,
-  [AS_HELP_STRING([--with-gdb],
-    [location of compiled GDB sources (required for backtracing on ARM)])],
-  [GDB_SRCDIR="`readlink -f $withval`"],
-  [GDB_SRCDIR=""]
-)
 
 # Ask user for enable utests with check (http://check.sourceforge.net)
 AC_ARG_ENABLE(check,
@@ -47,8 +40,6 @@ AC_ARG_ENABLE(check,
     [enable_check=yes],
     [enable_check=no]
 )
-
-if test -z "${GDB_SRCDIR}"; then
 
 # Check for libunwind availability
 AC_CHECK_LIB([unwind-ptrace], [_UPT_access_mem],
@@ -64,37 +55,6 @@ AC_CHECK_LIB([bfd], [bfd_fopen],
   [AC_MSG_ERROR([BFD library is required])],
   /usr/lib/libiberty.a
 )
-
-else
-
-# Check for libreadline availability
-AC_CHECK_LIB([readline], [tilde_expand],
-  [LIBS="${LIBS} -lreadline"],
-  [AC_MSG_ERROR([libreadline is required for backtracing on ARM])],
-  dnl empty
-)
-
-# Check for libexpat availability
-AC_CHECK_LIB([expat], [XML_ParserCreateNS],
-  [LIBS="${LIBS} -lexpat"],
-  [AC_MSG_ERROR([libexpat is required for backtracing on ARM])],
-  dnl empty
-)
-
-CFLAGS="${CFLAGS} -L${GDB_SRCDIR}/gdb -L${GDB_SRCDIR}/bfd -L${GDB_SRCDIR}/opcodes"
-CPPFLAGS="${CPPFLAGS} -I${GDB_SRCDIR} -I${GDB_SRCDIR}/include -I${GDB_SRCDIR}/gdb/config"
-
-# Check for libgdb.a availability
-AC_CHECK_LIB([gdb], [get_current_frame],
-  [LIBS="${LIBS} -lgdb -lbfd -lopcodes -lm -ldl /usr/lib/libiberty.a"],
-  [AC_MSG_ERROR([libgdb.a is required for backtracing on ARM])],
-  -lbfd -lopcodes -lm -ldl /usr/lib/libiberty.a
-)
-
-fi
-
-AM_CONDITIONAL(BACKTRACE_GDB, [test "x${GDB_SRCDIR}" != "x"])
-AC_SUBST([GDB_SRCDIR])
 
 # Check for glib-2.0 availability (used for gthreads test)
 PKG_PROG_PKG_CONFIG

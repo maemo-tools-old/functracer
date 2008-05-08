@@ -7,37 +7,34 @@ Functracer installation instructions
 1.1 Dependencies
 ----------------
 
-For x86, libunwind has to be compiled and installed prior to Functracer. To
-compile and install libunwind, issue:
+The libunwind package has to be compiled and installed prior to Functracer. To
+compile libunwind for ARM, binutils-dev needs to be installed inside
+Scratchbox:
 
-# ./configure --prefix=/usr/local/libunwind && make && make install
+[sbox-ARMEL] > apt-get install binutils-dev
 
-Add libunwind to the dynamic linker's links and cache:
+To compile and install libunwind inside Scratchbox, issue:
+[sbox-ARMEL] > ./configure --prefix=/usr/local/libunwind && make && make install
 
-# echo "/usr/local/libunwind/lib" >> /etc/ld.so.conf
-# ldconfig
+Make a tarball:
+[sbox-ARMEL] > tar -C /usr/local -cvzf /tmp/libunwind-indt.tar.gz libunwind
 
-For ARM, GDB (version 6.6) has to be compiled prior to Functracer. The
-following packages must be installed inside Scratchbox environment:
+Copy tarball to device and unpack it:
+[sbox-ARMEL] > scp /tmp/libunwind-indt.tar.gz root@192.168.2.15:/root && 
+	ssh root@192.168.2.15 tar -C /usr/local -xvzf /root/libunwind-indt.tar.gz
 
-libreadline4-dev, libexpat1-dev, libc6-dev and binutils-dev
-
-Inside Scratchbox:
-[sbox-ARMEL] > apt-get install libreadline4-dev libexpat1-dev libc6-dev binutils-dev
-
-To compile GDB, just type:
-[sbox-ARMEL] > ./configure && make
-
+Add libunwind to the dynamic linker's links and cache on device:
+[N800] # echo "/usr/local/libunwind/lib" >> /etc/ld.so.conf
+[N800] # ldconfig 
 
 1.2 Compiling Functracer
 --------------------------
 
-On x86, to compile and install Functracer, issue:
+On x86/ARM, to compile Functracer, issue:
 
 ./configure --with-libunwind=<PATH_TO_LIBUNWIND>
 make
 
-On ARM, to compile and install Functracer, issue:
+Copy functracer binary to device:
+scp src/functracer  root@192.168.2.15:/root/
 
-./configure --with-gdb=<PATH_TO_GDB>
-make

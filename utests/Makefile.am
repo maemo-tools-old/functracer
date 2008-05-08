@@ -12,7 +12,8 @@ utest_SOURCES = utest.c \
 		utest_report.c \
 		utest_report.h
 
-utest_SOURCES += $(csourcedir)/breakpoint.c \
+utest_SOURCES += $(csourcedir)/backtrace.c \
+		 $(csourcedir)/breakpoint.c \
 		 $(csourcedir)/callback.c \
 		 $(csourcedir)/debug.c \
 		 $(csourcedir)/dict.c \
@@ -28,12 +29,5 @@ utest_SOURCES += $(csourcedir)/breakpoint.c \
 
 utest_CPPFLAGS = $(CHECK_FLAGS) -I$(csourcedir)
 utest_LDADD = $(CHECK_LIBS) $(LDADD)
-
-if BACKTRACE_GDB
-utest_SOURCES += $(csourcedir)/backtrace_gdb.c
-utest_CPPFLAGS += -I@GDB_SRCDIR@/gdb
-else
-utest_SOURCES += $(csourcedir)/backtrace.c
-endif
 
 endif
