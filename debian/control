@@ -2,12 +2,12 @@ Source: functracer
 Section: devel
 Priority: extra
 Maintainer: Bruno de Oliveira Abinader <bruno.abinader@openbossa.org>
-Build-Depends: debhelper (>= 5), autotools-dev
+Build-Depends: debhelper (>= 5), autotools-dev, binutils-dev, libunwind7-dev
 Standards-Version: 3.7.2
 
 Package: functracer
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, binutils-dev, libunwind7-dev (>= 0.99~indt1)
+Depends: ${shlibs:Depends}
 Description: An Allocation Backtrace Tool
  Functracer is a debugging tool. It gets backtraces of all allocations done in
  ARM/x86 processes. It works with optimized (-O2) code, where debugging symbols
