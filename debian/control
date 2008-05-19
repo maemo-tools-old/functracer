@@ -13,3 +13,14 @@ Description: An Allocation Backtrace Tool
  ARM/x86 processes. It works with optimized (-O2) code, where debugging symbols
  are available either in the application  binaries themselves, or in separate
  debug files.
+
+Package: functracer-dbg
+Section: devel
+Architecture: any
+Depends: functracer (= ${Source-Version})
+Description: An Allocation Backtrace Tool - debug
+ Functracer is a debugging tool. It gets backtraces of all allocations done in
+ ARM/x86 processes. It works with optimized (-O2) code, where debugging symbols
+ are available either in the application  binaries themselves, or in separate
+ debug files.
+ This package includes the debug symbols.
