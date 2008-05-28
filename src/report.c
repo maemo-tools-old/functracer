@@ -78,7 +78,6 @@ void rp_dump_alloc(struct rp_allocinfo *rai)
 	for (j = 0; j < rai->bt_depth; j++) {
 		fprintf(rd->fp, "   %s\n", rai->backtrace[j]);
 	}
-	rp_copy_maps(rd);
 }
 
 struct rp_allocinfo *rp_new_alloc(struct rp_data *rd, addr_t addr, size_t size)
@@ -133,6 +132,7 @@ void rp_init(struct process *proc)
 
 void rp_finish(struct rp_data *rd)
 {
+	rp_copy_maps(rd);
 	bt_finish(rd->btd);
 
 	if (arguments.save_to_file)
