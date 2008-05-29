@@ -114,8 +114,6 @@ static void function_enter(struct process *proc, const char *name)
 
 static void function_exit(struct process *proc, const char *name)
 {
-	struct rp_allocinfo *rai;
-
 	debug(3, "function return (pid=%d, name=%s)", proc->pid, name);
 
 	if (trace_enabled()) {
@@ -124,22 +122,17 @@ static void function_exit(struct process *proc, const char *name)
 
 		assert(proc->rp_data != NULL);
 		if (strcmp(name, "__libc_malloc") == 0) {
-			rai = rp_new_alloc(proc->rp_data, retval, arg0);
+			rp_alloc(proc->rp_data, "malloc", retval, arg0);
 		} else if (strcmp(name, "__libc_calloc") == 0) {
 			size_t arg1 = fn_argument(proc, 1);
-			rai = rp_new_alloc(proc->rp_data, retval, arg0 * arg1);
+			rp_alloc(proc->rp_data, "calloc", retval, arg0 * arg1);
 		} else if (strcmp(name, "__libc_realloc") == 0) {
 			size_t arg1 = fn_argument(proc, 1);
-			rai = rp_new_alloc(proc->rp_data, retval, arg1);
+			rp_alloc(proc->rp_data, "realloc", retval, arg1);
 		} else if (strcmp(name, "__libc_free") == 0 ) {
-			retval = -1;
-			rai = rp_new_alloc(proc->rp_data, arg0, retval);
+			rp_free(proc->rp_data, arg0);
 		}
 
-		if (rai) {
-			rp_dump_alloc(rai);
-			rp_delete_alloc(rai);
-		}
 	}
 }
 

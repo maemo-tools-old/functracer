@@ -27,26 +27,18 @@
 #include "process.h"
 #include "target_mem.h"
 
-struct rp_allocinfo {
-	addr_t addr;
-	size_t size;
-	char *backtrace[MAX_BT_DEPTH];
-	int bt_depth;
-	struct rp_data *rd;
-};
-
 struct bt_data;
 
 struct rp_data {
 	pid_t pid;
+	int rp_number; 
 	FILE *fp;
 	struct bt_data *btd;
 };
 
 extern void rp_init(struct process *proc);
-extern struct rp_allocinfo *rp_new_alloc(struct rp_data *rd, addr_t addr, size_t size);
-extern void rp_delete_alloc(struct rp_allocinfo *rai);
-extern void rp_dump_alloc(struct rp_allocinfo *rai);
+extern void rp_alloc(struct rp_data *rd, const char *name, addr_t addr, size_t size);
+extern void rp_free(struct rp_data *rd, addr_t addr);
 extern void rp_finish(struct rp_data *rd);
 
 #endif /* !FTK_REPORT_H */

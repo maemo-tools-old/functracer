@@ -62,47 +62,38 @@ static void rp_copy_maps(struct rp_data *rd)
 	rp_copy_file(src, dst);
 }
 
-void rp_dump_alloc(struct rp_allocinfo *rai)
+void rp_alloc(struct rp_data *rd, const char *name, addr_t addr, size_t size)
 {
-	static int i = 0;
-	int j;
-	struct rp_data *rd;
+	int bt_depth, j;
+	char *backtrace[MAX_BT_DEPTH];
 
-	rd = rai->rd;
+	debug(3, "rp_alloc(pid=%d, name=%s, addr=0x%x, size=%d)", rd->pid, name, addr, size);
 
-	if ( (int) rai->size > 0)
-		fprintf(rd->fp, "%d. malloc: block at 0x%x with size %d\n", i++, rai->addr, rai->size);
-	else
-		fprintf(rd->fp, "%d. free: block at 0x%x\n", i++, rai->addr);
+	bt_depth = bt_backtrace(rd->btd, backtrace, arguments.depth);
 
-	for (j = 0; j < rai->bt_depth; j++) {
-		fprintf(rd->fp, "   %s\n", rai->backtrace[j]);
+	fprintf(rd->fp, "%d. %s: block at 0x%x with size %d\n", rd->rp_number++, name, addr, size);
+
+	for (j = 0; j < bt_depth; j++) {
+		fprintf(rd->fp, "   %s\n", backtrace[j]);
+		free(backtrace[j]);
 	}
 }
 
-struct rp_allocinfo *rp_new_alloc(struct rp_data *rd, addr_t addr, size_t size)
+void rp_free(struct rp_data *rd, addr_t addr)
 {
-	struct rp_allocinfo *rai;
+	int bt_depth, j;
+	char *backtrace[MAX_BT_DEPTH];
 
-	debug(3, "rp_new_alloc(pid=%d, addr=0x%x, size=%d)", rd->pid, addr, size);
+	debug(3, "rp_free(pid=%d, addr=0x%x)", rd->pid, addr);
 
-	rai = xcalloc(1, sizeof(struct rp_allocinfo));
-	rai->addr = addr;
-	rai->size = size;
-	rai->bt_depth = bt_backtrace(rd->btd, rai->backtrace, arguments.depth);
-	rai->rd = rd;
+	bt_depth = bt_backtrace(rd->btd, backtrace, arguments.depth);
 
-	return rai;
-}
+	fprintf(rd->fp, "%d. free: block at 0x%x\n", rd->rp_number++, addr);
 
-void rp_delete_alloc(struct rp_allocinfo *rai)
-{
-	int i;
-
-	for (i = 0; i < rai->bt_depth; i++)
-		free(rai->backtrace[i]);
-
-	free(rai);
+	for (j = 0; j < bt_depth; j++) {
+		fprintf(rd->fp, "   %s\n", backtrace[j]);
+		free(backtrace[j]);
+	}
 }
 
 void rp_init(struct process *proc)
@@ -116,6 +107,7 @@ void rp_init(struct process *proc)
 		rd = xcalloc(1, sizeof(struct rp_data));
 	rd->pid = proc->pid;
 	rd->btd = bt_init(proc->pid);
+	rd->rp_number = 0;
 	proc->rp_data = rd;
 
 	if (arguments.save_to_file) {
@@ -127,7 +119,6 @@ void rp_init(struct process *proc)
 			error_exit("rp_init(): fopen");
 	} else
 		rd->fp = stdout;
-
 }
 
 void rp_finish(struct rp_data *rd)
