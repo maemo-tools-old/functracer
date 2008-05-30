@@ -22,6 +22,9 @@ AC_TYPE_SIGNAL
 AC_TYPE_SIZE_T
 
 CPPFLAGS="${CPPFLAGS} -D_GNU_SOURCE"
+if test x$enable_debug = xyes; then
+  CPPFLAGS="${CPPFLAGS} -DDEBUG"
+fi
 
 # Ask user for path to libunwind
 AC_ARG_WITH(libunwind,
@@ -32,6 +35,10 @@ AC_ARG_WITH(libunwind,
 )
 CFLAGS="${CFLAGS} ${UNW_FLAGS}"
 
+# Turn on debug support 
+AC_ARG_ENABLE(debug,
+[  --enable-debug		turn on debug support (slow down execution)],
+[enable_debug=yes], [])
 
 # Ask user for enable utests with check (http://check.sourceforge.net)
 AC_ARG_ENABLE(check,
