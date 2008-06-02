@@ -32,6 +32,7 @@ struct bt_data;
 struct rp_data {
 	pid_t pid;
 	int rp_number; 
+	int step;
 	FILE *fp;
 	struct bt_data *btd;
 };

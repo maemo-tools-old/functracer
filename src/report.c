@@ -57,8 +57,8 @@ static void rp_copy_maps(struct rp_data *rd)
 	char src[256], dst[256];
 
 	snprintf(src, sizeof(src), "/proc/%d/maps", rd->pid);
-	snprintf(dst, sizeof(dst), "%s/allocs-%d.map",
-			arguments.path ? : getenv("HOME"), rd->pid);
+	snprintf(dst, sizeof(dst), "%s/allocs-%d.%d.map",
+			arguments.path ? : getenv("HOME"), rd->pid, rd->step);
 	rp_copy_file(src, dst);
 }
 
@@ -111,8 +111,9 @@ void rp_init(struct process *proc)
 	proc->rp_data = rd;
 
 	if (arguments.save_to_file) {
-		snprintf(path, sizeof(path), "%s/allocs-%d.trace",
-				arguments.path ? : getenv("HOME"), rd->pid);
+		snprintf(path, sizeof(path), "%s/allocs-%d.%d.trace",
+				arguments.path ? : getenv("HOME"), rd->pid,
+				rd->step);
 
 		rd->fp = fopen(path, "a");
 		if (rd->fp == NULL)
@@ -124,6 +125,7 @@ void rp_init(struct process *proc)
 void rp_finish(struct rp_data *rd)
 {
 	rp_copy_maps(rd);
+	rd->step++;
 	bt_finish(rd->btd);
 
 	if (arguments.save_to_file)

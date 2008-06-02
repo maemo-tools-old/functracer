@@ -73,13 +73,11 @@ static void process_signal(struct process *proc, int signo)
 {
 	debug(3, "process received signal (pid=%d, signo=%d)", proc->pid, signo);
 
-	if (signo == SIGUSR1 || signo == SIGUSR2) {
+	if (signo == SIGUSR1) {
 		if (trace_enabled()) {
 			assert(proc->rp_data != NULL);
-			if (signo == SIGUSR1) {
-				rp_finish(proc->rp_data);
-				trace_control = 0;
-			}
+			rp_finish(proc->rp_data);
+			trace_control = 0;
 		} else {
 			assert(proc->rp_data == NULL);
 			rp_init(proc);
