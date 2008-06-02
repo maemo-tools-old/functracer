@@ -21,7 +21,10 @@ Contents
 Functracer has been developed by:
 
 Anderson Lizardo <anderson.lizardo@indt.org.br>
+Allan Bezerra <allan.bezerra@indt.org.br>
 Bruna Moreira <bruna.moreira@indt.org.br>
+Ricardo Guimaraes <ricardo.guimaraes@indt.org.br>
+Thiago Marcos P. Santos <thiago.santos@indt.org.br>
 
 1. Introduction
 ---------------
@@ -46,9 +49,7 @@ Two output files are created by Functracer in $HOME:
 - allocs-PID.n.trace: allocation backtraces of traced process
 
 Output files are in libleaks compatible format so that its post-processing
-tools can be reused. For generating backtraces, libunwind[1] is used on x86.
-Libunwind ARM support for processes traced using ptrace() is currently broken,
-therefore on ARM Functracer has to be linked with libgdb.a from GDB sources
+tools can be reused. For generating backtraces, libunwind[1] is used.
 (see INSTALL for detailed compilation instructions).
 
 4. How to use
@@ -61,20 +62,23 @@ Run PROGRAM and track selected functions.
 
   -d, --debug                maximum debug level
   -e, --track-function=FUNCTION   which function to track (NOT IMPLEMENTED)
-  -n, --alloc-number=NUMBER  maximum number of allocations
+  -f, --file                 use a file to save backtraces instead of dump to
+                             stdout
+  -l, --path=DIR             dump reports to a custom location (defaults to
+                             homedir)
   -p, --track-pid=PID        which PID to track
   -s, --start                enable tracking memory from beginning
   -t, --depth=NUMBER         maximum backtrace depth
   -?, --help                 Give this help list
       --usage                Give a short usage message
 
-You can control when dumping output files. To use it, just send SIGUSR1/SIGUSR2
-to the tracked application (NOT functracer itself). Tracing is not enabled by
-default on application start (use -s to enable this). The control logic is:
+You can control the dumping of output files. To use it, just send SIGUSR1
+to the tracked application (NOT functracer itself) to toggle the tracing on/off.
+Tracing is not enabled by default on application start (use -s to enable this). 
+The control logic is:
   - If not tracing:
-    - both SIGUSR1 and SIGUSR2 start tracing
+    - SIGUSR1 start tracing
   - If tracing:
-    - SIGUSR2: dump backtraces
     - SIGUSR1: stop tracing, dump backtraces and clear them
 
 5. Where does it work

@@ -1,3 +1,15 @@
+functracer (0.5) unstable; urgency=low
+
+  * Add debug package creation.
+  * Add the __libc_ prefix for tracing functions.
+  * Move rp_copy_maps() to rp_finish().
+  * Simplify reporting functions.
+  * Support for enabling debug during compilation.
+  * Fix dump control regression (just toggle the tracing on/off).
+  * Update documentation.
+
+ -- Bruna Moreira <bruna.moreira@indt.org.br>  Mon, 02 Jun 2008 13:23:24 -0400
+
 functracer (0.4) unstable; urgency=low
 
   * Initial release.

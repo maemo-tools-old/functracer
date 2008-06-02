@@ -38,3 +38,14 @@ make
 Copy functracer binary to device:
 scp src/functracer  root@192.168.2.15:/root/
 
+1.3 Optional
+-------------
+
+The --enable-debug option compiles functracer with debugging options. It is
+not enabled by default for better performance. For enabling:
+
+./configure --enable-debug
+make
+
+NOTE: if functracer is not compiled using --enable-debug, the option -d does
+not have any affect!
