@@ -156,12 +156,12 @@ static void continue_process(struct process *proc)
 	if (bkpt_pending(proc))
 		xptrace(PTRACE_SINGLESTEP, proc->pid, NULL, NULL);
 	else
-		xptrace(PTRACE_SYSCALL, proc->pid, NULL, NULL);
+		xptrace(PTRACE_CONT, proc->pid, NULL, NULL);
 }
 
 static void continue_after_signal(pid_t pid, int signo)
 {
-	xptrace(PTRACE_SYSCALL, pid, NULL, (void *)signo);
+	xptrace(PTRACE_CONT, pid, NULL, (void *)signo);
 }
 
 static void trace_set_options(pid_t pid)
