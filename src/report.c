@@ -79,6 +79,25 @@ void rp_alloc(struct rp_data *rd, const char *name, addr_t addr, size_t size)
 	}
 }
 
+void rp_realloc(struct rp_data *rd, addr_t addr, addr_t addr_new, size_t size)
+{
+	int bt_depth, j;
+	char *backtrace[MAX_BT_DEPTH];
+
+	debug(3, "rp_realloc(pid=%d, addr=0x%x, addr_new=0x%x, size=%d)", rd->pid,
+			addr, addr_new, size);
+
+	bt_depth = bt_backtrace(rd->btd, backtrace, arguments.depth);
+
+	fprintf(rd->fp, "%d. realloc: from block at 0x%x to block at 0x%x with size %d\n",
+			rd->rp_number++, addr, addr_new, size);
+
+	for (j = 0; j < bt_depth; j++) {
+		fprintf(rd->fp, "   %s\n", backtrace[j]);
+		free(backtrace[j]);
+	}
+}
+
 void rp_free(struct rp_data *rd, addr_t addr)
 {
 	int bt_depth, j;

@@ -106,15 +106,19 @@ static void register_proc_breakpoints(struct process *proc)
 	}
 }
 
-static void register_return_breakpoint(struct process *proc, struct breakpoint *bkpt)
+static int register_return_breakpoint(struct process *proc, struct breakpoint *bkpt)
 {
 	addr_t ret_addr;
 	struct breakpoint *ret_bkpt;
 
 	fn_return_address(proc, &ret_addr);
+	if (breakpoint_from_address(proc, ret_addr) != NULL)
+		return 1;
 	ret_bkpt = register_breakpoint(proc, ret_addr);
 	ret_bkpt->type = BKPT_RETURN;
 	ret_bkpt->symbol = bkpt->symbol;
+
+	return 0;
 }
 
 static void register_dl_debug_breakpoint(struct process *proc)
@@ -148,7 +152,12 @@ void bkpt_handle(struct process *proc, addr_t addr)
 		switch (bkpt->type) {
 		case BKPT_ENTRY:
 			debug(1, "entry breakpoint for %s()", bkpt->symbol->name);
-			register_return_breakpoint(proc, bkpt);
+			/* Ignore function entries whose return address is the
+			 * same as a previous registered one. This usually happens
+			 * when the code uses the b (branch)  instruction
+			 */
+			if (register_return_breakpoint(proc, bkpt))
+				break;
 			fn_save_arg_data(proc);
 			if (cb && cb->function.enter)
 				cb->function.enter(proc, bkpt->symbol->name);

@@ -126,7 +126,7 @@ static void function_exit(struct process *proc, const char *name)
 			rp_alloc(proc->rp_data, "calloc", retval, arg0 * arg1);
 		} else if (strcmp(name, "__libc_realloc") == 0) {
 			size_t arg1 = fn_argument(proc, 1);
-			rp_alloc(proc->rp_data, "realloc", retval, arg1);
+			rp_realloc(proc->rp_data, arg0, retval, arg1);
 		} else if (strcmp(name, "__libc_free") == 0 ) {
 			rp_free(proc->rp_data, arg0);
 		}
@@ -142,13 +142,7 @@ static int library_match(const char *libname, const char *symname)
 	return (strcmp(symname, "__libc_calloc") == 0
 		|| strcmp(symname, "__libc_malloc") == 0
 		|| strcmp(symname, "__libc_free") == 0
-		/* 
-		   FIXME: realloc() tracking does not work on ARM (causes
-	     	   recursive loop).
-		|| strcmp(symname, "__libc_realloc") == 0
-		|| strcmp(libname, "/lib/libc-2.5.so") == 0
-		*/
-		);
+		|| strcmp(symname, "__libc_realloc") == 0);
 }
 
 static void cb_register(struct callback *cb)
