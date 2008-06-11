@@ -35,19 +35,22 @@ static void rp_copy_file(const char *src, const char *dst)
 	debug(3, "rp_copy_file(src=\"%s\", dst=\"%s\"", src, dst);
 
 	fpi = fopen(src, "r");
-	if (!fpi) {
+	if (!fpi){
 		debug(1, "rp_copyfile(): fopen: \"%s\": %s", src, strerror(errno));
 		return;
 	}
+
 	fpo = fopen(dst, "w");
-	if (!fpo) {
+	if (!fpo){
 		debug(1, "rp_copyfile(): fopen: \"%s\": %s", dst, strerror(errno));
 		fclose(fpi);
-		return;
+		exit (1);
 	}
-	while (fgets(line, sizeof(line), fpi)) {
+
+	while (fgets(line, sizeof(line), fpi)){
 		fputs(line, fpo);
 	}
+
 	fclose(fpo);
 	fclose(fpi);
 }
