@@ -28,6 +28,7 @@
 #include <unistd.h>
 
 #include "debug.h"
+#include "options.h"
 #include "process.h"
 
 static struct process *list_of_processes = NULL;
@@ -69,6 +70,10 @@ struct process *add_process(pid_t pid)
 		error_exit("malloc");
 	tmp->pid = pid;
 	tmp->filename = name_from_pid(pid);
+	/* Start with tracing enabled or not, depending on command
+	 * line option. */
+	if (arguments.enabled)
+		tmp->trace_control = 1;
 	tmp->next = list_of_processes;
 	list_of_processes = tmp;
 

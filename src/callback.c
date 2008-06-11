@@ -31,24 +31,22 @@
 #include "callback.h"
 #include "debug.h"
 #include "function.h"
-#include "options.h"
 #include "process.h"
 #include "report.h"
 #include "target_mem.h"
 
 static struct callback *current_cb = NULL;
-static int trace_control = 0;
 
-static int trace_enabled(void)
+static int trace_enabled(struct process *proc)
 {
-	return (trace_control != 0);
+	return (proc->trace_control != 0);
 }
 
 static void process_create(struct process *proc)
 {
 	debug(3, "new process (pid=%d)", proc->pid);
 
-	if (trace_enabled()) {
+	if (trace_enabled(proc)) {
 		assert(proc->rp_data == NULL);
 		rp_init(proc);
 	}
@@ -58,7 +56,7 @@ static void process_exit(struct process *proc, int exit_code)
 {
 	debug(3, "process exited (pid=%d, exit_code=%d)", proc->pid, exit_code);
 
-	if (trace_enabled()) {
+	if (trace_enabled(proc)) {
 		assert(proc->rp_data != NULL);
 		rp_finish(proc->rp_data);
 	}
@@ -74,14 +72,14 @@ static void process_signal(struct process *proc, int signo)
 	debug(3, "process received signal (pid=%d, signo=%d)", proc->pid, signo);
 
 	if (signo == SIGUSR1) {
-		if (trace_enabled()) {
+		if (trace_enabled(proc)) {
 			assert(proc->rp_data != NULL);
 			rp_finish(proc->rp_data);
-			trace_control = 0;
+			proc->trace_control = 0;
 		} else {
 			assert(proc->rp_data == NULL);
 			rp_init(proc);
-			trace_control = 1;
+			proc->trace_control = 1;
 		}
 	}
 }
@@ -89,7 +87,7 @@ static void process_signal(struct process *proc, int signo)
 static void process_interrupt(struct process *proc)
 {
 	debug(3, "process interrupted (pid=%d)", proc->pid);
-	if (trace_enabled()) {
+	if (trace_enabled(proc)) {
 		assert(proc->rp_data != NULL);
 		rp_finish(proc->rp_data);
 	}
@@ -114,7 +112,7 @@ static void function_exit(struct process *proc, const char *name)
 {
 	debug(3, "function return (pid=%d, name=%s)", proc->pid, name);
 
-	if (trace_enabled()) {
+	if (trace_enabled(proc)) {
 		addr_t retval = fn_return_value(proc);
 		size_t arg0 = fn_argument(proc, 0);
 
@@ -176,8 +174,6 @@ void cb_init(void)
 		},
 	};
 	cb_register(&cb);
-	if (arguments.enabled != 0)
-		trace_control = 1;
 }
 
 struct callback *cb_get(void)
