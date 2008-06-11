@@ -44,6 +44,7 @@ struct bt_data *bt_init(pid_t pid)
 	if (!btd)
 		error_exit("bt_init(): malloc");
 	btd->as = unw_create_addr_space(&_UPT_accessors, 0);
+	unw_set_caching_policy (btd->as, UNW_CACHE_GLOBAL);
 	if (!btd->as)
 		error_exit("bt_init(): unw_create_addr_space() failed");
 	btd->ui = _UPT_create(pid);
