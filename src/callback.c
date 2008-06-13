@@ -126,7 +126,11 @@ static void function_exit(struct process *proc, const char *name)
 			size_t arg1 = fn_argument(proc, 1);
 			rp_realloc(proc->rp_data, arg0, retval, arg1);
 		} else if (strcmp(name, "__libc_free") == 0 ) {
-			rp_free(proc->rp_data, arg0);
+			/* Suppress "free(NULL)" calls from trace output. 
+			 * They are a no-op according to ISO 
+			 */
+			if (arg0)
+				rp_free(proc->rp_data, arg0);
 		}
 
 	}
