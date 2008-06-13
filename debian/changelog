@@ -1,3 +1,15 @@
+functracer (0.6) unstable; urgency=low
+
+  * Enable realloc() tracing.
+  * Change ptrace for using PTRACE_CONT.
+  * Remove remaining handling to SIGUSR2.
+  * Fix segfault when permission denied is received.
+  * Fix segfault when more than one process is tracked.
+  * Enable libunwind cache (unw_set_caching_policy).
+  * Suppress "free(NULL)" calls from trace output.
+
+ -- Bruna Moreira <bruna.moreira@indt.org.br>  Fri, 13 Jun 2008 14:49:01 -0400
+
 functracer (0.5) unstable; urgency=low
 
   * Add debug package creation.
