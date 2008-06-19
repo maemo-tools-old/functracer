@@ -69,6 +69,7 @@ int bt_backtrace(struct bt_data *btd, char **buffer, int size)
 			debug(1, "bt_backtrace(): unw_get_reg() failed, ret=%d", ret);
 			return -1;
 		}
+#if 0 /* FIXME: We will check if it will be optional or removed. */
 		unw_get_proc_name(&c, buf, sizeof(buf), &off);
 		if (off) {
 			size_t len = strlen(buf);
@@ -76,6 +77,8 @@ int bt_backtrace(struct bt_data *btd, char **buffer, int size)
 				len = sizeof(buf) - 64;
 			sprintf(buf + len, "+0x%lx [0x%x]", (unsigned long)off, (uintptr_t)ip);
 		}
+#endif
+		sprintf(buf, "[0x%x]", (uintptr_t)ip);
 		buffer[n++] = strdup(buf);
 
 		if ((ret = unw_step(&c)) < 0) {
