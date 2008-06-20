@@ -1,3 +1,9 @@
+functracer (0.7) unstable; urgency=low
+
+  * Name resolution (unw_get_proc_name) removed. 
+
+ -- Bruna Moreira <bruna.moreira@indt.org.br>  Fri, 20 Jun 2008 13:27:32 -0400
+
 functracer (0.6) unstable; urgency=low
 
   * Enable realloc() tracing.
