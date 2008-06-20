@@ -1,7 +1,7 @@
 Source: functracer
 Section: devel
 Priority: extra
-Maintainer: Bruno de Oliveira Abinader <bruno.abinader@openbossa.org>
+Maintainer: Bruno Abinader <bruno.abinader@indt.org.br>
 Build-Depends: debhelper (>= 5), autotools-dev, binutils-dev, libunwind7-dev
 Standards-Version: 3.7.2
 
