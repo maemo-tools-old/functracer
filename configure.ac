@@ -98,6 +98,9 @@ AC_SUBST([ARCH])
 # Define architecture-specific constants used in include/report.h
 AC_DEFINE_UNQUOTED([MAX_BT_DEPTH], [$max_bt_depth], Define maximum backtrace depth.)
 
+# Define build architecture
+AC_DEFINE_UNQUOTED([BUILD_ARCH], ["$host"], Build architecture.)
+
 AC_CONFIG_FILES([
   Makefile
   src/Makefile
