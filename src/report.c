@@ -65,57 +65,57 @@ static void rp_copy_maps(struct rp_data *rd)
 	rp_copy_file(src, dst);
 }
 
-void rp_alloc(struct rp_data *rd, const char *name, addr_t addr, size_t size)
+static void rp_write_backtraces(struct rp_data *rd)
 {
 	int bt_depth, j;
 	char *backtrace[MAX_BT_DEPTH];
 
-	debug(3, "rp_alloc(pid=%d, name=%s, addr=0x%x, size=%d)", rd->pid, name, addr, size);
-
 	bt_depth = bt_backtrace(rd->btd, backtrace, arguments.depth);
 
-	fprintf(rd->fp, "%d. %s: block at 0x%x with size %d\n", rd->rp_number++, name, addr, size);
-
+	debug(3, "rp_write_backtraces(pid=%d)", rd->pid);
+	
 	for (j = 0; j < bt_depth; j++) {
 		fprintf(rd->fp, "   %s\n", backtrace[j]);
 		free(backtrace[j]);
 	}
+}
+
+void rp_malloc(struct rp_data *rd, addr_t addr, size_t size)
+{
+	debug(3, "rp_malloc(pid=%d, name=%s, addr=0x%x, size=%d)", rd->pid, addr, size);
+
+	fprintf(rd->fp, "%d. malloc: block at 0x%x with size %d\n", rd->rp_number++, addr, size);
+
+	rp_write_backtraces(rd);
+}
+
+void rp_calloc(struct rp_data *rd, addr_t addr, size_t nmemb, size_t size)
+{
+	debug(3, "rp_calloc(pid=%d, addr=0x%x, nmemb=%d, size=%d)", rd->pid, addr, nmemb, size);
+
+	fprintf(rd->fp, "%d. calloc: block at 0x%x with size %d\n", rd->rp_number++, addr, nmemb * size);
+
+	rp_write_backtraces(rd);
 }
 
 void rp_realloc(struct rp_data *rd, addr_t addr, addr_t addr_new, size_t size)
 {
-	int bt_depth, j;
-	char *backtrace[MAX_BT_DEPTH];
-
 	debug(3, "rp_realloc(pid=%d, addr=0x%x, addr_new=0x%x, size=%d)", rd->pid,
 			addr, addr_new, size);
-
-	bt_depth = bt_backtrace(rd->btd, backtrace, arguments.depth);
 
 	fprintf(rd->fp, "%d. realloc: from block at 0x%x to block at 0x%x with size %d\n",
 			rd->rp_number++, addr, addr_new, size);
 
-	for (j = 0; j < bt_depth; j++) {
-		fprintf(rd->fp, "   %s\n", backtrace[j]);
-		free(backtrace[j]);
-	}
+	rp_write_backtraces(rd);
 }
 
 void rp_free(struct rp_data *rd, addr_t addr)
 {
-	int bt_depth, j;
-	char *backtrace[MAX_BT_DEPTH];
-
 	debug(3, "rp_free(pid=%d, addr=0x%x)", rd->pid, addr);
-
-	bt_depth = bt_backtrace(rd->btd, backtrace, arguments.depth);
 
 	fprintf(rd->fp, "%d. free: block at 0x%x\n", rd->rp_number++, addr);
 
-	for (j = 0; j < bt_depth; j++) {
-		fprintf(rd->fp, "   %s\n", backtrace[j]);
-		free(backtrace[j]);
-	}
+	rp_write_backtraces(rd);
 }
 
 void rp_init(struct process *proc)
