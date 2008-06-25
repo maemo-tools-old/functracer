@@ -35,6 +35,7 @@ struct arguments {
 	int debug;
 	int enabled;
 	int save_to_file;
+	int resolve_name;
 	char *path;
 };
 

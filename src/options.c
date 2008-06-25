@@ -31,6 +31,9 @@
 
 #include "options.h"
 #include "report.h"
+#include "backtrace.h"
+
+const char *argp_program_version ="functracer 0.7";
 
 struct arguments arguments;
 
@@ -48,6 +51,7 @@ static const struct argp_option options[] = {
 	{"debug", 'd', NULL, 0, "maximum debug level", 0},
 	{"start", 's', NULL, 0, "enable tracking memory from beginning", 0},
 	{"depth", 't', "NUMBER", 0, "maximum backtrace depth", 0},
+	{"resolve-name", 'r', NULL, 0, "enable resolve name", 0},
 	{"file",  'f', NULL, 0,
 	 "use a file to save backtraces instead of dump to stdout", 0},
 	{"path",  'l', "DIR", 0,
@@ -89,6 +93,9 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 		break;
 	case 'd':
 		arg_data->debug++;
+		break;
+	case 'r':
+		arg_data->resolve_name++;
 		break;
 	case 's':
 		arg_data->enabled++;
