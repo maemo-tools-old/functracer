@@ -118,10 +118,10 @@ static void function_exit(struct process *proc, const char *name)
 
 		assert(proc->rp_data != NULL);
 		if (strcmp(name, "__libc_malloc") == 0) {
-			rp_alloc(proc->rp_data, "malloc", retval, arg0);
+			rp_malloc(proc->rp_data, retval, arg0);
 		} else if (strcmp(name, "__libc_calloc") == 0) {
 			size_t arg1 = fn_argument(proc, 1);
-			rp_alloc(proc->rp_data, "calloc", retval, arg0 * arg1);
+			rp_calloc(proc->rp_data, retval, arg0, arg1);
 		} else if (strcmp(name, "__libc_realloc") == 0) {
 			size_t arg1 = fn_argument(proc, 1);
 			rp_realloc(proc->rp_data, arg0, retval, arg1);
