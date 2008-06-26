@@ -30,10 +30,11 @@
 #include <unistd.h>
 
 #include "options.h"
+#include "config.h"
 #include "report.h"
 #include "backtrace.h"
 
-const char *argp_program_version ="functracer 0.7";
+const char *argp_program_version = PACKAGE_STRING;
 
 struct arguments arguments;
 
@@ -50,8 +51,9 @@ static const struct argp_option options[] = {
 	 "which function to track (NOT IMPLEMENTED)", 0},
 	{"debug", 'd', NULL, 0, "maximum debug level", 0},
 	{"start", 's', NULL, 0, "enable tracking memory from beginning", 0},
+	{"free-backtraces", 'b', NULL, 0, "enable backtrace for free() function", 0},
 	{"depth", 't', "NUMBER", 0, "maximum backtrace depth", 0},
-	{"resolve-name", 'r', NULL, 0, "enable resolve name", 0},
+	{"resolve-name", 'r', NULL, 0, "enable symbol name resolution", 0},
 	{"file",  'f', NULL, 0,
 	 "use a file to save backtraces instead of dump to stdout", 0},
 	{"path",  'l', "DIR", 0,
@@ -99,6 +101,9 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 		break;
 	case 's':
 		arg_data->enabled++;
+		break;
+	case 'b':
+		arg_data->enable_free_bkt++;
 		break;
 	case 'f':
 		arg_data->save_to_file++;

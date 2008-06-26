@@ -115,7 +115,8 @@ void rp_free(struct rp_data *rd, addr_t addr)
 
 	fprintf(rd->fp, "%d. free(0x%x) = <void>\n", rd->rp_number++, addr);
 
-	rp_write_backtraces(rd);
+	if (arguments.enable_free_bkt)
+		rp_write_backtraces(rd);
 }
 
 void rp_init(struct process *proc)

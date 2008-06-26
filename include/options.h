@@ -36,6 +36,7 @@ struct arguments {
 	int enabled;
 	int save_to_file;
 	int resolve_name;
+	int enable_free_bkt;
 	char *path;
 };
 
