@@ -59,6 +59,7 @@ int bt_backtrace(struct bt_data *btd, char **buffer, int size)
 	unw_word_t ip, off;
 	int n = 0, ret;
 	char buf[512];
+	size_t len = 0;
 
 	if ((ret = unw_init_remote(&c, btd->as, btd->ui)) < 0) {
 		debug(1, "bt_backtrace(): unw_init_remote() failed, ret=%d", ret);
@@ -70,18 +71,21 @@ int bt_backtrace(struct bt_data *btd, char **buffer, int size)
 			debug(1, "bt_backtrace(): unw_get_reg() failed, ret=%d", ret);
 			return -1;
 		}
-
-		if (arguments.resolve_name){
-			unw_get_proc_name(&c, buf, sizeof(buf), &off);
-			if (off) {
-				size_t len = strlen(buf);
+		if (arguments.resolve_name) {
+			ret = unw_get_proc_name(&c, buf, sizeof(buf), &off);
+			if (ret < 0)
+				sprintf(buf, "<undefined> ");
+			else if (off) {
+				len = strlen(buf);
 				if (len >= sizeof(buf) - 64)
 					len = sizeof(buf) - 64;
-				sprintf(buf + len, "+0x%lx [0x%x]", (unsigned long)off, (uintptr_t)ip);
+				sprintf(buf + len, "+0x%lx ", (unsigned long)off);
 			}
-		}else {
-			sprintf(buf, "[0x%x]", (uintptr_t)ip);
+			len = strlen(buf);
+			if (len >= sizeof(buf) - 64)
+				len = sizeof(buf) - 64;
 		}
+		sprintf(buf + len, "[0x%x]", (uintptr_t)ip);
 
 		buffer[n++] = strdup(buf);
 		if ((ret = unw_step(&c)) < 0) {
