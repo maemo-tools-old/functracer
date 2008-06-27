@@ -82,7 +82,7 @@ static void rp_write_backtraces(struct rp_data *rd)
 
 void rp_malloc(struct rp_data *rd, addr_t addr, size_t size)
 {
-	debug(3, "rp_malloc(pid=%d, name=%s, addr=0x%x, size=%d)", rd->pid, addr, size);
+	debug(3, "rp_malloc(pid=%d, addr=0x%x, size=%d)", rd->pid, addr, size);
 
 	fprintf(rd->fp, "%d. malloc(%d) = 0x%x\n", rd->rp_number++, size, addr);
 
