@@ -33,7 +33,9 @@
 #include "function.h"
 #include "target_mem.h"
 
+#ifdef DEBUG
 static int callstack_depth = 0; /* XXX debug */
+#endif
 
 #define off_lr 56
 #define off_sp 52
