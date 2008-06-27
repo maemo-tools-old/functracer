@@ -141,7 +141,7 @@ addr_t solib_dl_debug_address(struct process *proc)
 	bfd *abfd;
 	asection *sect;
 	bfd_size_type sect_size;
-	unsigned long sym_addr;
+	unsigned long sym_addr = 0;
 	char *buf, *interp_file = NULL;
 	addr_t base_addr = 0;
 	const bfd_format bfd_fmt = bfd_object;
