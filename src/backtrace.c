@@ -28,6 +28,7 @@
 #include <libunwind-ptrace.h>
 
 #include "backtrace.h"
+#include "config.h"
 #include "debug.h"
 #include "options.h"
 
@@ -85,7 +86,15 @@ int bt_backtrace(struct bt_data *btd, char **buffer, int size)
 			if (len >= sizeof(buf) - 64)
 				len = sizeof(buf) - 64;
 		}
-		sprintf(buf + len, "[0x%x]", (uintptr_t)ip);
+		/* Decrement breakpoint size from the first address in the
+		 * backtrace
+		 */
+		if (n == 0)
+			ip = (uintptr_t)ip - DECR_PC_AFTER_BREAK;
+		/* Small workaround: decrement the current address to get the
+		 * correct line in post-processing
+		 */
+		sprintf(buf + len, "[0x%x]", (uintptr_t)(ip - 1));
 
 		buffer[n++] = strdup(buf);
 		if ((ret = unw_step(&c)) < 0) {

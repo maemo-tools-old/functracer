@@ -24,6 +24,7 @@
 #include <linux/ptrace.h>
 
 #include "breakpoint.h"
+#include "config.h"
 #include "debug.h"
 
 addr_t bkpt_get_address(struct process *proc)
@@ -34,7 +35,7 @@ addr_t bkpt_get_address(struct process *proc)
 	addr = trace_user_readw(proc, 4 * EIP);
 	/* EIP is always incremented by 1 after hitting a breakpoint, so
  	 * decrement it to get the actual breakpoint address. */
-	addr -= 1;
+	addr -= DECR_PC_AFTER_BREAK;
 
 	return addr;
 }

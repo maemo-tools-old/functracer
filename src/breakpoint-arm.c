@@ -24,13 +24,14 @@
 #include <linux/ptrace.h>
 
 #include "breakpoint.h"
+#include "config.h"
 #include "debug.h"
 
 #define off_pc 60
 
 addr_t bkpt_get_address(struct process *proc)
 {
-	return trace_user_readw(proc, off_pc);
+	return trace_user_readw(proc, off_pc) - DECR_PC_AFTER_BREAK;
 }
 
 void set_instruction_pointer(struct process *proc, addr_t addr)
