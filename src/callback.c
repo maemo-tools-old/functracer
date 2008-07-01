@@ -131,6 +131,9 @@ static void function_exit(struct process *proc, const char *name)
 			 */
 			if (arg0)
 				rp_free(proc->rp_data, arg0);
+		} else {
+			msg_warn("unexpected function exit: name=\"%s\" arg0=%d retval=%#x\n", name,
+				arg0, retval);
 		}
 
 	}
