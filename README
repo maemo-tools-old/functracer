@@ -93,8 +93,6 @@ It works with ELF based Linux systems running on x86 or ARM architecture.
 -------
 - incomplete threads support ("unexpected breakpoint" error message might
   appear)
-- recursive calls in realloc() on ARM causes lot of overhead (realloc()
-  backtraces are DISABLED for now)
 
 To do:
 - better documentation, source code comments
