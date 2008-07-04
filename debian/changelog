@@ -1,3 +1,17 @@
+functracer (0.8) unstable; urgency=low
+
+  * Add a header to trace file.
+  * Reorganize report functions.
+  * Add option to enable address resolution on functracer.
+  * Add option to enable backtraces for free().
+  * Fix compilation warnings.
+  * Remove "name" variable from debug message.
+  * Added error check on unw_get_proc_name().
+  * Update documentation (README, manpage).
+  * Decrement IP value to get correct line on post-processing.
+
+ -- Ricardo Guimaraes <ricardo.guimaraes@indt.org.br>  Fri, 04 Jul 2008 15:47:18 -0400
+
 functracer (0.7) unstable; urgency=low
 
   * Name resolution (unw_get_proc_name) removed. 

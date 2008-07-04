@@ -87,7 +87,7 @@ binary-arch: build install
 #	dh_installinit
 #	dh_installcron
 #	dh_installinfo
-	dh_installman functracer.1
+	dh_installman -p functracer functracer.1
 	dh_link
 	dh_strip --dbg-package=functracer
 	dh_compress
