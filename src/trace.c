@@ -21,11 +21,14 @@
  *
  */
 
+#include <dirent.h>
 #include <errno.h>
 #include <linux/ptrace.h>
 #include <stddef.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/param.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
@@ -331,7 +334,32 @@ int trace_execute(char *filename, char *argv[])
 	return pid;
 }
 
-void trace_attach(pid_t pid)
+static void trace_attach(pid_t pid)
 {
 	xptrace(PTRACE_ATTACH, pid, NULL, NULL);
+}
+
+void trace_attach_child(pid_t pid)
+{
+	char proc_dir[MAXPATHLEN];
+	DIR *dir;
+
+	sprintf(proc_dir, "/proc/%d/task", pid);
+	dir = opendir(proc_dir);
+
+	if (dir != NULL) {
+		 struct dirent *dir_name;
+		 int tid;
+
+		 while ((dir_name = readdir(dir)) != NULL) {
+		 	if (dir_name->d_fileno == 0 ||
+				dir_name->d_name[0] == '.')
+				continue;
+			tid = atoi(dir_name->d_name);
+			if (tid <= 0)
+				continue;
+			trace_attach(tid);
+		}
+		closedir(dir);
+	}
 }

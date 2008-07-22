@@ -90,7 +90,7 @@ int main(int argc, char *argv[])
 
 	cb_init();
 	for (i = 0; i < arguments.npids; i++)
-		trace_attach(arguments.pid[i]);
+		trace_attach_child(arguments.pid[i]);
 	if (prog_index < argc)
 		trace_execute(argv[prog_index], argv + prog_index);
 	ret = trace_main_loop();
