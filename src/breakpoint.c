@@ -39,14 +39,27 @@ static void enable_breakpoint(struct process *proc, struct breakpoint *bkpt)
 	debug(1, "pid=%d, addr=0x%x", proc->pid, bkpt->addr);
 
 	trace_mem_read(proc, bkpt->addr, bkpt->orig_insn, bkpt->insn->size);
-	trace_mem_write(proc, bkpt->addr, bkpt->insn->value, bkpt->insn->size);
+
+	if (memcmp(bkpt->orig_insn, bkpt->insn->value, bkpt->insn->size) == 0)
+		debug(1, "breakpoint already enabled");
+	else
+		trace_mem_write(proc, bkpt->addr, bkpt->insn->value,
+			bkpt->insn->size);
 }
 
 static void disable_breakpoint(struct process *proc, struct breakpoint *bkpt)
 {
+	unsigned char tmp[BREAKPOINT_LENGTH];
+
 	debug(1, "pid=%d, addr=0x%x", proc->pid, bkpt->addr);
 
-	trace_mem_write(proc, bkpt->addr, bkpt->orig_insn, bkpt->insn->size);
+	trace_mem_read(proc, bkpt->addr, tmp, bkpt->insn->size);
+
+	if (memcmp(tmp, bkpt->insn->value, bkpt->insn->size) != 0)
+		debug(1, "breakpoint already disabled");
+	else
+		trace_mem_write(proc, bkpt->addr, bkpt->orig_insn,
+			bkpt->insn->size);
 }
 
 static struct breakpoint *breakpoint_from_address(struct process *proc, addr_t addr)
