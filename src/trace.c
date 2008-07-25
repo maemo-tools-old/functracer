@@ -185,7 +185,8 @@ static int handle_child_process(struct process *parent_proc, pid_t child_pid)
 
 	if (cb && cb->process.create)
 		cb->process.create(child_proc);
-	child_proc->breakpoints = parent_proc->breakpoints;
+	if (!child_proc->child)
+		child_proc->breakpoints = parent_proc->breakpoints;
 	pid = waitpid(child_proc->pid, &status, __WALL);
 	if (pid == -1) {
 		msg_err("waitpid: error waiting for new child");
@@ -238,7 +239,11 @@ static int dispatch_event(struct event *event)
 		event->proc = add_process(event->data.pid);
 		if (cb && cb->process.create)
 			cb->process.create(event->proc);
-		bkpt_init(event->proc);
+		/* Check if it is a single-threaded or parent process so
+		 * initialize the breakpoints for it.
+		 */
+		if (!event->proc->child)
+			bkpt_init(event->proc);
 		trace_set_options(event->proc->pid);
 		continue_process(event->proc);
 		break;

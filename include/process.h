@@ -48,6 +48,7 @@ struct process {
 	struct callstack *callstack;
 	int in_syscall;
 	int trace_control;
+	int child;
 	struct process *next;
 };
 

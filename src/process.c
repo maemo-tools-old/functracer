@@ -21,6 +21,7 @@
  *
  */
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -30,6 +31,62 @@
 #include "debug.h"
 #include "options.h"
 #include "process.h"
+
+#define BUF_SIZE	4096
+#define FIELD_NAME	"Tgid:"
+#define FIELD_SIZE	(sizeof(FIELD_NAME) - 1)
+
+pid_t get_tgid(pid_t pid)
+{
+	char path[255];
+	char *file_buf, *pos;
+	FILE *fp;
+	pid_t retval;
+
+	file_buf = malloc(BUF_SIZE);
+	if (file_buf == NULL)
+		return -1;
+
+	snprintf(path, sizeof(path), "/proc/%d/status", pid);
+	fp = fopen(path, "r");
+	if (fp == NULL) {
+		perror("open");
+		retval = -1;
+		goto open_error;
+	}
+
+	retval = fread(file_buf, BUF_SIZE, 1, fp);
+	if (retval != 1 && ferror(fp)) {
+		perror("read");
+		retval = -1;
+		goto read_error;
+	}
+	file_buf[BUF_SIZE - 1] = '\0';
+
+	retval = -1;
+	pos = file_buf;
+	while (1) {
+		if (pos + FIELD_SIZE + 1 > file_buf + BUF_SIZE)
+			break;
+		if (strncmp(pos, FIELD_NAME, FIELD_SIZE) == 0) {
+			char *val = strchr(pos, ':');
+			assert(val != NULL);
+			retval = atoi(val + 2);
+			break;
+		}
+		pos = strchr(pos, '\n');
+		if (pos == NULL)
+			break;
+		pos += 1;
+	}
+
+read_error:
+	fclose(fp);
+open_error:
+	free(file_buf);
+
+	return retval;
+}
 
 static struct process *list_of_processes = NULL;
 
@@ -64,6 +121,7 @@ char *name_from_pid(pid_t pid)
 struct process *add_process(pid_t pid)
 {
 	struct process *tmp;
+	pid_t tgid;
 
 	tmp = calloc(1, sizeof(struct process));
 	if (!tmp)
@@ -77,6 +135,15 @@ struct process *add_process(pid_t pid)
 	tmp->next = list_of_processes;
 	list_of_processes = tmp;
 
+	tgid = get_tgid(pid);
+	if (tgid != pid) {
+		struct process *parent;
+		parent = process_from_pid(tgid);
+		if (parent != NULL) {
+			tmp->child = 1;
+			tmp->breakpoints = parent->breakpoints;
+		}
+	}
 	debug(1, "Adding PID %d, filename = \"%s\"", pid, tmp->filename);
 
 	return tmp;
