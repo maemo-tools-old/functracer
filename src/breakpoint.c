@@ -125,7 +125,7 @@ static int register_return_breakpoint(struct process *proc, struct breakpoint *b
 	struct breakpoint *ret_bkpt;
 
 	fn_return_address(proc, &ret_addr);
-	ret_bkpt = breakpoint_from_address(proc, ret_addr);
+	ret_bkpt = breakpoint_from_address(proc, fixup_address(ret_addr));
 	if (ret_bkpt != NULL && ret_bkpt->enabled)
 		return 1;
 	ret_bkpt = register_breakpoint(proc, ret_addr);
