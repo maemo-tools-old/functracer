@@ -1,3 +1,13 @@
+functracer (0.9) unstable; urgency=low
+
+  * Attach all processes/threads when using -p option.
+  * Avoid enable or disable breakpoints more than once.
+  * Share breakpoints between parent and children.
+  * Fix verification for repeated return addresses.
+  * Add support for multithreaded programs.
+
+ -- Bruna Moreira <bruna.moreira@indt.org.br>  Fri, 01 Aug 2008 14:38:12 -0400
+
 functracer (0.8) unstable; urgency=low
 
   * Add a header to trace file.
