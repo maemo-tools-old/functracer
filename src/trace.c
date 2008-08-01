@@ -67,20 +67,6 @@ struct event {
 	} data;
 };
 
-static pid_t ft_wait(int *status)
-{
-	pid_t pid;
-
-	errno = 0;
-	do {
-		pid = waitpid(-1, status, __WALL);
-	} while (pid == -1 && errno == EINTR);
-	debug(5, "waitpid: pid=%d, status=0x%x", pid, *status);
-	if (pid == -1 && errno != ECHILD)
-		error_exit("waitpid");
-	return pid;
-}
-
 static int wait_for_event(struct event *event)
 {
 	pid_t pid;

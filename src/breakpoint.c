@@ -158,11 +158,13 @@ void bkpt_handle(struct process *proc, addr_t addr)
 	struct callback *cb = cb_get();
 
 	debug(3, "pid=%d, addr=0x%x", proc->pid, addr);
+
+	stop_other_processes(proc);
 	if (proc->pending_breakpoint != NULL) {
 		/* re-enable pending breakpoint */
 		enable_breakpoint(proc, proc->pending_breakpoint);
 		clear_pending_breakpoint(proc);
-	} else if (bkpt != NULL && bkpt->enabled) {
+	} else if (bkpt != NULL) {
 		switch (bkpt->type) {
 		case BKPT_ENTRY:
 			debug(1, "entry breakpoint for %s()", bkpt->symbol->name);
@@ -180,7 +182,8 @@ void bkpt_handle(struct process *proc, addr_t addr)
 			debug(1, "return breakpoint for %s()", bkpt->symbol->name);
 			if (cb && cb->function.exit)
 				cb->function.exit(proc, bkpt->symbol->name);
-			breakpoint_put(proc, bkpt);
+			if (bkpt->enabled)		
+				breakpoint_put(proc, bkpt);
 			fn_invalidate_arg_data(proc);
 			break;
 		case BKPT_SOLIB:
@@ -197,7 +200,7 @@ void bkpt_handle(struct process *proc, addr_t addr)
 		}
 		set_instruction_pointer(proc, addr);
 	} else {
-		msg_err("%s breakpoint at address 0x%x\n", bkpt ? "unexpected" : "unknown", addr);
+		msg_err("unknown breakpoint at address 0x%x\n", addr);
 		exit(EXIT_FAILURE);
 	}
 }

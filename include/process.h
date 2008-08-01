@@ -49,6 +49,8 @@ struct process {
 	int in_syscall;
 	int trace_control;
 	int child;
+	int pending;
+	int pending_status;
 	struct process *next;
 };
 
@@ -57,5 +59,7 @@ extern struct process *process_from_pid(pid_t pid);
 extern char *name_from_pid(pid_t pid);
 extern struct process *add_process(pid_t pid);
 extern void remove_process(struct process *proc);
+extern void stop_other_processes(struct process *current_proc);
+extern int ft_wait(int *status);
 
 #endif /* TT_PROCESS_H */
