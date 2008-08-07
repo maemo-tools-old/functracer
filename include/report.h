@@ -37,7 +37,7 @@ struct rp_data {
 	struct bt_data *btd;
 };
 
-extern void rp_init(struct process *proc);
+extern int rp_init(struct process *proc);
 extern void rp_malloc(struct rp_data *rd, addr_t addr, size_t size);
 extern void rp_calloc(struct rp_data *rd, addr_t addr, size_t nmemb, size_t size);
 extern void rp_realloc(struct rp_data *rd, addr_t addr, addr_t addr_new, size_t size);

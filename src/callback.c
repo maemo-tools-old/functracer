@@ -48,7 +48,8 @@ static void process_create(struct process *proc)
 
 	if (trace_enabled(proc)) {
 		assert(proc->rp_data == NULL);
-		rp_init(proc);
+		if (rp_init(proc) < 0)
+			proc->trace_control = 0;
 	}
 }
 
@@ -78,8 +79,7 @@ static void process_signal(struct process *proc, int signo)
 			proc->trace_control = 0;
 		} else {
 			assert(proc->rp_data == NULL);
-			rp_init(proc);
-			proc->trace_control = 1;
+			proc->trace_control = rp_init(proc) < 0 ? 0 : 1;
 		}
 	}
 }
@@ -112,7 +112,7 @@ static void function_exit(struct process *proc, const char *name)
 {
 	debug(3, "function return (pid=%d, name=%s)", proc->pid, name);
 
-	if (trace_enabled(proc)) {
+	if (proc->rp_data != NULL && trace_enabled(proc)) {
 		addr_t retval = fn_return_value(proc);
 		size_t arg0 = fn_argument(proc, 0);
 
