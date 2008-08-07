@@ -170,10 +170,15 @@ static char get_process_state(struct process *proc)
 
 /* Check whether process is inside a sleeping syscall.
  */
-static int sleeping_syscall(struct process *proc)
+static int sleeping_process(struct process *proc)
 {
-	return (get_process_state(proc) == 'S' ||
-		get_process_state(proc) == 'D');
+	char ret;
+
+	do {
+		ret = get_process_state(proc);
+	} while (ret == 'R');
+
+	return (ret == 'S' || ret == 'D');
 }
 
 /* "Stop" other processes by waiting for the next state change or exit. The
@@ -187,7 +192,7 @@ void stop_other_processes(struct process *current_proc)
 		if (current_proc->pid != tmp->pid && !tmp->pending) {
 			pid_t pid;
 
-			if (sleeping_syscall(tmp)) {
+			if (sleeping_process(tmp)) {
 				/* processes in sleeping state are ignored
 				 * because they might wait for another (currently
 				 * stopped) process to change state. This would
