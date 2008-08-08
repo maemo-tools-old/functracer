@@ -1,4 +1,4 @@
-This package was debianized by Bruno de Oliveira Abinader <bruno.abinader@openbossa.org> on
+This package was debianized by Bruno Abinader <bruno.abinader@indt.org.br> on
 Tue, 06 May 2008 16:01:34 -0400.
 
 Contact:
@@ -20,5 +20,5 @@ This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License version 2 as published by the Free
 Software Foundation.
 
-The Debian packaging is (C) 2008, Bruno de Oliveira Abinader <bruno.abinader@openbossa.org> and
-is licensed under the GPL, see `/usr/share/common-licenses/GPL'.
+The Debian packaging is (C) 2008, Bruno Abinader <bruno.abinader@indt.org.br>
+and is licensed under the GPL, see `/usr/share/common-licenses/GPL'.

@@ -16,6 +16,7 @@ Description: An Allocation Backtrace Tool
 
 Package: functracer-dbg
 Section: devel
+Priority: extra
 Architecture: any
 Depends: functracer (= ${Source-Version})
 Description: An Allocation Backtrace Tool - debug

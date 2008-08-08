@@ -1,4 +1,4 @@
-AC_INIT([functracer], [0.9])
+AC_INIT([functracer], [0.9.1])
 AC_CONFIG_HEADERS(include/config.h)
 AC_CONFIG_SRCDIR(src/functracer.c)
 AM_INIT_AUTOMAKE([-Wall -Werror foreign no-define])

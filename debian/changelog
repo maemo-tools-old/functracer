@@ -1,3 +1,11 @@
+functracer (0.9.1) unstable; urgency=low
+
+  * Fix segfault when non-write permission is received.
+  * Fix race condition on get_process_state().
+  * Move ft_wait*() functions to right place.
+
+ -- Bruna Moreira <bruna.moreira@indt.org.br>  Fri, 08 Aug 2008 07:46:27 -0400
+
 functracer (0.9) unstable; urgency=low
 
   * Attach all processes/threads when using -p option.

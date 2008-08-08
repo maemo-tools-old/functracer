@@ -49,9 +49,8 @@ Two output files are created by Functracer in $HOME:
 - allocs-PID.n.map: /proc/PID/maps of traced process
 - allocs-PID.n.trace: allocation backtraces of traced process
 
-Output files are in libleaks compatible format so that its post-processing
-tools can be reused. For generating backtraces, libunwind[1] is used.
-(see INSTALL for detailed compilation instructions).
+For generating backtraces, libunwind[1] is used (see INSTALL for detailed 
+compilation instructions).
 
 4. How to use
 --------------
@@ -91,8 +90,6 @@ It works with ELF based Linux systems running on x86 or ARM architecture.
 
 6. Bugs
 -------
-- due to a race condition in get_process_state(), sometimes ft_wait() fails to
-  select the correct process to wait for events, making functracer hang forever.
 - this version has a performance decrease due to several reading of /proc
   directory.
 To do:
