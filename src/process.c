@@ -33,60 +33,13 @@
 #include "debug.h"
 #include "options.h"
 #include "process.h"
+#include "trace.h"
 
 #define BUF_SIZE	4096
 #define FIELD_NAME	"Tgid:"
 #define FIELD_SIZE	(sizeof(FIELD_NAME) - 1)
 
 static struct process *list_of_processes = NULL;
-
-static pid_t ft_waitpid(pid_t pid, int *status, int options)
-{
-	pid_t pid2;
-
-	errno = 0;
-	do {
-		pid2 = waitpid(pid, status, __WALL);
-	} while (pid2 == -1 && errno == EINTR);
-
-	if (pid2 == -1 && errno != ECHILD)
-		error_exit("waitpid");
-
-	return pid2;
-}
-
-/* Wait for state changes in traced processes. Priority is given for processes
- * with pending breakpoint enabling/reinsertion. Any pending state changes are
- * "flushed" here.
- */
-int ft_wait(int *status)
-{
-	struct process *tmp = list_of_processes;
-
-	while (tmp) {
-		if (tmp->pending_breakpoint) {
-			debug(2, "Selecting priority PID %d (pending breakpoint)",
-			      tmp->pid);
-			return ft_waitpid(tmp->pid, status, __WALL);
-		}
-		tmp = tmp->next;
-	}
-
-	tmp = list_of_processes;
-	while (tmp) {
-		if (tmp->pending) {
-			*status = tmp->pending_status;
-			debug(2, "Selecting priority PID %d (pending status 0x%x)\n",
-			      tmp->pid, *status);
-			tmp->pending = 0;
-			return tmp->pid;
-		}
-		tmp = tmp->next;
-	}
-
-	/* no pending breakpoints or status changes; wait for any traced PID */
-	return ft_waitpid(-1, status, __WALL);
-}
 
 pid_t get_tgid(pid_t pid)
 {

@@ -31,5 +31,6 @@ extern int exiting;
 extern int trace_main_loop(void);
 extern void trace_attach_child(pid_t pid);
 extern int trace_execute(char *filename, char *argv[]);
+extern pid_t ft_waitpid(pid_t pid, int *status, int options);
 
 #endif /* !FTK_TRACE_H */

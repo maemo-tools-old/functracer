@@ -60,6 +60,5 @@ extern char *name_from_pid(pid_t pid);
 extern struct process *add_process(pid_t pid);
 extern void remove_process(struct process *proc);
 extern void stop_other_processes(struct process *current_proc);
-extern int ft_wait(int *status);
 
 #endif /* TT_PROCESS_H */
