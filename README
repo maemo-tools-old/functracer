@@ -84,6 +84,12 @@ The control logic is:
   - If tracing:
     - SIGUSR1: stop tracing, dump backtraces and clear them
 
+Internal symbol resolving in functracer (option "-r") has several limitations
+compared to its postprocessor symbol resolving (functracer-postproc):
+- it does not resolve source file name and line number.
+- it does not do demangling for C++ symbol names (low-level symbol names into
+  user-level names).
+
 5. Where does it work
 ---------------------
 It works with ELF based Linux systems running on x86 or ARM architecture.
