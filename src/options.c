@@ -38,6 +38,8 @@ const char *argp_program_version = PACKAGE_STRING;
 
 struct arguments arguments;
 
+static int no_usage = 0;
+
 /* strings for arguments in help texts */
 static const char args_doc[] = "PROGRAM [ARGS...]";
 
@@ -51,13 +53,16 @@ static const struct argp_option options[] = {
 	 "which function to track (NOT IMPLEMENTED)", 0},
 	{"debug", 'd', NULL, 0, "maximum debug level", 0},
 	{"start", 's', NULL, 0, "enable tracking memory from beginning", 0},
-	{"free-backtraces", 'b', NULL, 0, "enable backtrace for free() function", 0},
+	{"free-backtraces", 'b', NULL, 0, "enable backtraces for free() function", 0},
 	{"depth", 't', "NUMBER", 0, "maximum backtrace depth", 0},
 	{"resolve-name", 'r', NULL, 0, "enable symbol name resolution", 0},
 	{"file",  'f', NULL, 0,
 	 "use a file to save backtraces instead of dump to stdout", 0},
 	{"path",  'l', "DIR", 0,
          "dump reports to a custom location (defaults to homedir)", 0},
+	{"help", 'h', NULL, 0, "Give this help list", -1},
+	{"usage", OPT_USAGE, NULL, 0, "Give a short usage message", -1},
+	{"version", 'V', NULL, 0, "Print program version", -1},
 	{NULL, 0, NULL, 0, NULL, 0},
 };
 
@@ -108,6 +113,10 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 	case 'f':
 		arg_data->save_to_file++;
 		break;
+	case 'h':
+		argp_state_help (state, stdout,  ARGP_HELP_STD_HELP);
+		no_usage = 1;
+		break;
 	case 'l':
 		arg_data->path = arg;
 		if (stat(arg_data->path, &buf) || !S_ISDIR(buf.st_mode)) {
@@ -115,8 +124,16 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 			return ENOENT;
 		}
 		break;
+	case 'V':
+		printf("%s\n", argp_program_version);
+		no_usage = 1;
+		break;
+	case OPT_USAGE:
+		argp_state_help (state, stdout, ARGP_HELP_USAGE);
+		no_usage = 1;
+
 	case ARGP_KEY_END:
-		if (arg_data->npids == 0 && state->arg_num < 1)
+		if (arg_data->npids == 0 && no_usage == 0)
 			/* Not enough arguments. */
 			argp_usage(state);
 		break;
@@ -137,7 +154,7 @@ int process_options(int argc, char *argv[], int *remaining)
 
 	/* parse and process arguments */
 	ret = argp_parse(&argp, argc, argv,
-			ARGP_IN_ORDER | ARGP_NO_EXIT, remaining, &arguments);
+			ARGP_IN_ORDER | ARGP_NO_HELP, remaining, &arguments);
 
 	return ret;
 }

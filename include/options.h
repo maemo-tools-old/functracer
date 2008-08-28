@@ -27,6 +27,7 @@
 #include <sys/types.h>
 
 #define MAX_NPIDS 20
+#define OPT_USAGE -3
 
 struct arguments {
 	pid_t pid[MAX_NPIDS];
