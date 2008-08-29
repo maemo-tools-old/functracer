@@ -40,7 +40,7 @@ build-stamp:  config.status
 
 	# Add here commands to compile the package.
 	$(MAKE)
-	#docbook-to-man debian/functracer.sgml > functracer.1
+	help2man src/functracer -N -o man/functracer.1 -i man/functracer.1.inc 
 
 	touch $@
 
@@ -52,6 +52,7 @@ clean:
 	# Add here commands to clean up after the build process.
 	[ ! -f Makefile ] || $(MAKE) distclean
 	rm -f config.sub config.guess
+	rm -f man/functracer.1
 
 	dh_clean 
 
@@ -87,7 +88,7 @@ binary-arch: build install
 #	dh_installinit
 #	dh_installcron
 #	dh_installinfo
-	dh_installman -p functracer functracer.1
+	dh_installman -p functracer man/functracer.1
 	dh_link
 	dh_strip --dbg-package=functracer
 	dh_compress
