@@ -82,28 +82,28 @@ static void rp_write_backtraces(struct rp_data *rd)
 
 void rp_malloc(struct rp_data *rd, addr_t addr, size_t size)
 {
-	debug(3, "rp_malloc(pid=%d, addr=0x%x, size=%d)", rd->pid, addr, size);
+	debug(3, "rp_malloc(pid=%d, addr=0x%08x, size=%d)", rd->pid, addr, size);
 
-	fprintf(rd->fp, "%d. malloc(%d) = 0x%x\n", rd->rp_number++, size, addr);
+	fprintf(rd->fp, "%d. malloc(%d) = 0x%08x\n", rd->rp_number++, size, addr);
 
 	rp_write_backtraces(rd);
 }
 
 void rp_calloc(struct rp_data *rd, addr_t addr, size_t nmemb, size_t size)
 {
-	debug(3, "rp_calloc(pid=%d, addr=0x%x, nmemb=%d, size=%d)", rd->pid, addr, nmemb, size);
+	debug(3, "rp_calloc(pid=%d, addr=0x%08x, nmemb=%d, size=%d)", rd->pid, addr, nmemb, size);
 
-	fprintf(rd->fp, "%d. calloc(%d, %d) = 0x%x\n", rd->rp_number++, nmemb, size, addr);
+	fprintf(rd->fp, "%d. calloc(%d, %d) = 0x%08x\n", rd->rp_number++, nmemb, size, addr);
 
 	rp_write_backtraces(rd);
 }
 
 void rp_realloc(struct rp_data *rd, addr_t addr, addr_t addr_new, size_t size)
 {
-	debug(3, "rp_realloc(pid=%d, addr=0x%x, addr_new=0x%x, size=%d)", rd->pid,
+	debug(3, "rp_realloc(pid=%d, addr=0x%08x, addr_new=0x%08x, size=%d)", rd->pid,
 			addr, addr_new, size);
 
-	fprintf(rd->fp, "%d. realloc(0x%x, %d) = 0x%x\n", rd->rp_number++,
+	fprintf(rd->fp, "%d. realloc(0x%08x, %d) = 0x%08x\n", rd->rp_number++,
 			addr, size, addr_new);
 
 	rp_write_backtraces(rd);
@@ -111,9 +111,9 @@ void rp_realloc(struct rp_data *rd, addr_t addr, addr_t addr_new, size_t size)
 
 void rp_free(struct rp_data *rd, addr_t addr)
 {
-	debug(3, "rp_free(pid=%d, addr=0x%x)", rd->pid, addr);
+	debug(3, "rp_free(pid=%d, addr=0x%08x)", rd->pid, addr);
 
-	fprintf(rd->fp, "%d. free(0x%x) = <void>\n", rd->rp_number++, addr);
+	fprintf(rd->fp, "%d. free(0x%08x) = <void>\n", rd->rp_number++, addr);
 
 	if (arguments.enable_free_bkt)
 		rp_write_backtraces(rd);

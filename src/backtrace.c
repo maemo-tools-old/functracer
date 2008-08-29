@@ -94,7 +94,7 @@ int bt_backtrace(struct bt_data *btd, char **buffer, int size)
 		/* Small workaround: decrement the current address to get the
 		 * correct line in post-processing
 		 */
-		sprintf(buf + len, "[0x%x]", (uintptr_t)(ip - 1));
+		sprintf(buf + len, "[0x%08x]", (uintptr_t)(ip - 1));
 
 		buffer[n++] = strdup(buf);
 		if ((ret = unw_step(&c)) < 0) {
