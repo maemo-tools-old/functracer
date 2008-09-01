@@ -48,7 +48,7 @@ int get_syscall_nr(struct process *proc, int *nr)
 		/* old ABI syscall */
 		*nr = insn & 0xfffff;
 	} else {
-		/* TODO: handle swi<cond> variations */
+		/* FIXME: handle swi<cond> variations */
 		/* one possible reason for getting in here is that we
 		 * are coming from a signal handler, so the current
 		 * PC does not point to the instruction just after the

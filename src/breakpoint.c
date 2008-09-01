@@ -212,7 +212,7 @@ int bkpt_pending(struct process *proc)
 
 void bkpt_init(struct process *proc)
 {
-#if 0 /* XXX not needed? */
+#if 0 /* FIXME: not needed? */
 	if (proc->breakpoints) {
 		dict_apply_to_all(proc->breakpoints, free_bp_cb, NULL);
 		dict_clear(proc->breakpoints);

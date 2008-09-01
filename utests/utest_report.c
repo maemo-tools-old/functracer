@@ -35,7 +35,7 @@
 #include "report.h"
 #include "report.c"
 
-/* XXX: Ubber-hack to don't mess with the linker */
+/* FIXME: Ubber-hack to don't mess with the linker */
 #define main main_functracer
 int main_functracer(int argc, char *argv[]);
 #include "functracer.c"
@@ -82,7 +82,7 @@ START_TEST (test_process_report_screen)
 
 	fail_unless(fd == STDOUT_FILENO, "Redirect stdout to file trick not working");
 
-	/* XXX: double -s is harmless */
+	/* FIXME: double -s is harmless */
 	uargv[2] = "-s";
 
 	ret = process_options(uargc, uargv, &remaining);

@@ -31,7 +31,7 @@
 #include "function.h"
 
 #ifdef DEBUG
-static int callstack_depth = 0; /* XXX debug */
+static int callstack_depth = 0; /* XXX DEBUG */
 #endif
 
 static addr_t get_stack_pointer(struct process *proc)

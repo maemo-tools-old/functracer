@@ -183,7 +183,7 @@ addr_t solib_dl_debug_address(struct process *proc)
 		warning_bfd(interp_file, "not in shared file format");
 		goto close_abfd;
 	}
-#if 0 /* XXX unnecessary? */
+#if 0 /* FIXME: unnecessary? */
 	/* Find the .text section in interpreter code. */
 	sect = bfd_get_section_by_name(interp_bfd, ".text");
 	if (sect == NULL) {
