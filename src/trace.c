@@ -219,8 +219,9 @@ static int handle_child_process(struct process *parent_proc, pid_t child_pid)
 
 	if (cb && cb->process.create)
 		cb->process.create(child_proc);
-	if (!child_proc->child)
+	if (!child_proc->child) {
 		child_proc->breakpoints = parent_proc->breakpoints;
+	}
 	pid = waitpid(child_proc->pid, &status, __WALL);
 	if (pid == -1) {
 		msg_err("waitpid: error waiting for new child");

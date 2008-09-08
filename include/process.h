@@ -51,6 +51,7 @@ struct process {
 	int child;
 	int pending;
 	int pending_status;
+	struct process *parent;
 	struct process *next;
 };
 

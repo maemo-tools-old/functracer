@@ -59,7 +59,8 @@ static void process_exit(struct process *proc, int exit_code)
 
 	if (trace_enabled(proc)) {
 		assert(proc->rp_data != NULL);
-		rp_finish(proc->rp_data);
+		if (proc->parent == NULL)
+			rp_finish(proc->rp_data);
 	}
 }
 
@@ -75,7 +76,8 @@ static void process_signal(struct process *proc, int signo)
 	if (signo == SIGUSR1) {
 		if (trace_enabled(proc)) {
 			assert(proc->rp_data != NULL);
-			rp_finish(proc->rp_data);
+			if (proc->parent == NULL)
+				rp_finish(proc->rp_data);
 			proc->trace_control = 0;
 		} else {
 			assert(proc->rp_data == NULL);
@@ -111,30 +113,35 @@ static void function_enter(struct process *proc, const char *name)
 static void function_exit(struct process *proc, const char *name)
 {
 	debug(3, "function return (pid=%d, name=%s)", proc->pid, name);
+	struct rp_data *rd;
+	if (proc->parent != NULL)
+		rd = proc->parent->rp_data;
+	else
+		rd = proc->rp_data;
 
 	/* Avoid reporting internal/recursive calls */ 
 	if (proc->callstack == NULL || proc->callstack->next != NULL)
 		return;
 
-	if (proc->rp_data != NULL && trace_enabled(proc)) {
+	if (rd != NULL && trace_enabled(proc)) {
 		addr_t retval = fn_return_value(proc);
 		size_t arg0 = fn_argument(proc, 0);
 
 		assert(proc->rp_data != NULL);
 		if (strcmp(name, "__libc_malloc") == 0) {
-			rp_malloc(proc->rp_data, retval, arg0);
+			rp_malloc(rd, retval, arg0);
 		} else if (strcmp(name, "__libc_calloc") == 0) {
 			size_t arg1 = fn_argument(proc, 1);
-			rp_calloc(proc->rp_data, retval, arg0, arg1);
+			rp_calloc(rd, retval, arg0, arg1);
 		} else if (strcmp(name, "__libc_realloc") == 0) {
 			size_t arg1 = fn_argument(proc, 1);
-			rp_realloc(proc->rp_data, arg0, retval, arg1);
+			rp_realloc(rd, arg0, retval, arg1);
 		} else if (strcmp(name, "__libc_free") == 0 ) {
 			/* Suppress "free(NULL)" calls from trace output. 
 			 * They are a no-op according to ISO 
 			 */
 			if (arg0)
-				rp_free(proc->rp_data, arg0);
+				rp_free(rd, arg0);
 		} else {
 			msg_warn("unexpected function exit: name=\"%s\" arg0=%d retval=%#x\n", name,
 				arg0, retval);

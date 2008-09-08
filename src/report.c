@@ -126,6 +126,9 @@ int rp_init(struct process *proc)
 
 	debug(3, "pid=%d", proc->pid);
 
+	if (proc->parent != NULL)
+		return 0;
+
 	if (rd == NULL)
 		rd = xcalloc(1, sizeof(struct rp_data));
 	rd->pid = proc->pid;

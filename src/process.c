@@ -216,8 +216,10 @@ struct process *add_process(pid_t pid)
 		if (parent != NULL) {
 			tmp->child = 1;
 			tmp->breakpoints = parent->breakpoints;
+			tmp->parent = parent;
 		}
 	}
+
 	debug(1, "Adding PID %d, filename = \"%s\"", pid, tmp->filename);
 
 	return tmp;
