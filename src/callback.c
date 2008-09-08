@@ -112,6 +112,10 @@ static void function_exit(struct process *proc, const char *name)
 {
 	debug(3, "function return (pid=%d, name=%s)", proc->pid, name);
 
+	/* Avoid reporting internal/recursive calls */ 
+	if (proc->callstack == NULL || proc->callstack->next != NULL)
+		return;
+
 	if (proc->rp_data != NULL && trace_enabled(proc)) {
 		addr_t retval = fn_return_value(proc);
 		size_t arg0 = fn_argument(proc, 0);
