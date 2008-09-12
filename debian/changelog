@@ -1,3 +1,16 @@
+functracer (0.9.2) unstable; urgency=low
+
+  * Fix some lintian warnings, copyrights and README.
+  * Change option letter for help messagei (us -h).
+  * Create man page automatically.
+  * Change addresses to have same width.
+  * Replace TODO/XXX comments for FIXME.
+  * Avoid reporting internal/recursive calls.
+  * Generate only one .trace file per process.
+  * Trace pthread_mutex_lock/pthread_mutex_unlock functions.
+
+ -- Bruna Moreira <bruna.moreira@indt.org.br>  Fri, 12 Sep 2008 14:40:23 -0400
+
 functracer (0.9.1) unstable; urgency=low
 
   * Fix segfault when non-write permission is received.

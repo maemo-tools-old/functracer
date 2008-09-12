@@ -98,6 +98,11 @@ It works with ELF based Linux systems running on x86 or ARM architecture.
 -------
 - this version has a performance decrease due to several reading of /proc
   directory.
+- functracer tries to serialize the threads, avoiding that allocation related
+  breakpoints from multiple threads are caught by it at the same time.  Note
+  that there are still some issues with allocation functions not being reported
+  in the correct order.
+
 To do:
 - better documentation, source code comments
 - testsuite framework infrastructure (just some basic tests are available)
