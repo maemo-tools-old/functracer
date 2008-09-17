@@ -142,8 +142,8 @@ static void function_exit(struct process *proc, const char *name)
 			 */
 			if (arg0)
 				rp_free(rd, arg0);
-		} else if (strcmp(name, "pthread_mutex_lock") == 0 ||
-			   strcmp(name, "pthread_mutex_unlock") == 0) {
+		} else if (strcmp(name, "__pthread_mutex_lock") == 0 ||
+			   strcmp(name, "__pthread_mutex_unlock") == 0) {
 			debug(3, "pthread function = %s\n", name);
 		} else {
 			msg_warn("unexpected function exit: name=\"%s\" arg0=%d retval=%#x\n", name,
@@ -162,8 +162,8 @@ static int library_match(const char *libname, const char *symname)
 		|| strcmp(symname, "__libc_malloc") == 0
 		|| strcmp(symname, "__libc_free") == 0
 		|| strcmp(symname, "__libc_realloc") == 0
-		|| strcmp(symname, "pthread_mutex_lock") == 0
-		|| strcmp(symname, "pthread_mutex_unlock") == 0);
+		|| strcmp(symname, "__pthread_mutex_lock") == 0
+		|| strcmp(symname, "__pthread_mutex_unlock") == 0);
 }
 
 static void cb_register(struct callback *cb)
