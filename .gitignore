@@ -1,7 +1,7 @@
 *.o
 *~
 *.swp
-functracker
+src/functracer
 core
 tags
 
@@ -20,6 +20,7 @@ configure
 config.guess
 config.log
 config.status
+config.status.lineno
 config.sub
 Makefile.in
 Makefile
