@@ -244,6 +244,8 @@ void remove_process(struct process *proc)
 		if (tmp->next->pid == proc->pid) {
 			struct process *tmp2 = tmp->next;
 			tmp->next = tmp->next->next;
+			if (tmp2->filename)
+				free(tmp2->filename);
 			free(tmp2);
 			return;
 		}
