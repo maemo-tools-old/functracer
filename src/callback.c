@@ -59,8 +59,7 @@ static void process_exit(struct process *proc, int exit_code)
 
 	if (trace_enabled(proc)) {
 		assert(proc->rp_data != NULL);
-		if (proc->parent == NULL)
-			rp_finish(proc->rp_data);
+		rp_finish(proc);
 	}
 }
 
@@ -76,8 +75,7 @@ static void process_signal(struct process *proc, int signo)
 	if (signo == SIGUSR1) {
 		if (trace_enabled(proc)) {
 			assert(proc->rp_data != NULL);
-			if (proc->parent == NULL)
-				rp_finish(proc->rp_data);
+			rp_finish(proc);
 			proc->trace_control = 0;
 		} else {
 			assert(proc->rp_data == NULL);
@@ -91,7 +89,7 @@ static void process_interrupt(struct process *proc)
 	debug(3, "process interrupted (pid=%d)", proc->pid);
 	if (trace_enabled(proc)) {
 		assert(proc->rp_data != NULL);
-		rp_finish(proc->rp_data);
+		rp_finish(proc);
 	}
 }
 
@@ -112,43 +110,52 @@ static void function_enter(struct process *proc, const char *name)
 
 static void function_exit(struct process *proc, const char *name)
 {
+	struct rp_alloc ra;
+
 	debug(3, "function return (pid=%d, name=%s)", proc->pid, name);
-	struct rp_data *rd;
-	if (proc->parent != NULL)
-		rd = proc->parent->rp_data;
-	else
-		rd = proc->rp_data;
 
 	/* Avoid reporting internal/recursive calls */ 
 	if (proc->callstack == NULL || proc->callstack->next != NULL)
 		return;
 
-	if (rd != NULL && trace_enabled(proc)) {
+	if (trace_enabled(proc)) {
 		addr_t retval = fn_return_value(proc);
 		size_t arg0 = fn_argument(proc, 0);
 
 		assert(proc->rp_data != NULL);
 		if (strcmp(name, "__libc_malloc") == 0) {
-			rp_malloc(rd, retval, arg0);
+			ra.type = FN_MALLOC;
+			ra.addr = retval;
+			ra.size = arg0;
 		} else if (strcmp(name, "__libc_calloc") == 0) {
 			size_t arg1 = fn_argument(proc, 1);
-			rp_calloc(rd, retval, arg0, arg1);
+			ra.type = FN_CALLOC;
+			ra.addr = retval;
+			ra.nmemb = arg0;
+			ra.size = arg1;
 		} else if (strcmp(name, "__libc_realloc") == 0) {
 			size_t arg1 = fn_argument(proc, 1);
-			rp_realloc(rd, arg0, retval, arg1);
+			ra.type = FN_REALLOC;
+			ra.addr = arg0;
+			ra.addr_new = retval;
+			ra.size = arg1;
 		} else if (strcmp(name, "__libc_free") == 0 ) {
 			/* Suppress "free(NULL)" calls from trace output. 
 			 * They are a no-op according to ISO 
 			 */
-			if (arg0)
-				rp_free(rd, arg0);
+			if (arg0 == 0)
+				return;
+			ra.type = FN_FREE;
+			ra.addr = arg0;
 		} else if (strcmp(name, "__pthread_mutex_lock") == 0 ||
 			   strcmp(name, "__pthread_mutex_unlock") == 0) {
 			debug(3, "pthread function = %s\n", name);
+			return;
 		} else {
-			msg_warn("unexpected function exit: name=\"%s\" arg0=%d retval=%#x\n", name,
-				arg0, retval);
+			msg_warn("unexpected function exit (%s)\n", name);
+			return;
 		}
+		rp_alloc(proc, &ra);
 
 	}
 }

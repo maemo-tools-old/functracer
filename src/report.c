@@ -17,6 +17,7 @@
  * Based on code from libleaks.
  */
 
+#include <assert.h>
 #include <libiberty.h>
 #include <stdlib.h>
 #include <string.h>
@@ -80,43 +81,55 @@ static void rp_write_backtraces(struct rp_data *rd)
 	}
 }
 
-void rp_malloc(struct rp_data *rd, addr_t addr, size_t size)
+void rp_alloc(struct process *proc, struct rp_alloc *ra)
 {
-	debug(3, "rp_malloc(pid=%d, addr=0x%08x, size=%d)", rd->pid, addr, size);
+	struct rp_data *rd = proc->rp_data;
+	int *rp_number;
 
-	fprintf(rd->fp, "%d. malloc(%d) = 0x%08x\n", rd->rp_number++, size, addr);
+	if (proc->parent != NULL)
+		rp_number = &proc->parent->rp_data->rp_number;
+	else 
+		rp_number = &rd->rp_number;
 
-	rp_write_backtraces(rd);
-}
+	switch (ra->type) {
+		case FN_FREE:
+			debug(3, "rp_free(pid=%d, addr=0x%08x)", rd->pid,
+			      ra->addr);
 
-void rp_calloc(struct rp_data *rd, addr_t addr, size_t nmemb, size_t size)
-{
-	debug(3, "rp_calloc(pid=%d, addr=0x%08x, nmemb=%d, size=%d)", rd->pid, addr, nmemb, size);
+			fprintf(rd->fp, "%d. free(0x%08x) = <void>\n",
+				*rp_number, ra->addr);
+			break;
+		case FN_MALLOC:
+			debug(3, "rp_malloc(pid=%d, addr=0x%08x, size=%d)",
+			      rd->pid, ra->addr, ra->size);
 
-	fprintf(rd->fp, "%d. calloc(%d, %d) = 0x%08x\n", rd->rp_number++, nmemb, size, addr);
+			fprintf(rd->fp, "%d. malloc(%d) = 0x%08x\n",
+				*rp_number, ra->size, ra->addr);
+			break;
+		case FN_CALLOC:
+			debug(3, "rp_calloc(pid=%d, addr=0x%08x, nmemb=%d, \
+			      size=%d)", rd->pid, ra->addr, ra->nmemb, ra->size);
 
-	rp_write_backtraces(rd);
-}
+			fprintf(rd->fp, "%d. calloc(%d, %d) = 0x%08x\n",
+				*rp_number, ra->nmemb, ra->size, ra->addr);
+			break;
+		case FN_REALLOC:
+			debug(3, "rp_realloc(pid=%d, addr=0x%08x, \
+			      addr_new=0x%08x, size=%d)", rd->pid, ra->addr,
+			      ra->addr_new, ra->size);
 
-void rp_realloc(struct rp_data *rd, addr_t addr, addr_t addr_new, size_t size)
-{
-	debug(3, "rp_realloc(pid=%d, addr=0x%08x, addr_new=0x%08x, size=%d)", rd->pid,
-			addr, addr_new, size);
-
-	fprintf(rd->fp, "%d. realloc(0x%08x, %d) = 0x%08x\n", rd->rp_number++,
-			addr, size, addr_new);
-
-	rp_write_backtraces(rd);
-}
-
-void rp_free(struct rp_data *rd, addr_t addr)
-{
-	debug(3, "rp_free(pid=%d, addr=0x%08x)", rd->pid, addr);
-
-	fprintf(rd->fp, "%d. free(0x%08x) = <void>\n", rd->rp_number++, addr);
-
-	if (arguments.enable_free_bkt)
+			fprintf(rd->fp, "%d. realloc(0x%08x, %d) = 0x%08x\n",
+				*rp_number, ra->addr, ra->size, ra->addr_new);
+			break;
+		default:
+			/* Should not happen */
+			assert(0);
+			break;
+	}
+	(*rp_number)++;
+	if (ra->type != FN_FREE || arguments.enable_free_bkt)
 		rp_write_backtraces(rd);
+
 }
 
 int rp_init(struct process *proc)
@@ -126,15 +139,17 @@ int rp_init(struct process *proc)
 
 	debug(3, "pid=%d", proc->pid);
 
-	if (proc->parent != NULL)
-		return 0;
-
 	if (rd == NULL)
 		rd = xcalloc(1, sizeof(struct rp_data));
 	rd->pid = proc->pid;
 	rd->btd = bt_init(proc->pid);
 	rd->rp_number = 0;
 	proc->rp_data = rd;
+
+	if (proc->parent != NULL) {
+		proc->rp_data->fp = proc->parent->rp_data->fp;
+		return 0;
+	}
 
 	if (arguments.save_to_file) {
 		snprintf(path, sizeof(path), "%s/allocs-%d.%d.trace",
@@ -158,14 +173,15 @@ int rp_init(struct process *proc)
 	return 0;
 }
 
-void rp_finish(struct rp_data *rd)
+void rp_finish(struct process *proc)
 {
-	if (rd == NULL)
+	struct rp_data *rd = proc->rp_data;
+
+	bt_finish(rd->btd);
+	if (proc->parent != NULL)
 		return;
 	rp_copy_maps(rd);
 	rd->step++;
-	bt_finish(rd->btd);
-
 	if (arguments.save_to_file)
 		fclose(rd->fp);
 }

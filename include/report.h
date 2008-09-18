@@ -37,11 +37,24 @@ struct rp_data {
 	struct bt_data *btd;
 };
 
+/* function type enumerator */
+enum {
+	FN_FREE,
+	FN_MALLOC,
+	FN_CALLOC,
+	FN_REALLOC,
+};
+
+struct rp_alloc {
+	int type;
+	addr_t addr;
+	size_t nmemb;
+	size_t size;
+	addr_t addr_new;
+};
+
 extern int rp_init(struct process *proc);
-extern void rp_malloc(struct rp_data *rd, addr_t addr, size_t size);
-extern void rp_calloc(struct rp_data *rd, addr_t addr, size_t nmemb, size_t size);
-extern void rp_realloc(struct rp_data *rd, addr_t addr, addr_t addr_new, size_t size);
-extern void rp_free(struct rp_data *rd, addr_t addr);
-extern void rp_finish(struct rp_data *rd);
+extern void rp_alloc(struct process *proc, struct rp_alloc *ra);
+extern void rp_finish(struct process *proc);
 
 #endif /* !FTK_REPORT_H */
