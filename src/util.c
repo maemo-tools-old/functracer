@@ -36,15 +36,11 @@ long xptrace(int request, pid_t pid, void *addr, void *data)
 	errno = 0;
 	ret = ptrace((enum __ptrace_request)request, pid, addr, data);
 	if (ret == -1 && errno) {
-		if (errno == EIO) {
-			errno = 0;
+		if (errno == EIO)
 			msg_warn("Cannot access memory at address %p", addr);
-		} else {
+		else
 			msg_warn("ptrace");
-			/* Prevent GDB backtrace code from reporting this error
-			 * again. */
-			errno = 0;
-		}
+		errno = 0;
 	}
 
 	return ret;
