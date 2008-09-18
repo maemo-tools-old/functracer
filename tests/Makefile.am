@@ -11,7 +11,7 @@ check_PROGRAMS = clone fork malloc_simple malloc_recursive callchain
 callchain_LDADD = libcallchain.so
 
 libcallchain.so: libcallchain.c
-	$(CC) -shared -o $@ $<
+	$(CC) -shared -fPIC -o $@ $<
 
 clean-local:
 	rm -f libcallchain.so
