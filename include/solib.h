@@ -38,12 +38,10 @@ struct library_symbol {
 struct solib_list {
 	addr_t base_addr;
 	char *path;
-	struct library_symbol *symbols;
 	struct solib_list *next;
 };
 
 extern void solib_update_list(struct process *proc);
 extern addr_t solib_dl_debug_address(struct process *proc);
-extern struct library_symbol *solib_read_symbols(char *filename);
 
 #endif /* !FTK_SOLIB_H */
