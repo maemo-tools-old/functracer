@@ -72,20 +72,6 @@ int bt_backtrace(struct bt_data *btd, char **buffer, int size)
 			debug(1, "bt_backtrace(): unw_get_reg() failed, ret=%d", ret);
 			return -1;
 		}
-		if (arguments.resolve_name) {
-			ret = unw_get_proc_name(&c, buf, sizeof(buf), &off);
-			if (ret < 0)
-				sprintf(buf, "<undefined> ");
-			else if (off) {
-				len = strlen(buf);
-				if (len >= sizeof(buf) - 64)
-					len = sizeof(buf) - 64;
-				sprintf(buf + len, "+0x%lx ", (unsigned long)off);
-			}
-			len = strlen(buf);
-			if (len >= sizeof(buf) - 64)
-				len = sizeof(buf) - 64;
-		}
 		/* Decrement breakpoint size from the first address in the
 		 * backtrace
 		 */
@@ -94,7 +80,22 @@ int bt_backtrace(struct bt_data *btd, char **buffer, int size)
 		/* Small workaround: decrement the current address to get the
 		 * correct line in post-processing
 		 */
-		sprintf(buf + len, "[0x%08x]", (uintptr_t)(ip - 1));
+		sprintf(buf,  "0x%08x", (uintptr_t)(ip - 1));
+
+		if (arguments.resolve_name) {
+			strcat(buf,  ": ");
+			len = strlen(buf);
+			ret = unw_get_proc_name(&c, buf + len, sizeof(buf) - len, &off);
+			if (ret < 0)
+				sprintf(buf + len, "<undefined>");
+			else if (off) {
+				len = strlen(buf);
+				/* Reserve the last 64 bytes for the offset */
+				if (len >= sizeof(buf) - 64)
+					len = sizeof(buf) - 64;
+				sprintf(buf + len, "+0x%lx ", (unsigned long)off);
+			}
+		}
 
 		buffer[n++] = strdup(buf);
 		if ((ret = unw_step(&c)) < 0) {
