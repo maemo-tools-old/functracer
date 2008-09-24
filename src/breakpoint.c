@@ -212,17 +212,15 @@ int bkpt_pending(struct process *proc)
 
 void bkpt_init(struct process *proc)
 {
-#if 0 /* FIXME: not needed? */
-	if (proc->breakpoints) {
-		dict_apply_to_all(proc->breakpoints, free_bp_cb, NULL);
-		dict_clear(proc->breakpoints);
-		proc->breakpoints = NULL;
+	if (proc->parent == NULL) {
+		proc->breakpoints = dict_init(dict_key2hash_int, dict_key_cmp_int);
+		register_dl_debug_breakpoint(proc);
+		solib_update_list(proc);
+		register_proc_breakpoints(proc);
+	} else {
+		proc->breakpoints = proc->parent->breakpoints;
+		proc->solib_list = proc->parent->solib_list;
 	}
-#endif
-	proc->breakpoints = dict_init(dict_key2hash_int, dict_key_cmp_int);
-	register_dl_debug_breakpoint(proc);
-	solib_update_list(proc);
-	register_proc_breakpoints(proc);
 }
 
 static void disable_bkpt_cb(void *addr __unused, void *bkpt, void *proc)

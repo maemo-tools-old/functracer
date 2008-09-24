@@ -73,7 +73,7 @@ pid_t ft_waitpid(pid_t pid, int *status, int options)
 
 	errno = 0;
 	do {
-		pid2 = waitpid(pid, status, __WALL);
+		pid2 = waitpid(pid, status, options);
 	} while (pid2 == -1 && errno == EINTR);
 
 	if (pid2 == -1 && errno != ECHILD)
@@ -211,18 +211,15 @@ static void trace_set_options(pid_t pid)
 	xptrace(PTRACE_SETOPTIONS, pid, NULL, (void *)options);
 }
 
+/* FIXME: this function shares too much code with the EV_NEW_PROC event
+ * handling. */
 static int handle_child_process(struct process *parent_proc, pid_t child_pid)
 {
 	struct callback *cb = cb_get();
-	struct process *child_proc = add_process(child_pid);
+	struct process *child_proc;
 	int status, pid;
 
-	if (cb && cb->process.create)
-		cb->process.create(child_proc);
-	if (!child_proc->child) {
-		child_proc->breakpoints = parent_proc->breakpoints;
-	}
-	pid = waitpid(child_proc->pid, &status, __WALL);
+	pid = ft_waitpid(child_pid, &status, __WALL);
 	if (pid == -1) {
 		msg_err("waitpid: error waiting for new child");
 		return -1;
@@ -235,7 +232,22 @@ static int handle_child_process(struct process *parent_proc, pid_t child_pid)
 		msg_err("waitpid: unexpected status 0x%x returned", status);
 		return -1;
 	}
-	trace_set_options(child_proc->pid);
+	child_proc = add_process(child_pid);
+	if (cb && cb->process.create)
+		cb->process.create(child_proc);
+	/* At the time handle_child_process() is called, the breakpoints are
+	 * enabled on the child process even if it does not share the address
+	 * space with the parent (i.e. it is not a thread). This happens
+	 * because at the time the children was forked/cloned, the breakpoints
+	 * were enabled and were copied to the new process' address space.
+	 * Therefore, we disable these breakpoints for the new process. */
+	if (child_proc->parent == NULL) {
+		child_proc->breakpoints = parent_proc->breakpoints;
+		disable_all_breakpoints(child_proc);
+		child_proc->breakpoints = NULL;
+	}
+	bkpt_init(child_proc);
+	trace_set_options(child_pid);
 	continue_process(child_proc);
 
 	return 0;
@@ -274,11 +286,7 @@ static int dispatch_event(struct event *event)
 		event->proc = add_process(event->data.pid);
 		if (cb && cb->process.create)
 			cb->process.create(event->proc);
-		/* Check if it is a single-threaded or parent process so
-		 * initialize the breakpoints for it.
-		 */
-		if (!event->proc->child)
-			bkpt_init(event->proc);
+		bkpt_init(event->proc);
 		trace_set_options(event->proc->pid);
 		continue_process(event->proc);
 		break;

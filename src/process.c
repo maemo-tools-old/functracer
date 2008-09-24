@@ -41,7 +41,7 @@
 
 static struct process *list_of_processes = NULL;
 
-pid_t get_tgid(pid_t pid)
+static pid_t get_tgid(pid_t pid)
 {
 	char path[255];
 	char *file_buf, *pos;
@@ -210,19 +210,20 @@ struct process *add_process(pid_t pid)
 	list_of_processes = tmp;
 
 	tgid = get_tgid(pid);
-	if (tgid != pid) {
-		struct process *parent;
-		parent = process_from_pid(tgid);
-		if (parent != NULL) {
-			tmp->child = 1;
-			tmp->breakpoints = parent->breakpoints;
-			tmp->parent = parent;
-		}
-	}
+	if (tgid != pid)
+		tmp->parent = process_from_pid(tgid);
 
 	debug(1, "Adding PID %d, filename = \"%s\"", pid, tmp->filename);
 
 	return tmp;
+}
+
+static void free_process(struct process *proc, struct process **prev_next)
+{
+	*prev_next = proc->next;
+	if (proc->filename)
+		free(proc->filename);
+	free(proc);
 }
 
 void remove_process(struct process *proc)
@@ -232,21 +233,13 @@ void remove_process(struct process *proc)
 	debug(1, "Removing PID %d", proc->pid);
 
 	if (list_of_processes->pid == proc->pid) {
-		tmp = list_of_processes;
-		list_of_processes = list_of_processes->next;
-		if (tmp->filename)
-			free(tmp->filename);
-		free(tmp);
+		free_process(list_of_processes, &list_of_processes);
 		return;
 	}
 	tmp = list_of_processes;
 	while (tmp->next) {
 		if (tmp->next->pid == proc->pid) {
-			struct process *tmp2 = tmp->next;
-			tmp->next = tmp->next->next;
-			if (tmp2->filename)
-				free(tmp2->filename);
-			free(tmp2);
+			free_process(tmp->next, &tmp->next);
 			return;
 		}
 		tmp = tmp->next;
