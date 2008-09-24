@@ -50,6 +50,7 @@ struct process {
 	int trace_control;
 	int pending;
 	int pending_status;
+        int detached;
 	struct process *parent;
 	struct process *next;
 };

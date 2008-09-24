@@ -232,6 +232,8 @@ static void disable_bkpt_cb(void *addr __unused, void *bkpt, void *proc)
 
 void disable_all_breakpoints(struct process *proc)
 {
+	if (proc->breakpoints == NULL)
+		return;
 	debug(1, "Disabling breakpoints for pid %d...", proc->pid);
 	dict_apply_to_all(proc->breakpoints, disable_bkpt_cb, proc);
 }

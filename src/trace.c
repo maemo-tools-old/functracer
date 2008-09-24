@@ -91,7 +91,7 @@ static int ft_wait(int *status)
 	struct process *tmp = get_list_of_processes();
 
 	while (tmp) {
-		if (tmp->pending_breakpoint) {
+		if (tmp->pending_breakpoint && !tmp->detached) {
 			debug(2, "Selecting priority PID %d (pending breakpoint)",
 			      tmp->pid);
 			return ft_waitpid(tmp->pid, status, __WALL);
@@ -101,7 +101,7 @@ static int ft_wait(int *status)
 
 	tmp = get_list_of_processes();
 	while (tmp) {
-		if (tmp->pending) {
+		if (tmp->pending && !tmp->detached) {
 			*status = tmp->pending_status;
 			debug(2, "Selecting priority PID %d (pending status 0x%x)\n",
 			      tmp->pid, *status);
@@ -267,6 +267,7 @@ static int handle_interrupt(struct process *proc, int signo)
 			cb->process.interrupt(proc);
 		disable_all_breakpoints(proc);
 		trace_detach(proc->pid);
+		proc->detached = 1;
 
 		return 1;
 	}
@@ -373,6 +374,10 @@ int trace_execute(char *filename, char *argv[])
 		error_file(filename, "could not execute program");
 		return -1;
 	} else if (pid == 0) {	/* child */
+		if (setsid() < 0) {
+			error_file(filename, "could not create new session");
+			return -1;
+		}
 		xptrace(PTRACE_TRACEME, 0, NULL, NULL);
 		execvp(filename, argv);
 		error_file(filename, "could not execute program");

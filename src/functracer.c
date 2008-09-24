@@ -45,7 +45,7 @@ static int my_kill(int pid, int signo)
 	static int tkill_failed;
 
 	if (!tkill_failed) {
-		int ret = syscall(__NR_tkill, pid, signo);
+		int ret = syscall(SYS_tkill, pid, signo);
 		if (errno != ENOSYS)
 			return ret;
 		errno = 0;
@@ -56,11 +56,13 @@ static int my_kill(int pid, int signo)
 
 static void signal_exit(int sig __unused)
 {
+	if (exiting)
+		return;
 	exiting = 1;
 	debug(1, "Received interrupt signal; exiting...");
 	struct process *tmp = get_list_of_processes();
 	while (tmp) {
-		debug(2, "Sending SIGSTOP to process %u\n", tmp->pid);
+		debug(2, "Sending SIGSTOP to process %u", tmp->pid);
 		my_kill(tmp->pid, SIGSTOP);
 		tmp = tmp->next;
 	}
