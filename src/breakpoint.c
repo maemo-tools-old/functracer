@@ -21,6 +21,7 @@
  *
  */
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -32,34 +33,23 @@
 #include "function.h"
 #include "process.h"
 #include "solib.h"
+#include "ssol.h"
 #include "target_mem.h"
 
 static void enable_breakpoint(struct process *proc, struct breakpoint *bkpt)
 {
+	long orig_insn;
+
 	debug(1, "pid=%d, addr=0x%x", proc->pid, bkpt->addr);
-
-	trace_mem_read(proc, bkpt->addr, bkpt->orig_insn, bkpt->insn->size);
-
-	if (memcmp(bkpt->orig_insn, bkpt->insn->value, bkpt->insn->size) == 0)
-		debug(1, "breakpoint already enabled");
-	else
-		trace_mem_write(proc, bkpt->addr, bkpt->insn->value,
-			bkpt->insn->size);
+	orig_insn = trace_mem_readw(proc, bkpt->addr);
+	trace_mem_writew(proc, bkpt->ssol_addr, orig_insn);
+	trace_mem_write(proc, bkpt->addr, bkpt->insn->value, bkpt->insn->size);
 }
 
 static void disable_breakpoint(struct process *proc, struct breakpoint *bkpt)
 {
-	unsigned char tmp[BREAKPOINT_LENGTH];
-
-	debug(1, "pid=%d, addr=0x%x", proc->pid, bkpt->addr);
-
-	trace_mem_read(proc, bkpt->addr, tmp, bkpt->insn->size);
-
-	if (memcmp(tmp, bkpt->insn->value, bkpt->insn->size) != 0)
-		debug(1, "breakpoint already disabled");
-	else
-		trace_mem_write(proc, bkpt->addr, bkpt->orig_insn,
-			bkpt->insn->size);
+	long orig_insn = trace_mem_readw(proc, bkpt->ssol_addr);
+	trace_mem_writew(proc, bkpt->addr, orig_insn);
 }
 
 static struct breakpoint *breakpoint_from_address(struct process *proc, addr_t addr)
@@ -67,24 +57,26 @@ static struct breakpoint *breakpoint_from_address(struct process *proc, addr_t a
 	return dict_find_entry(proc->breakpoints, (void *)addr);
 }
 
-static void breakpoint_get(struct process *proc, struct breakpoint *bkpt)
+static void register_breakpoint_(struct process *proc, addr_t addr,
+				 struct breakpoint *bkpt)
 {
-	bkpt->enabled++;
-	if (bkpt->enabled == 1)
-		enable_breakpoint(proc, bkpt);
+	dict_enter(proc->breakpoints, (void *)addr, bkpt);
+	bkpt->refcnt++;
 }
 
-static void breakpoint_put(struct process *proc, struct breakpoint *bkpt)
+static void breakpoint_put(struct breakpoint *bkpt)
 {
-	bkpt->enabled--;
-	if (bkpt->enabled == 0)
-		disable_breakpoint(proc, bkpt);
+	if (--bkpt->refcnt == 0) {
+		free(bkpt->symbol);
+		free(bkpt);
+	}
 }
 
-static struct breakpoint *register_breakpoint(struct process *proc, addr_t addr)
+static struct breakpoint *register_breakpoint(struct process *proc, addr_t addr,
+					      int type)
 {
 	struct breakpoint *bkpt;
-	addr_t fixed_addr;
+	addr_t fixed_addr, ssol_addr;
 
 	debug(1, "addr=0x%x", addr);
 
@@ -96,138 +88,183 @@ static struct breakpoint *register_breakpoint(struct process *proc, addr_t addr)
 			perror("calloc");
 			exit(EXIT_FAILURE);
 		}
-		dict_enter(proc->breakpoints, (void *)fixed_addr, bkpt);
+		register_breakpoint_(proc, fixed_addr, bkpt);
+		if (type == BKPT_RETURN || type == BKPT_SENTINEL) {
+			ssol_addr = fixed_addr;
+		} else {
+			ssol_addr = ssol_new_slot(proc);
+			register_breakpoint_(proc, ssol_addr, bkpt);
+		}
 		bkpt->addr = fixed_addr;
+		bkpt->ssol_addr = ssol_addr;
+		bkpt->type = type;
 		bkpt->insn = breakpoint_instruction(addr);
 	}
-	breakpoint_get(proc, bkpt);
+	enable_breakpoint(proc, bkpt);
 
 	return bkpt;
 }
 
-static void register_proc_breakpoints(struct process *proc)
+static void register_entry_breakpoint(struct process *proc, const char *libname,
+				      const char *symname, addr_t symaddr)
 {
-	struct library_symbol *tmp;
-	struct breakpoint *bkpt = NULL;
+	struct breakpoint *bkpt, *bkpt2;
 
-	tmp = proc->symbols;
-	while (tmp) {
-		bkpt = register_breakpoint(proc, tmp->enter_addr);
-		bkpt->type = BKPT_ENTRY;
-		bkpt->symbol = tmp;
-		tmp = tmp->next;
+	if (strcmp(symname, "__pthread_mutex_lock") == 0 ||
+	    strcmp(symname, "__pthread_mutex_unlock") == 0 ||
+	    strcmp(symname, "__libc_calloc") == 0 ||
+	    strcmp(symname, "__libc_malloc") == 0 ||
+	    strcmp(symname, "__libc_realloc") == 0 ||
+	    strcmp(symname, "__libc_free") == 0 ||
+	    strcmp(symname, "__libc_memalign") == 0 ||
+	    strcmp(symname, "__libc_valloc") == 0 ||
+	    strcmp(symname, "__libc_pvalloc") == 0 ||
+	    strcmp(symname, "posix_memalign") == 0) {
+		bkpt = register_breakpoint(proc, symaddr, BKPT_ENTRY);
+		bkpt->symbol = strdup(symname);
+		bkpt2 = register_breakpoint(proc, ssol_new_slot(proc), BKPT_SENTINEL);
+		debug(2, "entry breakpoint registered for \"%s\" at %#x, "
+		      "SSOL %#x, sentinel %#x, PID %d", bkpt->symbol,
+		      bkpt->addr, bkpt->ssol_addr, bkpt2->addr, proc->pid);
 	}
-}
 
-static int register_return_breakpoint(struct process *proc, struct breakpoint *bkpt)
-{
-	addr_t ret_addr;
-	struct breakpoint *ret_bkpt;
-
-	fn_return_address(proc, &ret_addr);
-	ret_bkpt = breakpoint_from_address(proc, fixup_address(ret_addr));
-	if (ret_bkpt != NULL && ret_bkpt->enabled)
-		return 1;
-	ret_bkpt = register_breakpoint(proc, ret_addr);
-	ret_bkpt->type = BKPT_RETURN;
-	ret_bkpt->symbol = bkpt->symbol;
-
-	return 0;
 }
 
 static void register_dl_debug_breakpoint(struct process *proc)
 {
 	addr_t addr = solib_dl_debug_address(proc);
-	struct breakpoint *dl_bkpt;
 
 	debug(3, "solib_dl_debug_address=0x%x", addr);
-	dl_bkpt = register_breakpoint(proc, addr);
-	dl_bkpt->type = BKPT_SOLIB;
+	register_breakpoint(proc, addr, BKPT_SOLIB);
 }
 
-#define set_pending_breakpoint(proc, bkpt) do { \
-	proc->pending_breakpoint = bkpt; \
-	} while (0)
-#define clear_pending_breakpoint(proc) do { \
-	proc->pending_breakpoint = NULL; \
-	} while (0)
+static void register_ssol_return_breakpoint(struct process *proc)
+{
+	register_breakpoint(proc, proc->ssol->first, BKPT_RETURN);
+}
+
+static int ssol_insn_size(struct process *proc, addr_t addr)
+{
+	int size;
+
+	/* Skip first SSOL entry (reserved for return breakpoint). */
+	if (addr <= proc->ssol->first ||
+	    addr > proc->ssol->last + sizeof(long))
+		return -1;
+
+	size = addr - (addr / sizeof(long)) * sizeof(long);
+	if (size == 0)
+		size = sizeof(long);
+	return size;
+}
+
+void singlestep_handle(struct process *proc, addr_t addr)
+{
+	struct breakpoint *bkpt;
+	int size = ssol_insn_size(proc, addr);
+
+	debug(1, "pid=%d, addr=0x%x", proc->pid, addr);
+	assert(size > 0 && size <= sizeof(long));
+	bkpt = breakpoint_from_address(proc, addr - size);
+	assert(bkpt != NULL);
+	set_instruction_pointer(proc, bkpt->addr + size);
+}
+
+void singlestep_after_signal(struct process *proc)
+{
+	addr_t addr = bkpt_get_address(proc);
+
+	debug(2, "signal received while singlestepping (pid=%d, ssol=%#x)",
+	      proc->pid, addr);
+	if (proc->exiting) {
+		/* If a process is exiting/detaching, we cannot point it to a
+		 * SSOL address, so instead we point it to the original
+		 * instruction. */
+		struct breakpoint *bkpt = breakpoint_from_address(proc, addr);
+		addr = bkpt->addr;
+	} else {
+		addr += sizeof(long);
+	}
+	set_instruction_pointer(proc, addr);
+	proc->singlestep = 0;
+}
 
 void bkpt_handle(struct process *proc, addr_t addr)
 {
 	struct breakpoint *bkpt = breakpoint_from_address(proc, addr);
 	struct callback *cb = cb_get();
+	char *symbol_name;
 
 	debug(3, "pid=%d, addr=0x%x", proc->pid, addr);
 
-	stop_other_processes(proc);
-	if (proc->pending_breakpoint != NULL) {
-		/* re-enable pending breakpoint */
-		enable_breakpoint(proc, proc->pending_breakpoint);
-		clear_pending_breakpoint(proc);
-	} else if (bkpt != NULL) {
-		switch (bkpt->type) {
-		case BKPT_ENTRY:
-			debug(1, "entry breakpoint for %s()", bkpt->symbol->name);
-			/* Ignore function entries whose return address is the
-			 * same as a previous registered one. This usually happens
-			 * when the code uses the b (branch)  instruction
-			 */
-			if (register_return_breakpoint(proc, bkpt))
-				break;
-			fn_save_arg_data(proc);
-			if (cb && cb->function.enter)
-				cb->function.enter(proc, bkpt->symbol->name);
-			break;
-		case BKPT_RETURN:
-			debug(1, "return breakpoint for %s()", bkpt->symbol->name);
-			if (cb && cb->function.exit)
-				cb->function.exit(proc, bkpt->symbol->name);
-			if (bkpt->enabled)		
-				breakpoint_put(proc, bkpt);
-			fn_invalidate_arg_data(proc);
-			break;
-		case BKPT_SOLIB:
-			solib_update_list(proc);
-			register_proc_breakpoints(proc);
-			break;
-		default:
-			error_exit("unknown breakpoint type");
-		}
-		/* temporarily disable breakpoint, so we can pass over it */
-		if (bkpt->enabled) {
-			disable_breakpoint(proc, bkpt);
-			set_pending_breakpoint(proc, bkpt);
-		}
-		set_instruction_pointer(proc, addr);
-	} else {
+	if (bkpt == NULL) {
 		msg_err("unknown breakpoint at address 0x%x\n", addr);
 		exit(EXIT_FAILURE);
 	}
-}
 
-int bkpt_pending(struct process *proc)
-{
-	return (proc->pending_breakpoint != NULL);
+	switch (bkpt->type) {
+	case BKPT_ENTRY:
+		symbol_name = bkpt->symbol;
+		debug(2, "entry breakpoint for %s()", symbol_name);
+		/* Set instruction pointer to SSOL address before calling
+		 * fn_callstack_push(), so that it can read the original
+		 * instruction from it. */
+		set_instruction_pointer(proc, bkpt->ssol_addr);
+		if (fn_callstack_push(proc, symbol_name) == 0) {
+			fn_set_return_address(proc, proc->ssol->first);
+			if (cb && cb->function.enter)
+				cb->function.enter(proc, symbol_name);
+		}
+		proc->singlestep = 1;
+		break;
+	case BKPT_RETURN:
+		symbol_name = fn_name(proc);
+		debug(2, "return breakpoint for %s()", symbol_name);
+		/* Fixup return address before calling function.exit()
+		 * callback so that backtraces do not contain the SSOL
+		 * address. */
+		fn_get_return_address(proc, &addr);
+		set_instruction_pointer(proc, addr);
+		fn_callstack_restore(proc, 1);
+		if (cb && cb->function.exit)
+			cb->function.exit(proc, symbol_name);
+		fn_callstack_restore(proc, 0);
+		fn_callstack_pop(proc);
+		break;
+	case BKPT_SOLIB:
+		debug(1, "solib breakpoint");
+		solib_update_list(proc, register_entry_breakpoint);
+		fn_do_return(proc);
+		break;
+	case BKPT_SENTINEL:
+		/* A singlestep was interrupted by a signal. Restart it here.
+		 */
+		set_instruction_pointer(proc, addr - sizeof(long));
+		proc->singlestep = 1;
+		break;
+	default:
+		error_exit("unknown breakpoint type");
+	}
 }
 
 void bkpt_init(struct process *proc)
 {
 	if (proc->parent == NULL) {
 		proc->breakpoints = dict_init(dict_key2hash_int, dict_key_cmp_int);
+		ssol_init(proc);
+		register_ssol_return_breakpoint(proc);
 		register_dl_debug_breakpoint(proc);
-		solib_update_list(proc);
-		register_proc_breakpoints(proc);
+		solib_update_list(proc, register_entry_breakpoint);
 	} else {
 		proc->breakpoints = proc->parent->breakpoints;
 		proc->solib_list = proc->parent->solib_list;
+		proc->ssol = proc->parent->ssol;
 	}
 }
 
 static void disable_bkpt_cb(void *addr __unused, void *bkpt, void *proc)
 {
-	if (((struct breakpoint *)bkpt)->enabled) {
-		disable_breakpoint((struct process *)proc, bkpt);
-	}
+	disable_breakpoint((struct process *)proc, bkpt);
 }
 
 void disable_all_breakpoints(struct process *proc)
@@ -236,4 +273,28 @@ void disable_all_breakpoints(struct process *proc)
 		return;
 	debug(1, "Disabling breakpoints for pid %d...", proc->pid);
 	dict_apply_to_all(proc->breakpoints, disable_bkpt_cb, proc);
+}
+
+static void free_bkpt_cb(void *addr __unused, void *bkpt, void *proc __unused)
+{
+	breakpoint_put((struct breakpoint *)bkpt);
+}
+
+static void free_all_breakpoints(struct process *proc)
+{
+	if (proc->breakpoints == NULL)
+		return;
+	debug(1, "Freeing breakpoints for pid %d...", proc->pid);
+	dict_apply_to_all(proc->breakpoints, free_bkpt_cb, proc);
+	dict_clear(proc->breakpoints);
+	proc->breakpoints = NULL;
+}
+
+void bkpt_finish(struct process *proc)
+{
+	if (proc->parent != NULL)
+		return;
+	free_all_solibs(proc);
+	ssol_finish(proc);
+	free_all_breakpoints(proc);
 }

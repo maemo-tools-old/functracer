@@ -41,6 +41,7 @@ struct rp_data {
 enum {
 	FN_FREE,
 	FN_MALLOC,
+	FN_MEMALIGN,
 	FN_CALLOC,
 	FN_REALLOC,
 };
@@ -49,6 +50,7 @@ struct rp_alloc {
 	int type;
 	addr_t addr;
 	size_t nmemb;
+	size_t boundary;
 	size_t size;
 	addr_t addr_new;
 };

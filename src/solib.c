@@ -32,7 +32,6 @@
 
 #include "callback.h"
 #include "debug.h"
-#include "elf.h"
 #include "maps.h"
 #include "solib.h"
 
@@ -174,6 +173,9 @@ addr_t solib_dl_debug_address(struct process *proc)
 	   loaded so that we can load its symbols and place a breakpoint
 	   in the dynamic linker itself. */
 	find_solib(buf, &interp_file);
+	if (interp_file == NULL)
+		goto error;
+	free(buf);
 	abfd = bfd_fopen(interp_file, "default", "rb", -1);
 	if (abfd == NULL) {
 		warning_bfd(interp_file, "could not open dynamic linker file");
@@ -200,10 +202,11 @@ addr_t solib_dl_debug_address(struct process *proc)
 	if (!solib_is_prelinked(abfd))
 		lib_base_address(proc->pid, interp_file, &base_addr);
 
+	free(interp_file);
 close_abfd:
 	if (!bfd_close(abfd))
 		error_bfd(interp_file, "could not close file");
-
+error:
 	return (base_addr + sym_addr);
 }
 
@@ -228,6 +231,7 @@ static void current_solibs(struct process *proc, struct solib_list **solist)
 			so = tmp;
 		}
 	}
+	free(exec_path);
 	maps_finish(&md);
 	*solist = so;
 }
@@ -239,13 +243,25 @@ static void free_solib(struct solib_list *solib)
 	free(solib);
 }
 
-static void solib_read_library(struct library_symbol **syms, char *filename, addr_t base_addr)
+void free_all_solibs(struct process *proc)
+{
+	struct solib_list *tmp = proc->solib_list, *tmp2;
+
+	while (tmp) {
+		tmp2 = tmp;
+		tmp = tmp->next;
+		free_solib(tmp2);
+	}
+	proc->solib_list = NULL;
+}
+
+static void solib_read_library(struct process *proc, char *filename,
+			       addr_t base_addr, new_sym_t callback)
 {
 	bfd *abfd;
 	long storage_needed, number_of_symbols;
 	asymbol *sym, **symbol_table;
 	addr_t symaddr;
-	struct callback *cb = cb_get();
 	const bfd_format bfd_fmt = bfd_object;
 	const flagword flags = BSF_EXPORT | BSF_FUNCTION;
 
@@ -264,22 +280,15 @@ static void solib_read_library(struct library_symbol **syms, char *filename, add
 		number_of_symbols = bfd_canonicalize_dynamic_symtab(abfd, symbol_table);
 		for (i = 0; i < number_of_symbols; i++) {
 			sym = symbol_table[i];
-			if ((sym->flags & flags) == flags && cb
-			    && cb->library.match(filename, sym->name)) {
-				struct library_symbol *tmp;
-
+			if ((sym->flags & flags) == flags) {
 				if (!solib_is_prelinked(abfd))
 					symaddr = base_addr;
 				else
 					symaddr = 0;
 				/* Bfd symbols are section relative. */
 				symaddr += sym->value + sym->section->vma;
-				debug(3, "new symbol: name=\"%s\", addr=0x%x", sym->name, symaddr);
-				tmp = xmalloc(sizeof(struct library_symbol));
-				tmp->name = strdup(sym->name);
-				tmp->enter_addr = symaddr;
-				tmp->next = *syms;
-				*syms = tmp;
+				/* FIXME: pass SONAME instead of library filename. */
+				callback(proc, filename, sym->name, symaddr);
 			}
 		}
 		free(symbol_table);
@@ -290,7 +299,7 @@ err:
 }
 
 /* Based on update_solib_list() code from GDB 6.6 (gdb/solib.c). */
-void solib_update_list(struct process *proc)
+void solib_update_list(struct process *proc, new_sym_t callback)
 {
 	struct solib_list *cur_sos;
 	struct solib_list *k = proc->solib_list;
@@ -329,7 +338,7 @@ void solib_update_list(struct process *proc)
 		for (c = cur_sos; c; c = c->next) {
 			/* solib was loaded */
 			debug(3, "solib loaded: base=0x%x, name=%s", c->base_addr, c->path);
-			solib_read_library(&proc->symbols, c->path, c->base_addr);
+			solib_read_library(proc, c->path, c->base_addr, callback);
 		}
 	}
 }

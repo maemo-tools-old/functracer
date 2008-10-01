@@ -30,9 +30,11 @@
 #include <sys/wait.h>
 #include <errno.h>
 
+#include "breakpoint.h"
 #include "debug.h"
 #include "options.h"
 #include "process.h"
+#include "report.h"
 #include "trace.h"
 
 #define BUF_SIZE	4096
@@ -91,77 +93,6 @@ open_error:
 	free(file_buf);
 
 	return retval;
-}
-
-/* Get process' current state from /proc/PID/stat.
- */
-static char get_process_state(struct process *proc)
-{
-	char procfile[64];
-	FILE *filp;
-	struct proc_state {
-		int pid;
-		char name[64];
-		char state;
-	} p;
-
-	snprintf(procfile, 64, "/proc/%d/stat", proc->pid);
-	filp = fopen(procfile, "r");
-	if (!filp) {
-		if (errno == ENOENT)
-			return ' ';
-		perror("get_process_state(): fopen");
-		exit(1);
-	}
-
-	fscanf(filp, "%d (%64[^)]) %c", &p.pid, p.name, &p.state);
-	p.name[63] = '\0';
-	fclose(filp);
-
-	return p.state;
-}
-
-/* Check whether process is inside a sleeping syscall.
- */
-static int sleeping_process(struct process *proc)
-{
-	char ret;
-
-	do {
-		ret = get_process_state(proc);
-	} while (ret == 'R');
-
-	return (ret == 'S' || ret == 'D');
-}
-
-/* "Stop" other processes by waiting for the next state change or exit. The
- * status for the new state is saved for future usage by ft_wait().
- */
-void stop_other_processes(struct process *current_proc)
-{
-	struct process *tmp = list_of_processes;
-
-	while (tmp) {
-		if (current_proc->pid != tmp->pid && !tmp->pending) {
-			pid_t pid;
-
-			if (sleeping_process(tmp)) {
-				/* processes in sleeping state are ignored
-				 * because they might wait for another (currently
-				 * stopped) process to change state. This would
-				 * cause the waitpid() call below to never return.
-				 * The syscall that made the process sleep will
-				 * eventually return, and will be stopped by
-				 * ptrace anyway. */
-				debug(1, "process %d is sleeping, ignoring", tmp->pid);
-				tmp = tmp->next;
-				continue;
-			}
-			pid = ft_waitpid(tmp->pid, &tmp->pending_status, __WALL);
-			tmp->pending = 1;
-		}
-		tmp = tmp->next;
-	}
 }
 
 struct process *get_list_of_processes(void)
@@ -244,4 +175,17 @@ void remove_process(struct process *proc)
 		}
 		tmp = tmp->next;
 	}
+}
+
+void remove_all_processes(void)
+{
+#if 0
+	struct process *tmp = list_of_processes;
+
+	while (tmp) {
+		fprintf(stderr, "removing dangling process: %d\n", tmp->pid);
+		rp_finish(tmp);
+		free_process(tmp, &tmp);
+	}
+#endif
 }

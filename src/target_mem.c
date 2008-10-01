@@ -88,3 +88,8 @@ void trace_getregs(struct process *proc, void *regs)
 {
 	xptrace(PTRACE_GETREGS, proc->pid, NULL, regs);
 }
+
+void trace_setregs(struct process *proc, void *regs)
+{
+	xptrace(PTRACE_SETREGS, proc->pid, NULL, regs);
+}

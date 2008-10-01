@@ -27,13 +27,11 @@
 #include <sys/types.h>
 
 struct dict;
-struct breakpoint;
-struct library_symbol;
 struct rp_data;
 struct solib_list;
 
 struct callstack {
-	void *fn_arg_data;
+	void *data[3];
 	struct callstack *next;
 };
 
@@ -41,16 +39,17 @@ struct process {
 	pid_t pid;
 	char *filename;
 	struct dict *breakpoints;
-	struct library_symbol *symbols;
 	struct solib_list *solib_list;
-	struct breakpoint *pending_breakpoint;
 	struct rp_data *rp_data;
 	struct callstack *callstack;
-	int in_syscall;
+#ifdef DEBUG
+	int callstack_depth;
+#endif
 	int trace_control;
-	int pending;
-	int pending_status;
-        int detached;
+	int singlestep;
+        int exiting;
+	int in_syscall;
+	struct ssol *ssol;
 	struct process *parent;
 	struct process *next;
 };
@@ -60,6 +59,6 @@ extern struct process *process_from_pid(pid_t pid);
 extern char *name_from_pid(pid_t pid);
 extern struct process *add_process(pid_t pid);
 extern void remove_process(struct process *proc);
-extern void stop_other_processes(struct process *current_proc);
+extern void remove_all_processes(void);
 
 #endif /* TT_PROCESS_H */

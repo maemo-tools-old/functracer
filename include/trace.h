@@ -26,8 +26,6 @@
 
 #include <sys/types.h>
 
-extern int exiting;
-
 extern int trace_main_loop(void);
 extern void trace_attach_child(pid_t pid);
 extern int trace_execute(char *filename, char *argv[]);

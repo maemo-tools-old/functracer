@@ -29,19 +29,17 @@
 #include "process.h"
 #include "target_mem.h"
 
-struct library_symbol {
-	char *name;
-	addr_t enter_addr;
-	struct library_symbol *next;
-};
-
 struct solib_list {
 	addr_t base_addr;
 	char *path;
 	struct solib_list *next;
 };
 
-extern void solib_update_list(struct process *proc);
+typedef void (*new_sym_t)(struct process *, const char *, const char *,
+			  addr_t);
+
+extern void solib_update_list(struct process *proc, new_sym_t callback);
 extern addr_t solib_dl_debug_address(struct process *proc);
+extern void free_all_solibs(struct process *proc);
 
 #endif /* !FTK_SOLIB_H */

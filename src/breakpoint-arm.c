@@ -28,6 +28,7 @@
 #include "debug.h"
 
 #define off_pc 60
+#define off_cpsr 64
 
 addr_t bkpt_get_address(struct process *proc)
 {
@@ -36,6 +37,14 @@ addr_t bkpt_get_address(struct process *proc)
 
 void set_instruction_pointer(struct process *proc, addr_t addr)
 {
+	if (addr & 1) {
+		/* Set Thumb mode if ADDR is a Thumb address */
+		long cpsr;
+		addr = fixup_address(addr);
+		cpsr = trace_user_readw(proc, off_cpsr);
+		cpsr |= (1 << 5);
+		trace_user_writew(proc, off_cpsr, cpsr);
+	}
 	trace_user_writew(proc, off_pc, (long)addr);
 }
 

@@ -21,23 +21,18 @@
  *
  */
 
-#ifndef TT_PTRACE_H
-#define TT_PTRACE_H
-
-#include <stdint.h>
+#ifndef FT_SSOL_H
+#define FT_SSOL_H
 
 #include "process.h"
+#include "target_mem.h"
 
-/*typedef void *addr_t;*/
-typedef uintptr_t addr_t;
+struct ssol {
+	addr_t first, last;
+};
 
-extern long trace_mem_readw(struct process *proc, addr_t addr);
-extern void trace_mem_writew(struct process *proc, addr_t addr, long w);
-extern long trace_user_readw(struct process *proc, long offset);
-extern void trace_user_writew(struct process *proc, long offset, long w);
-extern void trace_mem_read(struct process *proc, addr_t addr, void *buf, size_t count);
-extern void trace_mem_write(struct process *proc, addr_t addr, void *buf, size_t count);
-extern void trace_getregs(struct process *proc, void *regs);
-extern void trace_setregs(struct process *proc, void *regs);
+extern addr_t ssol_new_slot(struct process *proc);
+extern void ssol_init(struct process *proc);
+extern void ssol_finish(struct process *proc);
 
-#endif /* TT_PTRACE_H */
+#endif /* !FT_SSOL_H */

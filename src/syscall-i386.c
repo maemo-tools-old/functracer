@@ -26,6 +26,15 @@
 #include "syscall.h"
 #include "target_mem.h"
 
+struct syscall_data syscall_data = {
+	/* cd 80 - int 0x80; 90 - nop */
+	{ 0xcd, 0x80, 0x90, 0x90 },
+	{ EBX, ECX, EDX, ESI, EDI, EBP },
+	EIP,
+	EAX,
+	EAX
+};
+
 int get_syscall_nr(struct process *proc, int *nr)
 {
 	*nr = trace_user_readw(proc, 4 * ORIG_EAX);

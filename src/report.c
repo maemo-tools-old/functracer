@@ -114,6 +114,13 @@ void rp_alloc(struct process *proc, struct rp_alloc *ra)
 			fprintf(rd->fp, "%d. calloc(%d, %d) = 0x%08x\n",
 				*rp_number, ra->nmemb, ra->size, ra->addr);
 			break;
+		case FN_MEMALIGN:
+			debug(3, "rp_memalign(pid=%d, addr=0x%08x, boundary=%d, \
+			      size=%d)", rd->pid, ra->addr, ra->boundary, ra->size);
+
+			fprintf(rd->fp, "%d. memalign(%d, %d) = 0x%08x\n",
+				*rp_number, ra->boundary, ra->size, ra->addr);
+			break;
 		case FN_REALLOC:
 			debug(3, "rp_realloc(pid=%d, addr=0x%08x, \
 			      addr_new=0x%08x, size=%d)", rd->pid, ra->addr,

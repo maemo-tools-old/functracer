@@ -42,12 +42,10 @@ struct callback {
 		void (*enter)(struct process *proc, int sysno);
 		void (*exit)(struct process *proc, int sysno);
 	} syscall;
-	struct {
-		int (*match)(const char *libname, const char *symname);
-	} library;
 };
 
 extern void cb_init(void);
+extern void cb_finish(void);
 extern struct callback *cb_get(void);
 
 #endif /* !FTK_CALLBACK_H */

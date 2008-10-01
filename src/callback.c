@@ -21,7 +21,6 @@
  *
  */
 
-#define NDEBUG
 #include <assert.h>
 #include <libiberty.h>
 #include <signal.h>
@@ -123,7 +122,11 @@ static void function_exit(struct process *proc, const char *name)
 		size_t arg0 = fn_argument(proc, 0);
 
 		assert(proc->rp_data != NULL);
-		if (strcmp(name, "__libc_malloc") == 0) {
+		if (strcmp(name, "__pthread_mutex_lock") == 0 ||
+		    strcmp(name, "__pthread_mutex_unlock") == 0) {
+			debug(3, "pthread function = %s\n", name);
+			return;
+		} else if (strcmp(name, "__libc_malloc") == 0) {
 			ra.type = FN_MALLOC;
 			ra.addr = retval;
 			ra.size = arg0;
@@ -132,6 +135,12 @@ static void function_exit(struct process *proc, const char *name)
 			ra.type = FN_CALLOC;
 			ra.addr = retval;
 			ra.nmemb = arg0;
+			ra.size = arg1;
+		} else if (strcmp(name, "__libc_memalign") == 0) {
+			size_t arg1 = fn_argument(proc, 1);
+			ra.type = FN_MEMALIGN;
+			ra.addr = retval;
+			ra.boundary = arg0;
 			ra.size = arg1;
 		} else if (strcmp(name, "__libc_realloc") == 0) {
 			size_t arg1 = fn_argument(proc, 1);
@@ -147,10 +156,6 @@ static void function_exit(struct process *proc, const char *name)
 				return;
 			ra.type = FN_FREE;
 			ra.addr = arg0;
-		} else if (strcmp(name, "__pthread_mutex_lock") == 0 ||
-			   strcmp(name, "__pthread_mutex_unlock") == 0) {
-			debug(3, "pthread function = %s\n", name);
-			return;
 		} else {
 			msg_warn("unexpected function exit (%s)\n", name);
 			return;
@@ -160,24 +165,10 @@ static void function_exit(struct process *proc, const char *name)
 	}
 }
 
-static int library_match(const char *libname, const char *symname)
-{
-	debug(3, "library symbol match test (libname=\"%s\", symname=\"%s\")",
-	      libname, symname);
-
-	return (strcmp(symname, "__libc_calloc") == 0
-		|| strcmp(symname, "__libc_malloc") == 0
-		|| strcmp(symname, "__libc_free") == 0
-		|| strcmp(symname, "__libc_realloc") == 0
-		|| strcmp(symname, "__pthread_mutex_lock") == 0
-		|| strcmp(symname, "__pthread_mutex_unlock") == 0);
-}
-
 static void cb_register(struct callback *cb)
 {
-	if (current_cb)
-		free(current_cb);
-	current_cb = xmalloc(sizeof(struct callback));
+	if (current_cb == NULL)
+		current_cb = xmalloc(sizeof(struct callback));
 	memcpy(current_cb, cb, sizeof(struct callback));
 }
 
@@ -199,11 +190,16 @@ void cb_init(void)
 			.enter	   = function_enter,
 			.exit	   = function_exit,
 		},
-		.library = {
-			.match     = library_match,
-		},
 	};
 	cb_register(&cb);
+}
+
+void cb_finish(void)
+{
+	if (current_cb == NULL)
+		return;
+	free(current_cb);
+	current_cb = NULL;
 }
 
 struct callback *cb_get(void)

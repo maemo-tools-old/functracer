@@ -35,13 +35,15 @@ addr_t bkpt_get_address(struct process *proc)
 	addr = trace_user_readw(proc, 4 * EIP);
 	/* EIP is always incremented by 1 after hitting a breakpoint, so
  	 * decrement it to get the actual breakpoint address. */
-	addr -= DECR_PC_AFTER_BREAK;
+	if (!proc->singlestep)
+		addr -= DECR_PC_AFTER_BREAK;
 
 	return addr;
 }
 
 void set_instruction_pointer(struct process *proc, addr_t addr)
 {
+	debug(3, "pid=%d, addr=0x%x", proc->pid, addr);
 	trace_user_writew(proc, 4 * EIP, (long)addr);
 }
 

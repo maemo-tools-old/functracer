@@ -33,6 +33,15 @@
 #define off_ip 48
 #define off_pc 60
 
+struct syscall_data syscall_data = {
+	/* ef 00 00 00 - swi 0x00000000 */
+	{ 0x00, 0x00, 0x00, 0xef },
+	{ 0, 1, 2, 3, 4, 5 }, /* r0, r1, r2, r3, r4, r5 */
+	15,	/* pc */
+	7,	/* r7 */
+	0	/* r0 */
+};
+
 int get_syscall_nr(struct process *proc, int *nr)
 {
 	/* get the user's pc (plus 8) */

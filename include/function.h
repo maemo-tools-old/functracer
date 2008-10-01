@@ -30,8 +30,12 @@ struct process;
 
 extern long fn_argument(struct process *proc, int arg_num);
 extern long fn_return_value(struct process *proc);
-extern void fn_return_address(struct process *proc, addr_t *addr);
-extern void fn_save_arg_data(struct process *proc);
-extern void fn_invalidate_arg_data(struct process *proc);
+extern void fn_get_return_address(struct process *proc, addr_t *addr);
+extern void fn_set_return_address(struct process *proc, addr_t addr);
+extern void fn_do_return(struct process *proc);
+extern int fn_callstack_push(struct process *proc, char *fn_name);
+extern void fn_callstack_pop(struct process *proc);
+extern void fn_callstack_restore(struct process *proc, int original);
+extern char *fn_name(struct process *proc);
 
 #endif /* !FTK_FUNCTION_H */
