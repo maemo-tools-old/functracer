@@ -1,3 +1,22 @@
+functracer (0.10) unstable; urgency=low
+
+  * Add prefix "__" on pthread_mutex_lock/pthread_mutex_unlock functions.
+  * Fix allocation report for multithread programs.
+  * Add missing *fPIC flag to libcallchain.so build.
+  * Update .gitignore.
+  * Remove unused declarations.
+  * Fix memory leak in remove_process().
+  * Simplify xptrace().
+  * Change backtrace output format.
+  * Add second line to header.
+  * Small refactorings and a race condition fix.
+  * Fix functracer interrupt (CTRL+C) handling.
+  * Improve some tests.
+  * Replace traditional breakpoint approach with SSOL.
+  * Add support for reporting of process events.
+
+ -- Bruna Moreira <bruna.moreira@indt.org.br>  Wed, 01 Oct 2008 11:29:36 -0400
+
 functracer (0.9.2) unstable; urgency=low
 
   * Fix some lintian warnings, copyrights and README.

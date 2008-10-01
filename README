@@ -96,12 +96,10 @@ It works with ELF based Linux systems running on x86 or ARM architecture.
 
 6. Bugs
 -------
-- this version has a performance decrease due to several reading of /proc
-  directory.
-- functracer tries to serialize the threads, avoiding that allocation related
-  breakpoints from multiple threads are caught by it at the same time.  Note
-  that there are still some issues with allocation functions not being reported
-  in the correct order.
+- tracing of breakpoints after an exec() call is not working on the new SSOL
+  approach. The issue is being investigated and should be fixed on next sprint.
+  From the applications tested, only osso-calculator has been affected.
+- SIGUSR1-based process control is not working with multithreaded applications.
 
 To do:
 - better documentation, source code comments
