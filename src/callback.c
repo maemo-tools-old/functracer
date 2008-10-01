@@ -47,8 +47,11 @@ static void process_create(struct process *proc)
 
 	if (trace_enabled(proc)) {
 		assert(proc->rp_data == NULL);
-		if (rp_init(proc) < 0)
+		if (rp_init(proc) < 0) {
 			proc->trace_control = 0;
+		} else {
+			rp_event(proc, "Process %d was created\n", proc->pid);
+		}
 	}
 }
 
@@ -58,6 +61,8 @@ static void process_exit(struct process *proc, int exit_code)
 
 	if (trace_enabled(proc)) {
 		assert(proc->rp_data != NULL);
+		rp_event(proc, "Process %d has exited with code %d\n",
+			 proc->pid, exit_code);
 		rp_finish(proc);
 	}
 }
@@ -65,6 +70,10 @@ static void process_exit(struct process *proc, int exit_code)
 static void process_kill(struct process *proc, int signo)
 {
 	debug(3, "process killed by signal (pid=%d, signo=%d)", proc->pid, signo);
+	if (trace_enabled(proc)) {
+		rp_event(proc, "Process %d was killed by signal %d\n",
+			 proc->pid, signo);
+	}
 }
 
 static void process_signal(struct process *proc, int signo)
@@ -72,6 +81,8 @@ static void process_signal(struct process *proc, int signo)
 	debug(3, "process received signal (pid=%d, signo=%d)", proc->pid, signo);
 
 	if (signo == SIGUSR1) {
+		/* FIXME: SIGUSR1 handling is broken for multithreaded
+		 * applications. */
 		if (trace_enabled(proc)) {
 			assert(proc->rp_data != NULL);
 			rp_finish(proc);
@@ -79,6 +90,11 @@ static void process_signal(struct process *proc, int signo)
 		} else {
 			assert(proc->rp_data == NULL);
 			proc->trace_control = rp_init(proc) < 0 ? 0 : 1;
+		}
+	} else {
+		if (trace_enabled(proc)) {
+			rp_event(proc, "Process %d received signal %d\n",
+				 proc->pid, signo);
 		}
 	}
 }
@@ -88,6 +104,7 @@ static void process_interrupt(struct process *proc)
 	debug(3, "process interrupted (pid=%d)", proc->pid);
 	if (trace_enabled(proc)) {
 		assert(proc->rp_data != NULL);
+		rp_event(proc, "Process %d was detached\n", proc->pid);
 		rp_finish(proc);
 	}
 }

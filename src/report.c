@@ -19,6 +19,7 @@
 
 #include <assert.h>
 #include <libiberty.h>
+#include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
@@ -138,6 +139,22 @@ void rp_alloc(struct process *proc, struct rp_alloc *ra)
 	if (ra->type != FN_FREE || arguments.enable_free_bkt)
 		rp_write_backtraces(rd);
 
+}
+
+void rp_event(struct process *proc, const char *fmt, ...)
+{
+	struct rp_data *rd = proc->rp_data;
+	int *rp_number;
+	va_list args;
+
+	if (proc->parent != NULL)
+		rp_number = &proc->parent->rp_data->rp_number;
+	else 
+		rp_number = &rd->rp_number;
+
+	va_start(args, fmt);
+	vfprintf(rd->fp, fmt, args);
+	va_end(args);
 }
 
 int rp_init(struct process *proc)

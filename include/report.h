@@ -57,6 +57,7 @@ struct rp_alloc {
 
 extern int rp_init(struct process *proc);
 extern void rp_alloc(struct process *proc, struct rp_alloc *ra);
+extern void rp_event(struct process *proc, const char *fmt, ...);
 extern void rp_finish(struct process *proc);
 
 #endif /* !FTK_REPORT_H */
