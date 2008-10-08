@@ -48,11 +48,12 @@ static long syscall_remote(struct process *proc, long sysnum, int argnum,
 	elf_gregset_t orig_regs, mmap_regs;
 	elf_greg_t *orig_regs_p = (elf_greg_t *)&orig_regs;
 	elf_greg_t *mmap_regs_p = (elf_greg_t *)&mmap_regs;
-	long ret, retval, orig_insn;
+	long ret, retval;
 	int status, i;
 	const unsigned int ip_reg = syscall_data.ip_reg;
 	const unsigned int sysnum_reg = syscall_data.sysnum_reg;
 	const unsigned int retval_reg = syscall_data.retval_reg;
+	char orig_insns[sizeof(syscall_data.insns)];
 
 	/* only up to six arguments are supported */
 	assert(argnum <= ARRAY_SIZE(syscall_data.regs));
@@ -61,8 +62,9 @@ static long syscall_remote(struct process *proc, long sysnum, int argnum,
 	memset(&orig_regs, 0, sizeof(elf_gregset_t));
 	trace_getregs(proc, &orig_regs);
 
-	/* save original instruction at instruction pointer */
-	orig_insn = trace_mem_readw(proc, orig_regs_p[ip_reg]);
+	/* save original instructions */
+	trace_mem_read(proc, orig_regs_p[ip_reg], orig_insns,
+		       sizeof(syscall_data.insns));
 
 	/* set register values for system call */
 	memcpy(&mmap_regs, &orig_regs, sizeof(elf_gregset_t));
@@ -72,16 +74,16 @@ static long syscall_remote(struct process *proc, long sysnum, int argnum,
 	trace_setregs(proc, &mmap_regs);
 
 	/* set syscall instruction */
-	trace_mem_write(proc, orig_regs_p[ip_reg], (char *)syscall_data.insn,
-			sizeof(syscall_data.insn));
+	trace_mem_write(proc, orig_regs_p[ip_reg], (char *)syscall_data.insns,
+			sizeof(syscall_data.insns));
 
 	/* execute syscall instruction and stop again */
-	xptrace(PTRACE_SINGLESTEP, proc->pid, 0, 0);
+	xptrace(PTRACE_CONT, proc->pid, 0, 0);
 
 	/* wait for child to stop */
 	ret = ft_waitpid(proc->pid, &status, __WALL);
 	assert(ret == proc->pid && WIFSTOPPED(status) &&
-	       (WSTOPSIG(status) == SIGTRAP /*|| WSTOPSIG(status) == SIGINT*/));
+	       WSTOPSIG(status) == SIGTRAP);
 
 	/* get system call return value */
 	retval = trace_user_readw(proc, 4 * retval_reg);
@@ -89,8 +91,9 @@ static long syscall_remote(struct process *proc, long sysnum, int argnum,
 	/* restore original register values */
 	trace_setregs(proc, &orig_regs);
 
-	/* restore original instruction */
-	trace_mem_writew(proc, orig_regs_p[ip_reg], orig_insn);
+	/* restore original instructions */
+	trace_mem_write(proc, orig_regs_p[ip_reg], orig_insns,
+			sizeof(syscall_data.insns));
 
 	return retval;
 }

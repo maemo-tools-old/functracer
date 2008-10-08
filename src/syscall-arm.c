@@ -34,12 +34,12 @@
 #define off_pc 60
 
 struct syscall_data syscall_data = {
-	/* ef 00 00 00 - swi 0x00000000 */
-	{ 0x00, 0x00, 0x00, 0xef },
-	{ 0, 1, 2, 3, 4, 5 }, /* r0, r1, r2, r3, r4, r5 */
-	15,	/* pc */
-	7,	/* r7 */
-	0	/* r0 */
+	/* ef 00 00 00 - swi 0x00000000; e7 f0 01 f0 - bkpt. instruction */
+	.insns = { 0x00, 0x00, 0x00, 0xef, 0xf0, 0x01, 0xf0, 0xe7 },
+	.regs = { 0, 1, 2, 3, 4, 5 }, /* r0, r1, r2, r3, r4, r5 */
+	.ip_reg = 15,		/* pc */
+	.sysnum_reg = 7,	/* r7 */
+	.retval_reg = 0		/* r0 */
 };
 
 int get_syscall_nr(struct process *proc, int *nr)

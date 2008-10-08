@@ -27,12 +27,12 @@
 #include "target_mem.h"
 
 struct syscall_data syscall_data = {
-	/* cd 80 - int 0x80; 90 - nop */
-	{ 0xcd, 0x80, 0x90, 0x90 },
-	{ EBX, ECX, EDX, ESI, EDI, EBP },
-	EIP,
-	EAX,
-	EAX
+	/* cd 80 - int 0x80; cc - breakpoint instruction */
+	.insns = { 0xcd, 0x80, 0xcc },
+	.regs = { EBX, ECX, EDX, ESI, EDI, EBP },
+	.ip_reg = EIP,
+	.sysnum_reg = EAX,
+	.retval_reg = EAX
 };
 
 int get_syscall_nr(struct process *proc, int *nr)
