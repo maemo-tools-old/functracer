@@ -14,7 +14,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * Based on code from libleaks.
  */
 
 #include <assert.h>
@@ -29,44 +28,6 @@
 #include "debug.h"
 #include "report.h"
 #include "options.h"
-
-static void rp_copy_file(const char *src, const char *dst)
-{
-	char line[256];
-	FILE *fpi, *fpo;
-
-	debug(3, "rp_copy_file(src=\"%s\", dst=\"%s\"", src, dst);
-
-	fpi = fopen(src, "r");
-	if (!fpi){
-		debug(1, "rp_copyfile(): fopen: \"%s\": %s", src, strerror(errno));
-		return;
-	}
-
-	fpo = fopen(dst, "w");
-	if (!fpo){
-		debug(1, "rp_copyfile(): fopen: \"%s\": %s", dst, strerror(errno));
-		fclose(fpi);
-		exit (1);
-	}
-
-	while (fgets(line, sizeof(line), fpi)){
-		fputs(line, fpo);
-	}
-
-	fclose(fpo);
-	fclose(fpi);
-}
-
-static void rp_copy_maps(struct rp_data *rd)
-{
-	char src[256], dst[256];
-
-	snprintf(src, sizeof(src), "/proc/%d/maps", rd->pid);
-	snprintf(dst, sizeof(dst), "%s/allocs-%d.%d.map",
-			arguments.path ? : getenv("HOME"), rd->pid, rd->step);
-	rp_copy_file(src, dst);
-}
 
 static void rp_write_backtraces(struct rp_data *rd)
 {
@@ -208,7 +169,6 @@ void rp_finish(struct process *proc)
 	bt_finish(rd->btd);
 	if (proc->parent != NULL)
 		return;
-	rp_copy_maps(rd);
 	rd->step++;
 	if (arguments.save_to_file)
 		fclose(rd->fp);
