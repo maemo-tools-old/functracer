@@ -25,6 +25,7 @@
 #define FTK_CALLBACK_H
 
 #include "process.h"
+#include "target_mem.h"
 
 struct callback {
 	struct {
@@ -42,6 +43,11 @@ struct callback {
 		void (*enter)(struct process *proc, int sysno);
 		void (*exit)(struct process *proc, int sysno);
 	} syscall;
+	struct {
+		void (*load)(struct process *proc, addr_t start_addr,
+			     addr_t end_addr, char *path);
+	} library;
+
 };
 
 extern void cb_init(void);

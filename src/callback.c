@@ -182,6 +182,17 @@ static void function_exit(struct process *proc, const char *name)
 	}
 }
 
+static void library_load(struct process *proc, addr_t start_addr,
+			 addr_t end_addr, char *path)
+{
+	debug(3, "library load (pid=%d, start=0x%08x, end=0x%08x, path=%s)",
+	      proc->pid, start_addr, end_addr, path);
+
+	if (trace_enabled(proc))
+		rp_event(proc, "%s => 0x%08x-0x%08x\n", path, start_addr,
+			 end_addr);
+}
+
 static void cb_register(struct callback *cb)
 {
 	if (current_cb == NULL)
@@ -206,6 +217,9 @@ void cb_init(void)
 		.function = {
 			.enter	   = function_enter,
 			.exit	   = function_exit,
+		},
+		.library = {
+			.load	   = library_load,
 		},
 	};
 	cb_register(&cb);

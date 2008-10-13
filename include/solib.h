@@ -30,7 +30,8 @@
 #include "target_mem.h"
 
 struct solib_list {
-	addr_t base_addr;
+	addr_t start_addr;
+	addr_t end_addr;
 	char *path;
 	struct solib_list *next;
 };

@@ -142,7 +142,7 @@ addr_t solib_dl_debug_address(struct process *proc)
 	bfd_size_type sect_size;
 	unsigned long sym_addr = 0;
 	char *buf, *interp_file = NULL;
-	addr_t base_addr = 0;
+	addr_t start_addr = 0;
 	const bfd_format bfd_fmt = bfd_object;
 
 	abfd = bfd_fopen(proc->filename, "default", "rb", -1);
@@ -200,14 +200,14 @@ addr_t solib_dl_debug_address(struct process *proc)
 		goto close_abfd;
 	}
 	if (!solib_is_prelinked(abfd))
-		lib_base_address(proc->pid, interp_file, &base_addr);
+		lib_base_address(proc->pid, interp_file, &start_addr);
 
 	free(interp_file);
 close_abfd:
 	if (!bfd_close(abfd))
 		error_bfd(interp_file, "could not close file");
 error:
-	return (base_addr + sym_addr);
+	return (start_addr + sym_addr);
 }
 
 static void current_solibs(struct process *proc, struct solib_list **solist)
@@ -221,11 +221,11 @@ static void current_solibs(struct process *proc, struct solib_list **solist)
 		return;
 	resolve_path(proc->filename, &exec_path);
 	while (maps_next(&md) == 1) {
-		if (MAP_EXEC(&md) && md.off == 0 && md.inum != 0
-		    && strcmp(md.path, exec_path) != 0) {
+		if (MAP_EXEC(&md) && md.off == 0 && md.inum != 0) {
 			struct solib_list *tmp = xmalloc(sizeof(struct solib_list));
 
-			tmp->base_addr = md.lo;
+			tmp->start_addr = md.lo;
+			tmp->end_addr = md.hi;
 			tmp->path = strdup(md.path);
 			tmp->next = so;
 			so = tmp;
@@ -256,7 +256,7 @@ void free_all_solibs(struct process *proc)
 }
 
 static void solib_read_library(struct process *proc, char *filename,
-			       addr_t base_addr, new_sym_t callback)
+			       addr_t start_addr, new_sym_t callback)
 {
 	bfd *abfd;
 	long storage_needed, number_of_symbols;
@@ -282,7 +282,7 @@ static void solib_read_library(struct process *proc, char *filename,
 			sym = symbol_table[i];
 			if ((sym->flags & flags) == flags) {
 				if (!solib_is_prelinked(abfd))
-					symaddr = base_addr;
+					symaddr = start_addr;
 				else
 					symaddr = 0;
 				/* Bfd symbols are section relative. */
@@ -304,6 +304,7 @@ void solib_update_list(struct process *proc, new_sym_t callback)
 	struct solib_list *cur_sos;
 	struct solib_list *k = proc->solib_list;
 	struct solib_list **k_link = &proc->solib_list;
+	struct callback *cb = cb_get();
 
 	current_solibs(proc, &cur_sos);
 	while (k) {
@@ -325,7 +326,8 @@ void solib_update_list(struct process *proc, new_sym_t callback)
 			k = *k_link;
 		} else {
 			/* solib was unloaded */
-			debug(3, "solib unloaded: base=0x%x, name=%s", k->base_addr, k->path);
+			debug(3, "solib unloaded: start=0x%x, end=0x%x, \
+			      name=%s", k->start_addr, k->end_addr, k->path);
 			*k_link = k->next;
 			free_solib(k);
 			k = *k_link;
@@ -337,8 +339,13 @@ void solib_update_list(struct process *proc, new_sym_t callback)
 		*k_link = cur_sos;
 		for (c = cur_sos; c; c = c->next) {
 			/* solib was loaded */
-			debug(3, "solib loaded: base=0x%x, name=%s", c->base_addr, c->path);
-			solib_read_library(proc, c->path, c->base_addr, callback);
+			debug(3, "solib loaded: start=0x%08x, end=0x%08x, \
+			      name=%s", c->start_addr, c->end_addr, c->path);
+			if (cb && cb->library.load)
+				cb->library.load(proc, c->start_addr,
+						 c->end_addr, c->path);
+			solib_read_library(proc, c->path, c->start_addr,
+					   callback);
 		}
 	}
 }
