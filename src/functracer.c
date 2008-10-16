@@ -54,18 +54,23 @@ static int my_kill(int pid, int signo)
 	return kill(pid, signo);
 }
 
+static void kill_process(struct process *proc, void *arg __unused)
+{
+	int ret;
+
+	if (proc->exiting)
+		return;
+	debug(2, "Sending SIGSTOP to process %d", proc->pid);
+	ret = my_kill(proc->pid, SIGSTOP);
+	if (ret < 0)
+		msg_warn("could not send SIGSTOP to PID %d", proc->pid);
+	proc->exiting = 1;
+}
+
 static void signal_exit(int sig __unused)
 {
 	debug(1, "Received interrupt signal; exiting...");
-	struct process *tmp = get_list_of_processes();
-	while (tmp) {
-		if (tmp->exiting)
-			continue;
-		debug(2, "Sending SIGSTOP to process %u", tmp->pid);
-		my_kill(tmp->pid, SIGSTOP);
-		tmp->exiting = 1;
-		tmp = tmp->next;
-	}
+	for_each_process(kill_process, NULL);
 }
 
 static void signal_attach(void)

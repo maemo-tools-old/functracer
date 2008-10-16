@@ -95,9 +95,15 @@ open_error:
 	return retval;
 }
 
-struct process *get_list_of_processes(void)
+void for_each_process(for_each_process_t callback, void *arg)
 {
-	return list_of_processes;
+	struct process *tmp;
+
+	tmp = list_of_processes;
+	while (tmp) {
+		callback(tmp, arg);
+		tmp = tmp->next;
+	}
 }
 
 struct process *process_from_pid(pid_t pid)
