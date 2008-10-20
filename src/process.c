@@ -147,8 +147,12 @@ struct process *add_process(pid_t pid)
 	list_of_processes = tmp;
 
 	tgid = get_tgid(pid);
-	if (tgid != pid)
+	if (tgid != pid) {
 		tmp->parent = process_from_pid(tgid);
+		/* Set tracing status according to whether parent has tracing
+		 * enabled or not. */
+		tmp->trace_control = tmp->parent->trace_control;
+	}
 
 	debug(1, "Adding PID %d, filename = \"%s\"", pid, tmp->filename);
 

@@ -23,18 +23,15 @@
 #include <stdio.h>
 #include <sys/types.h>
 
-#include "config.h"
 #include "process.h"
 #include "target_mem.h"
-
-struct bt_data;
 
 struct rp_data {
 	pid_t pid;
 	int rp_number; 
 	int step;
 	FILE *fp;
-	struct bt_data *btd;
+        int refcnt;
 };
 
 /* function type enumerator */

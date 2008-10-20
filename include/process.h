@@ -27,6 +27,7 @@
 #include <sys/types.h>
 
 struct dict;
+struct bt_data;
 struct rp_data;
 struct solib_list;
 
@@ -40,6 +41,7 @@ struct process {
 	char *filename;
 	struct dict *breakpoints;
 	struct solib_list *solib_list;
+	struct bt_data *bt_data;
 	struct rp_data *rp_data;
 	struct callstack *callstack;
 #ifdef DEBUG
