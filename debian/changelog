@@ -1,3 +1,13 @@
+functracer (0.11) unstable; urgency=low
+
+  * Fix SSOL area creation after a exec*() on ARM.
+  * Remove /proc/PID/maps copying functions.
+  * Dump maps information to trace file.
+  * Replace get_list_of_processes() with for_each_process().
+  * Fix regression in dump control; indentation fixes.
+
+ -- Bruna Moreira <bruna.moreira@indt.org.br>  Mon, 20 Oct 2008 14:03:13 -0400
+
 functracer (0.10) unstable; urgency=low
 
   * Add prefix "__" on pthread_mutex_lock/pthread_mutex_unlock functions.

@@ -45,8 +45,7 @@ on entrypoint of Glibc allocation functions (malloc, calloc and realloc) and
 when one of them is called, the breakpoint is hit and the allocation address,
 size and callchain backtrace are reported.
 
-Two output files are created by Functracer in $HOME:
-- allocs-PID.n.map: /proc/PID/maps of traced process
+One output file is created by Functracer in $HOME (by default):
 - allocs-PID.n.trace: allocation backtraces of traced process
 
 For generating backtraces, libunwind[1] is used (see INSTALL for detailed 
@@ -96,10 +95,10 @@ It works with ELF based Linux systems running on x86 or ARM architecture.
 
 6. Bugs
 -------
-- tracing of breakpoints after an exec() call is not working on the new SSOL
-  approach. The issue is being investigated and should be fixed on next sprint.
-  From the applications tested, only osso-calculator has been affected.
-- SIGUSR1-based process control is not working with multithreaded applications.
+- in some cases, functracer process may be interrupted by CTRL+C while some
+  operation is on progress (e.g. backtrace being generated or breakpoints being
+  added/removed), this may cause unexpected behaviour. This is being fixed so
+  that signals are blocked while doing these operations.
 
 To do:
 - better documentation, source code comments
