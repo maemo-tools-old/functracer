@@ -31,6 +31,7 @@
 #include "debug.h"
 #include "dict.h"
 #include "function.h"
+#include "plugins.h"
 #include "process.h"
 #include "solib.h"
 #include "ssol.h"
@@ -110,16 +111,7 @@ static void register_entry_breakpoint(struct process *proc, const char *libname,
 {
 	struct breakpoint *bkpt, *bkpt2;
 
-	if (strcmp(symname, "__pthread_mutex_lock") == 0 ||
-	    strcmp(symname, "__pthread_mutex_unlock") == 0 ||
-	    strcmp(symname, "__libc_calloc") == 0 ||
-	    strcmp(symname, "__libc_malloc") == 0 ||
-	    strcmp(symname, "__libc_realloc") == 0 ||
-	    strcmp(symname, "__libc_free") == 0 ||
-	    strcmp(symname, "__libc_memalign") == 0 ||
-	    strcmp(symname, "__libc_valloc") == 0 ||
-	    strcmp(symname, "__libc_pvalloc") == 0 ||
-	    strcmp(symname, "posix_memalign") == 0) {
+	if (plg_match(symname)) {
 		bkpt = register_breakpoint(proc, symaddr, BKPT_ENTRY);
 		bkpt->symbol = strdup(symname);
 		bkpt2 = register_breakpoint(proc, ssol_new_slot(proc), BKPT_SENTINEL);

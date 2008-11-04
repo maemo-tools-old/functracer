@@ -21,7 +21,6 @@
  *
  */
 
-#include <assert.h>
 #include <libiberty.h>
 #include <signal.h>
 #include <stdlib.h>
@@ -30,6 +29,7 @@
 #include "callback.h"
 #include "debug.h"
 #include "function.h"
+#include "plugins.h"
 #include "process.h"
 #include "report.h"
 #include "target_mem.h"
@@ -140,60 +140,14 @@ static void function_enter(struct process *proc, const char *name)
 
 static void function_exit(struct process *proc, const char *name)
 {
-	struct rp_alloc ra;
-
 	debug(3, "function return (pid=%d, name=%s)", proc->pid, name);
 
 	/* Avoid reporting internal/recursive calls */ 
 	if (proc->callstack == NULL || proc->callstack->next != NULL)
 		return;
 
-	if (trace_enabled(proc)) {
-		addr_t retval = fn_return_value(proc);
-		size_t arg0 = fn_argument(proc, 0);
-
-		assert(proc->rp_data != NULL);
-		if (strcmp(name, "__pthread_mutex_lock") == 0 ||
-		    strcmp(name, "__pthread_mutex_unlock") == 0) {
-			debug(3, "pthread function = %s\n", name);
-			return;
-		} else if (strcmp(name, "__libc_malloc") == 0) {
-			ra.type = FN_MALLOC;
-			ra.addr = retval;
-			ra.size = arg0;
-		} else if (strcmp(name, "__libc_calloc") == 0) {
-			size_t arg1 = fn_argument(proc, 1);
-			ra.type = FN_CALLOC;
-			ra.addr = retval;
-			ra.nmemb = arg0;
-			ra.size = arg1;
-		} else if (strcmp(name, "__libc_memalign") == 0) {
-			size_t arg1 = fn_argument(proc, 1);
-			ra.type = FN_MEMALIGN;
-			ra.addr = retval;
-			ra.boundary = arg0;
-			ra.size = arg1;
-		} else if (strcmp(name, "__libc_realloc") == 0) {
-			size_t arg1 = fn_argument(proc, 1);
-			ra.type = FN_REALLOC;
-			ra.addr = arg0;
-			ra.addr_new = retval;
-			ra.size = arg1;
-		} else if (strcmp(name, "__libc_free") == 0 ) {
-			/* Suppress "free(NULL)" calls from trace output. 
-			 * They are a no-op according to ISO 
-			 */
-			if (arg0 == 0)
-				return;
-			ra.type = FN_FREE;
-			ra.addr = arg0;
-		} else {
-			msg_warn("unexpected function exit (%s)\n", name);
-			return;
-		}
-		rp_alloc(proc, &ra);
-
-	}
+	if (trace_enabled(proc))
+		plg_function_exit(proc, name);
 }
 
 static void library_load(struct process *proc, addr_t start_addr,
@@ -237,6 +191,7 @@ void cb_init(void)
 		},
 	};
 	cb_register(&cb);
+	plg_init();
 }
 
 void cb_finish(void)
@@ -245,6 +200,7 @@ void cb_finish(void)
 		return;
 	free(current_cb);
 	current_cb = NULL;
+	plg_finish();
 }
 
 struct callback *cb_get(void)

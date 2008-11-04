@@ -3,6 +3,7 @@ AC_CONFIG_HEADERS(include/config.h)
 AC_CONFIG_SRCDIR(src/functracer.c)
 AM_INIT_AUTOMAKE([-Wall -Werror foreign no-define])
 AC_PROG_CC
+AC_PROG_LIBTOOL
 
 AC_FUNC_CLOSEDIR_VOID
 AC_FUNC_ERROR_AT_LINE
@@ -50,7 +51,7 @@ AC_ARG_ENABLE(check,
 
 # Check for libunwind availability
 AC_CHECK_LIB([unwind-ptrace], [_UPT_access_mem],
-  [LIBS="${LIBS} -lunwind-ptrace -lunwind-generic"],
+  [FT_LIBS="${FT_LIBS} -lunwind-ptrace -lunwind-generic"],
   [AC_MSG_ERROR([libunwind is required for backtracing])],
   -lunwind-generic
 )
@@ -58,10 +59,18 @@ AC_CHECK_LIB([unwind-ptrace], [_UPT_access_mem],
 # Check for BFD availability
 # Linking with libiberty.a is necessary due to Scratchbox bug
 AC_CHECK_LIB([bfd], [bfd_fopen],
-  [LIBS="${LIBS} -lbfd /usr/lib/libiberty.a"],
+  [FT_LIBS="${FT_LIBS} -lbfd /usr/lib/libiberty.a"],
   [AC_MSG_ERROR([BFD library is required])],
   /usr/lib/libiberty.a
 )
+
+# Check for dlopen
+AC_CHECK_LIB([dl], [dlopen],
+  [FT_LIBS="${FT_LIBS} -ldl"],
+  [AC_MSG_ERROR([dlopen library is required for plugins])],
+)
+
+AC_SUBST(FT_LIBS)
 
 # Check for glib-2.0 availability (used for gthreads test)
 PKG_PROG_PKG_CONFIG
@@ -107,6 +116,7 @@ AC_DEFINE_UNQUOTED([DECR_PC_AFTER_BREAK], [$decr_pc_after_break], Define decreme
 AC_CONFIG_FILES([
   Makefile
   src/Makefile
+  src/modules/Makefile
   tests/Makefile
   utests/Makefile
 ])

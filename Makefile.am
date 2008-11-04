@@ -1,1 +1,1 @@
-SUBDIRS = src tests utests
+SUBDIRS = src src/modules tests utests
