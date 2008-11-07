@@ -27,6 +27,10 @@ if test x$enable_debug = xyes; then
   CPPFLAGS="${CPPFLAGS} -DDEBUG"
 fi
 
+if test x$prefix = xNONE; then
+  prefix=$ac_default_prefix
+fi
+
 # Ask user for path to libunwind
 AC_ARG_WITH(libunwind,
   [AS_HELP_STRING([--with-libunwind],
@@ -35,6 +39,15 @@ AC_ARG_WITH(libunwind,
   [UNW_FLAGS=""]
 )
 CFLAGS="${CFLAGS} ${UNW_FLAGS}"
+
+# Ask user for path to plugins
+AC_ARG_WITH(plugins,
+  [AS_HELP_STRING([--with-plugins],
+    [prefix of plugins installation (default=PREFIX/lib/functracer)])],
+  [plg_path="$withval"],
+  [plg_path="${prefix}/lib/functracer"]
+)
+AC_DEFINE_UNQUOTED([PLG_PATH], ["$plg_path"], Prefix of plugins installation.)
 
 # Turn on debug support 
 AC_ARG_ENABLE(debug,

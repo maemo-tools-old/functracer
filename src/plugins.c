@@ -22,11 +22,14 @@
  */
 
 #include <dlfcn.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "config.h"
 #include "debug.h"
+#include "options.h"
 #include "process.h"
 
 #define FT_API_VERSION "1.0"
@@ -111,7 +114,11 @@ int plg_match(const char *symname)
 
 void plg_init()
 {
-	plg_load_module("memory.so");
+	char plg_name[PATH_MAX];
+
+	snprintf(plg_name, sizeof(plg_name), "%s/%s.so", PLG_PATH,
+		 arguments.plugin);
+	plg_load_module(plg_name);
 }
 
 void plg_finish()

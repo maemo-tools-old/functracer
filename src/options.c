@@ -38,8 +38,6 @@ const char *argp_program_version = PACKAGE_STRING;
 
 struct arguments arguments;
 
-static int no_usage = 0;
-
 /* strings for arguments in help texts */
 static const char args_doc[] = "PROGRAM [ARGS...]";
 
@@ -48,12 +46,13 @@ static const char doc[] = "Run PROGRAM and track selected functions.";
 
 /* definitions of arguments for argp functions */
 static const struct argp_option options[] = {
-	{"track-pid", 'p', "PID", 0, "which PID to track", 0},
-	{"track-function", 'e', "FUNCTION", 0,
-	 "which function to track (NOT IMPLEMENTED)", 0},
+	{"pid", 'p', "PID", 0, "which PID to track", 0},
+	{"track", 'e', "PLUGIN", 0,
+	 "which set of functions to track", 0},
 	{"debug", 'd', NULL, 0, "maximum debug level", 0},
 	{"start", 's', NULL, 0, "enable tracking memory from beginning", 0},
-	{"free-backtraces", 'b', NULL, 0, "enable backtraces for free() function", 0},
+	{"free-backtraces", 'b', NULL, 0, 
+	 "enable backtraces for free() function", 0},
 	{"depth", 't', "NUMBER", 0, "maximum backtrace depth", 0},
 	{"resolve-name", 'r', NULL, 0, "enable symbol name resolution", 0},
 	{"file",  'f', NULL, 0,
@@ -101,6 +100,9 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 	case 'd':
 		arg_data->debug++;
 		break;
+	case 'e':
+		arg_data->plugin = arg;
+		break;
 	case 'r':
 		arg_data->resolve_name++;
 		break;
@@ -114,8 +116,8 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 		arg_data->save_to_file++;
 		break;
 	case 'h':
-		argp_state_help (state, stdout,  ARGP_HELP_STD_HELP);
-		no_usage = 1;
+		argp_state_help(state, stdout,  ARGP_HELP_STD_HELP);
+		/* Does not return. */
 		break;
 	case 'l':
 		arg_data->path = arg;
@@ -126,18 +128,18 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 		break;
 	case 'V':
 		printf("%s\n", argp_program_version);
-		no_usage = 1;
+		exit(0);
 		break;
 	case OPT_USAGE:
-		argp_state_help (state, stdout, ARGP_HELP_USAGE);
-		no_usage = 1;
-
+		argp_state_help(state, stdout, ARGP_HELP_USAGE | ARGP_HELP_EXIT_OK);
+		/* Does not return. */
+		break;
 	case ARGP_KEY_END:
-		if (arg_data->npids == 0 && no_usage == 0)
+		if (arg_data->npids == 0) {
 			/* Not enough arguments. */
 			argp_usage(state);
+		}
 		break;
-
 	default:
 		return ARGP_ERR_UNKNOWN;
 	}
@@ -151,6 +153,7 @@ int process_options(int argc, char *argv[], int *remaining)
 	/* Initial values */
 	memset(&arguments, 0, sizeof(struct arguments));
 	arguments.depth = MAX_BT_DEPTH;
+	arguments.plugin = "memory";
 
 	/* parse and process arguments */
 	ret = argp_parse(&argp, argc, argv,
