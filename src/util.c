@@ -34,7 +34,9 @@ long xptrace(int request, pid_t pid, void *addr, void *data)
 	long ret;
 
 	errno = 0;
-	ret = ptrace((enum __ptrace_request)request, pid, addr, data);
+	do {
+		ret = ptrace((enum __ptrace_request)request, pid, addr, data);
+	} while (ret == -1 && errno == EINTR);
 	if (ret == -1 && errno) {
 		if (errno == EIO)
 			msg_warn("Cannot access memory at address %p", addr);
