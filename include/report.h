@@ -34,27 +34,14 @@ struct rp_data {
         int refcnt;
 };
 
-/* function type enumerator */
-enum {
-	FN_FREE,
-	FN_MALLOC,
-	FN_MEMALIGN,
-	FN_CALLOC,
-	FN_REALLOC,
-};
-
 struct rp_alloc {
-	int type;
 	addr_t addr;
-	size_t nmemb;
-	size_t boundary;
 	size_t size;
-	addr_t addr_new;
 };
 
 extern int rp_init(struct process *proc);
-extern void rp_alloc(struct process *proc, struct rp_alloc *ra);
 extern void rp_event(struct process *proc, const char *fmt, ...);
+extern void rp_write_backtraces(struct process *proc);
 extern void rp_finish(struct process *proc);
 
 #endif /* !FTK_REPORT_H */

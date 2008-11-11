@@ -28,6 +28,7 @@
 #include "callback.h"
 #include "debug.h"
 #include "function.h"
+#include "options.h"
 #include "process.h"
 #include "report.h"
 #include "target_mem.h"
@@ -38,7 +39,9 @@ char api_version[] = MEM_API_VERSION;
 
 void function_exit(struct process *proc, const char *name)
 {
-	struct rp_alloc ra;
+	const char format[] = "%d. %s(%d) = 0x%08x\n";
+	struct rp_data *rd = proc->rp_data;
+	int is_free = 0;
 
 	addr_t retval = fn_return_value(proc);
 	size_t arg0 = fn_argument(proc, 0);
@@ -49,40 +52,51 @@ void function_exit(struct process *proc, const char *name)
 		debug(3, "pthread function = %s\n", name);
 		return;
 	} else if (strcmp(name, "__libc_malloc") == 0) {
-		ra.type = FN_MALLOC;
-		ra.addr = retval;
-		ra.size = arg0;
+		rp_event(proc, format, rd->rp_number, "malloc", arg0, retval);
+
 	} else if (strcmp(name, "__libc_calloc") == 0) {
 		size_t arg1 = fn_argument(proc, 1);
-		ra.type = FN_CALLOC;
-		ra.addr = retval;
-		ra.nmemb = arg0;
-		ra.size = arg1;
+                rp_event(proc, format, rd->rp_number, "calloc", arg0 * arg1,
+			 retval);
+
 	} else if (strcmp(name, "__libc_memalign") == 0) {
 		size_t arg1 = fn_argument(proc, 1);
-		ra.type = FN_MEMALIGN;
-		ra.addr = retval;
-		ra.boundary = arg0;
-		ra.size = arg1;
+                rp_event(proc, format, rd->rp_number, "memalign", arg0 * arg1,
+			 retval);
+
 	} else if (strcmp(name, "__libc_realloc") == 0) {
 		size_t arg1 = fn_argument(proc, 1);
-		ra.type = FN_REALLOC;
-		ra.addr = arg0;
-		ra.addr_new = retval;
-		ra.size = arg1;
+		if (arg0 != 0) {
+			/* realloc acting normally (returning same or different
+			 * address) OR acting as free so showing the freeing */
+			rp_event(proc, "%d. realloc(0x%08x)\n", rd->rp_number++,
+				 arg0);
+		}
+		if (arg1 == 0 && retval == 0) {
+			/* realloc acting as free so return */
+			return;
+		}
+		/* show a new resource allocation (can be same or different
+		 * address) 
+		 */
+                rp_event(proc, format, rd->rp_number, "realloc", arg1, retval);
+
 	} else if (strcmp(name, "__libc_free") == 0 ) {
 		/* Suppress "free(NULL)" calls from trace output. 
 		 * They are a no-op according to ISO 
 		 */
+		is_free = 1;
 		if (arg0 == 0)
 			return;
-		ra.type = FN_FREE;
-		ra.addr = arg0;
+                rp_event(proc, "%d. free(0x%08x)\n", rd->rp_number, arg0);
+
 	} else {
 		msg_warn("unexpected function exit (%s)\n", name);
 		return;
 	}
-	rp_alloc(proc, &ra);
+	(rd->rp_number)++;
+	if (!is_free || arguments.enable_free_bkt)
+		rp_write_backtraces(proc);
 }
 
 int library_match(const char *symname)

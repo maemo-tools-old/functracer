@@ -30,7 +30,7 @@
 #include "report.h"
 #include "options.h"
 
-static void rp_write_backtraces(struct process *proc)
+void rp_write_backtraces(struct process *proc)
 {
 	int bt_depth, j;
 	char *backtrace[MAX_BT_DEPTH];
@@ -44,56 +44,6 @@ static void rp_write_backtraces(struct process *proc)
 		fprintf(rd->fp, "   %s\n", backtrace[j]);
 		free(backtrace[j]);
 	}
-}
-
-void rp_alloc(struct process *proc, struct rp_alloc *ra)
-{
-	struct rp_data *rd = proc->rp_data;
-
-	assert(rd != NULL);
-	switch (ra->type) {
-	case FN_FREE:
-		debug(3, "rp_free(pid=%d, addr=0x%08x)", rd->pid, ra->addr);
-
-		fprintf(rd->fp, "%d. free(0x%08x) = <void>\n", rd->rp_number,
-			ra->addr);
-		break;
-	case FN_MALLOC:
-		debug(3, "rp_malloc(pid=%d, addr=0x%08x, size=%d)", rd->pid,
-		      ra->addr, ra->size);
-
-		fprintf(rd->fp, "%d. malloc(%d) = 0x%08x\n", rd->rp_number,
-			ra->size, ra->addr);
-		break;
-	case FN_CALLOC:
-		debug(3, "rp_calloc(pid=%d, addr=0x%08x, nmemb=%d, size=%d)",
-		      rd->pid, ra->addr, ra->nmemb, ra->size);
-
-		fprintf(rd->fp, "%d. calloc(%d, %d) = 0x%08x\n", rd->rp_number,
-			ra->nmemb, ra->size, ra->addr);
-		break;
-	case FN_MEMALIGN:
-		debug(3, "rp_memalign(pid=%d, addr=0x%08x, boundary=%d, \
-		      size=%d)", rd->pid, ra->addr, ra->boundary, ra->size);
-
-		fprintf(rd->fp, "%d. memalign(%d, %d) = 0x%08x\n",
-			rd->rp_number, ra->boundary, ra->size, ra->addr);
-		break;
-	case FN_REALLOC:
-		debug(3, "rp_realloc(pid=%d, addr=0x%08x, addr_new=0x%08x, \
-		      size=%d)", rd->pid, ra->addr, ra->addr_new, ra->size);
-
-		fprintf(rd->fp, "%d. realloc(0x%08x, %d) = 0x%08x\n",
-			rd->rp_number, ra->addr, ra->size, ra->addr_new);
-		break;
-	default:
-		/* Should not happen */
-		abort();
-	}
-	(rd->rp_number)++;
-	if (ra->type != FN_FREE || arguments.enable_free_bkt)
-		rp_write_backtraces(proc);
-
 }
 
 void rp_event(struct process *proc, const char *fmt, ...)
