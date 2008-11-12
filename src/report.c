@@ -111,8 +111,13 @@ int rp_init(struct process *proc)
 		rd = proc->rp_data;
 	if (rd == NULL) {
 		rd = xcalloc(1, sizeof(struct rp_data));
-		rd->pid = proc->pid;
+		if (proc->parent != NULL)
+			rd->pid = proc->parent->pid;
+		else
+			rd->pid = proc->pid;
 	}
+	if (proc->parent != NULL)
+		proc->parent->rp_data = rd;
 	proc->rp_data = rd;
 	if (rd->refcnt++ == 0) {
 		int ret = rp_write_header(proc);

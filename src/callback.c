@@ -84,30 +84,12 @@ static void toggle_tracing(struct process *proc)
 	}
 }
 
-static void toggle_tracing_cb(struct process *proc, void *arg)
-{
-	struct process *parent = arg;
-
-	/* Only toggle tracing for sibling threads and single-threaded
-	 * processes. */
-	if (proc->parent != parent && proc != parent)
-		return;
-	/* Exclude parent thread. */
-	if (proc->parent != NULL && proc == parent)
-		return;
-
-	toggle_tracing(proc);
-}
-
 static void process_signal(struct process *proc, int signo)
 {
 	debug(3, "process received signal (pid=%d, signo=%d)", proc->pid, signo);
 
 	if (signo == SIGUSR1) {
-		/* Always toggle tracing for parent thread first. */
-		if (proc->parent != NULL)
-			toggle_tracing(proc->parent);
-		for_each_process(toggle_tracing_cb, proc->parent ? : proc);
+		for_each_process(toggle_tracing);
 	} else if (trace_enabled(proc)) {
 		rp_event(proc, "Process %d received signal %d\n",
 			 proc->pid, signo);

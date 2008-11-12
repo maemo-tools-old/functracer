@@ -54,7 +54,7 @@ static int my_kill(int pid, int signo)
 	return kill(pid, signo);
 }
 
-static void kill_process(struct process *proc, void *arg __unused)
+static void kill_process(struct process *proc)
 {
 	int ret;
 
@@ -70,7 +70,7 @@ static void kill_process(struct process *proc, void *arg __unused)
 static void signal_exit(int sig __unused)
 {
 	debug(1, "Received interrupt signal; exiting...");
-	for_each_process(kill_process, NULL);
+	for_each_process(kill_process);
 }
 
 static void signal_attach(void)

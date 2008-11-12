@@ -95,13 +95,13 @@ open_error:
 	return retval;
 }
 
-void for_each_process(for_each_process_t callback, void *arg)
+void for_each_process(for_each_process_t callback)
 {
 	struct process *tmp;
 
 	tmp = list_of_processes;
 	while (tmp) {
-		callback(tmp, arg);
+		callback(tmp);
 		tmp = tmp->next;
 	}
 }
