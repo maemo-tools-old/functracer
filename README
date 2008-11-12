@@ -12,8 +12,10 @@ Contents
  3. How does it work
  4. How to use
  5. Where does it work
- 6. Bugs
- 7. License
+ 6. Performance impact
+ 7. Other effects
+ 8. Bugs
+ 9. License
 
 
 0. Authors
@@ -48,6 +50,21 @@ size and callchain backtrace are reported.
 One output file is created by Functracer in $HOME (by default):
 - allocs-PID.n.trace: allocation backtraces of traced process
 
+For functions that perform both resource allocation and destruction (e.g.
+realloc), it will be produced two separate events, first the destruction event,
+then the allocation one. For example, if source code does:
+
+realloc(0x001ae840, 16) = 0x001ae858
+
+Functracer will produce the following trace events:
+
+0. realloc(0x001ae840)       <- destruction event
+1. realloc(16) = 0x001ae858  <- allocation event
+   [backtrace lines ...]
+
+Functracer has support to plugins and currently only the memory plugin is
+implemented (it is default). Plugins will be installed in /usr/lib/functracer.
+
 For generating backtraces, libunwind[1] is used (see INSTALL for detailed 
 compilation instructions).
 
@@ -61,16 +78,16 @@ Run PROGRAM and track selected functions.
 
   -b, --free-backtraces      enable backtraces for free() function
   -d, --debug                maximum debug level
-  -e, --track-function=FUNCTION   which function to track (NOT IMPLEMENTED)
+  -e, --track=PLUGIN         which set of functions to track
   -f, --file                 use a file to save backtraces instead of dump to
                              stdout
   -l, --path=DIR             dump reports to a custom location (defaults to
                              homedir)
-  -p, --track-pid=PID        which PID to track
+  -p, --pid=PID              which PID to track
   -r, --resolve-name         enable symbol name resolution
   -s, --start                enable tracking memory from beginning
   -t, --depth=NUMBER         maximum backtrace depth
-  -?, --help                 Give this help list
+  -h, --help                 Give this help list
       --usage                Give a short usage message
   -V, --version              Print program version
 
@@ -93,18 +110,32 @@ compared to its postprocessor symbol resolving (functracer-postproc):
 ---------------------
 It works with ELF based Linux systems running on x86 or ARM architecture.
 
-6. Bugs
+6. Performance impact
+---------------------
+Functracer sets ptrace() breakpoints to suitable functions to be able to trace
+their use.  This can have quite noticeable impact on the traced program
+performance, even when the Functracer reporting and backtracing is not enabled.
+
+Unless one wants to trace the whole program life-cycle, one should (re-)attach
+to a program only during the use-cases that one is interested about and to
+terminate functracer with CTRL-C when the use-case ends.
+
+7. Other effects
+----------------
+Program being slowed down may also effect its behavior slightly (timers, thread
+synchronization etc), but if the program is robust, it should still function
+normally.  Ptrace() used for tracing changes unix signaling semantics slightly,
+but in most cases this should not affect anything either.
+ 
+8. Bugs
 -------
-- in some cases, functracer process may be interrupted by CTRL+C while some
-  operation is on progress (e.g. backtrace being generated or breakpoints being
-  added/removed), this may cause unexpected behaviour. This is being fixed so
-  that signals are blocked while doing these operations.
+
 
 To do:
 - better documentation, source code comments
 - testsuite framework infrastructure (just some basic tests are available)
 
-7. License
+9. License
 ----------
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License version 2 as published by the Free

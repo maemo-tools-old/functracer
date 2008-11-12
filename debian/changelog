@@ -1,3 +1,17 @@
+functracer (0.12) unstable; urgency=low
+
+  * Add initial support to plugins.
+  * Add new option "-e" to plugin name.
+  * Add in configure a new entry "--with-plugins" to prefix of plugins
+    installation.
+  * Add check in xptrace() function.
+  * Change the backtrace header format for a more generic one.
+  * Avoid overwriting trace file.
+  * Simplify dump control functions.
+  * Handle interrupt before a singlestep action.
+
+ -- Bruna Moreira <bruna.moreira@indt.org.br>  Wed, 12 Nov 2008 10:58:38 -0400
+
 functracer (0.11) unstable; urgency=low
 
   * Fix SSOL area creation after a exec*() on ARM.
