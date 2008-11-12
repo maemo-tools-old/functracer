@@ -315,10 +315,10 @@ static int dispatch_event(struct event *event)
 		continue_process(event->proc);
 		break;
 	case EV_SIGNAL:
-		if (event->proc->singlestep)
-			singlestep_after_signal(event->proc);
 		if (handle_interrupt(event->proc, event->data.signo))
 			return 0;
+		if (event->proc->singlestep)
+			singlestep_after_signal(event->proc);
 		if (cb && cb->process.signal)
 			cb->process.signal(event->proc, event->data.signo);
 		if (event->data.signo == SIGUSR1)
