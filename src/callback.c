@@ -43,14 +43,35 @@ static int trace_enabled(struct process *proc)
 
 static void process_create(struct process *proc)
 {
+	char *buf;
+
 	debug(3, "new process (pid=%d)", proc->pid);
 
 	if (trace_enabled(proc)) {
 		if (rp_init(proc) < 0) {
 			proc->trace_control = 0;
 		} else {
-			rp_event(proc, "Process %d was created\n", proc->pid);
+			buf = cmd_from_pid(proc->pid, 1);
+			rp_event(proc, "Process %d (%s) was created\n",
+				 proc->pid, buf);
+			free(buf);
 		}
+	}
+}
+
+static void process_exec(struct process *proc)
+{
+	char *buf;
+
+	debug(3, "process has executed (pid=%d, filename=%s)", proc->pid,
+	      proc->filename);
+
+	if (trace_enabled(proc)) {
+		buf = cmd_from_pid(proc->pid, 0);
+		rp_event(proc, "Process %d has executed: %s\n", proc->pid,
+			 buf);
+		free(buf);
+
 	}
 }
 
@@ -67,7 +88,9 @@ static void process_exit(struct process *proc, int exit_code)
 
 static void process_kill(struct process *proc, int signo)
 {
-	debug(3, "process killed by signal (pid=%d, signo=%d)", proc->pid, signo);
+	debug(3, "process killed by signal (pid=%d, signo=%d)", proc->pid,
+	      signo);
+
 	if (trace_enabled(proc)) {
 		rp_event(proc, "Process %d was killed by signal %d\n",
 			 proc->pid, signo);
@@ -99,6 +122,7 @@ static void process_signal(struct process *proc, int signo)
 static void process_interrupt(struct process *proc)
 {
 	debug(3, "process interrupted (pid=%d)", proc->pid);
+
 	if (trace_enabled(proc)) {
 		rp_event(proc, "Process %d was detached\n", proc->pid);
 		rp_finish(proc);
@@ -155,6 +179,7 @@ void cb_init(void)
 	struct callback cb = {
 		.process = {
 			.create	   = process_create,
+			.exec	   = process_exec,
 			.exit	   = process_exit,
 			.kill	   = process_kill,
 			.signal	   = process_signal,

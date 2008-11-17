@@ -129,6 +129,46 @@ char *name_from_pid(pid_t pid)
 	return NULL;
 }
 
+char *cmd_from_pid(pid_t pid, int noargs)
+{
+	char proc_cmd[1024], buf[1024];
+	char *pos, *new_pos;
+	FILE *fp;
+	int ret;
+
+	if (kill(pid, 0) == 0) {
+		snprintf(proc_cmd, sizeof(proc_cmd), "/proc/%d/cmdline", pid);
+		if (access(proc_cmd, F_OK) < 0)
+			error_exit("access");
+		fp = fopen(proc_cmd, "r");
+		if (fp == NULL)
+			error_exit("fopen");
+		memset(buf, 0, sizeof(buf));
+		ret = fscanf(fp, "%1024c", buf);
+		if (ret < 0 || ferror(fp)) {
+			return strdup("<none>");
+		}
+		fclose(fp);
+		/* Truncate string */
+		buf[sizeof(buf) - 2] = '\0';
+		buf[sizeof(buf) - 1] = '\0';
+		pos = buf;
+		while (!noargs) {
+			new_pos = rawmemchr(pos, '\0');
+			if (new_pos == pos) {
+				/* Remove last whitespace */
+				*(new_pos - 1) = '\0';
+				break;
+			}
+			*new_pos = ' ';
+			pos = new_pos + 1;
+
+		}
+		return strdup(buf);
+	}
+	return strdup("<none>");
+}
+
 struct process *add_process(pid_t pid)
 {
 	struct process *tmp;

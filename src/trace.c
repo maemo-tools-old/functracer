@@ -269,6 +269,8 @@ static int dispatch_event(struct event *event)
 	case EV_EXEC:
 		free(event->proc->filename);
 		event->proc->filename = name_from_pid(event->proc->pid);
+		if (cb && cb->process.exec)
+			cb->process.exec(event->proc);
 		bkpt_finish(event->proc);
 		bkpt_init(event->proc);
 		continue_process(event->proc);

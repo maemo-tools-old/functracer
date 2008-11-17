@@ -34,6 +34,7 @@ struct callback {
 	} function;
 	struct {
 		void (*create)(struct process *proc);
+		void (*exec)(struct process *proc);
 		void (*exit)(struct process *proc, int exit_code);
 		void (*kill)(struct process *proc, int signo);
 		void (*signal)(struct process *proc, int signo);

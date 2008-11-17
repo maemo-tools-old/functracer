@@ -61,6 +61,7 @@ typedef void (*for_each_process_t)(struct process *);
 extern void for_each_process(for_each_process_t callback);
 extern struct process *process_from_pid(pid_t pid);
 extern char *name_from_pid(pid_t pid);
+extern char *cmd_from_pid(pid_t pid, int nargs);
 extern struct process *add_process(pid_t pid);
 extern void remove_process(struct process *proc);
 extern void remove_all_processes(void);
