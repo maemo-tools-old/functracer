@@ -128,6 +128,31 @@ static int rp_write_header(struct process *proc)
 	return 0;
 }
 
+void rp_alloc(struct process *proc, int rp_number, const char *name,
+	      size_t arg0, size_t arg1)
+{
+	struct rp_data *rd = proc->rp_data;
+
+	assert(rd != NULL);
+	if (arguments.time)
+		rp_event(proc, "%d. [%s] %s(%d) = 0x%08x\n", rp_number,
+			 rp_timestamp(), name, arg0, arg1);
+	else
+		rp_event(proc, "%d. %s(%d) = 0x%08x\n", rp_number, name, arg0, arg1);
+}
+
+void rp_free(struct process *proc, int rp_number, const char *name, size_t arg)
+{
+	struct rp_data *rd = proc->rp_data;
+
+	assert(rd != NULL);
+	if (arguments.time)
+		rp_event(proc, "%d. [%s] %s(0x%08x)\n", rp_number,
+			 rp_timestamp(), name, arg);
+	else
+		rp_event(proc, "%d. %s(0x%08x)\n", rp_number, name, arg);
+}
+
 int rp_init(struct process *proc)
 {
 	struct rp_data *rd;

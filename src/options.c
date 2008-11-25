@@ -50,6 +50,7 @@ static const struct argp_option options[] = {
 	{"track", 'e', "PLUGIN", 0,
 	 "which set of functions to track", 0},
 	{"debug", 'd', NULL, 0, "maximum debug level", 0},
+	{"time", 'i', NULL, 0, "print absolute timestamps for every event", 0},
 	{"start", 's', NULL, 0, "enable tracking memory from beginning", 0},
 	{"free-backtraces", 'b', NULL, 0, 
 	 "enable backtraces for free() function", 0},
@@ -118,6 +119,9 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 	case 'h':
 		argp_state_help(state, stdout,  ARGP_HELP_STD_HELP);
 		/* Does not return. */
+		break;
+	case 'i':
+		arg_data->time++;
 		break;
 	case 'l':
 		arg_data->path = arg;

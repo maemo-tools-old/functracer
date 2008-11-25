@@ -38,6 +38,7 @@ struct arguments {
 	int save_to_file;
 	int resolve_name;
 	int enable_free_bkt;
+	int time;
 	char *plugin;
 	char *path;
 };

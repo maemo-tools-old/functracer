@@ -40,6 +40,8 @@ struct rp_alloc {
 };
 
 extern int rp_init(struct process *proc);
+extern void rp_alloc(struct process *proc, int rp_number, const char *name, size_t arg0, size_t arg1);
+extern void rp_free(struct process *proc, int rp_number, const char *name, size_t arg);
 extern void rp_event(struct process *proc, const char *fmt, ...);
 extern void rp_write_backtraces(struct process *proc);
 extern void rp_finish(struct process *proc);
