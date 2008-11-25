@@ -46,11 +46,7 @@ void function_exit(struct process *proc, const char *name)
 	size_t arg0 = fn_argument(proc, 0);
 
 	assert(proc->rp_data != NULL);
-	if (strcmp(name, "__pthread_mutex_lock") == 0 ||
-	    strcmp(name, "__pthread_mutex_unlock") == 0) {
-		debug(3, "pthread function = %s\n", name);
-		return;
-	} else if (strcmp(name, "__libc_malloc") == 0) {
+	if (strcmp(name, "__libc_malloc") == 0) {
 		rp_alloc(proc, rd->rp_number, "malloc", arg0, retval);
 
 	} else if (strcmp(name, "__libc_calloc") == 0) {
@@ -99,9 +95,7 @@ void function_exit(struct process *proc, const char *name)
 
 int library_match(const char *symname)
 {
-	return(strcmp(symname, "__pthread_mutex_lock") == 0 ||
-	       strcmp(symname, "__pthread_mutex_unlock") == 0 ||
-	       strcmp(symname, "__libc_calloc") == 0 ||
+	return(strcmp(symname, "__libc_calloc") == 0 ||
 	       strcmp(symname, "__libc_malloc") == 0 ||
 	       strcmp(symname, "__libc_realloc") == 0 ||
 	       strcmp(symname, "__libc_free") == 0 ||
