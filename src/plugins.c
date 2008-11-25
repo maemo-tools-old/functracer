@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 
 #include "config.h"
 #include "debug.h"
@@ -115,9 +116,16 @@ int plg_match(const char *symname)
 void plg_init()
 {
 	char plg_name[PATH_MAX];
+	struct stat buf;
 
-	snprintf(plg_name, sizeof(plg_name), "%s/%s.so", PLG_PATH,
-		 arguments.plugin);
+	/* First check if arguments.plugin (full path/filename) exists,
+ 	 * otherwise then prefixing it with default plugin directory and
+	 * postfixing with .so */
+	if (stat(arguments.plugin, &buf) == 0 && S_ISREG(buf.st_mode))
+		snprintf(plg_name, sizeof(plg_name), arguments.plugin);
+	else
+		snprintf(plg_name, sizeof(plg_name), "%s/%s.so", PLG_PATH,
+		 	 arguments.plugin);
 	plg_load_module(plg_name);
 }
 
