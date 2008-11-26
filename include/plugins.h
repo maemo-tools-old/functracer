@@ -26,6 +26,21 @@
 
 #include "process.h"
 
+struct plg_api {
+	char *api_version;
+	void (*function_entry)(struct process *proc, const char *name);
+	void (*function_exit)(struct process *proc, const char *name);
+	void (*process_create)(struct process *proc);
+	void (*process_exec)(struct process *proc);
+	void (*process_exit)(struct process *proc, int exit_code);
+	void (*process_kill)(struct process *proc, int signo);
+	void (*process_signal)(struct process *proc, int signo);
+	void (*process_interrupt)(struct process *proc);
+	void (*syscall_enter)(struct process *proc, int sysno);
+	void (*syscall_exit)(struct process *proc, int sysno);
+	int (*library_match)(const char *name);
+};
+
 void plg_init();
 void plg_finish();
 void plg_function_exit(struct process *proc, const char *name);

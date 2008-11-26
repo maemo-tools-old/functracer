@@ -25,19 +25,18 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "callback.h"
 #include "debug.h"
 #include "function.h"
 #include "options.h"
+#include "plugins.h"
 #include "process.h"
 #include "report.h"
-#include "target_mem.h"
 
-#define MEM_API_VERSION "1.0"
+#define MEM_API_VERSION "2.0"
 
-char api_version[] = MEM_API_VERSION;
+static char mem_api_version[] = MEM_API_VERSION;
 
-void function_exit(struct process *proc, const char *name)
+static void mem_function_exit(struct process *proc, const char *name)
 {
 	struct rp_data *rd = proc->rp_data;
 	int is_free = 0;
@@ -93,7 +92,7 @@ void function_exit(struct process *proc, const char *name)
 		rp_write_backtraces(proc);
 }
 
-int library_match(const char *symname)
+static int mem_library_match(const char *symname)
 {
 	return(strcmp(symname, "__libc_calloc") == 0 ||
 	       strcmp(symname, "__libc_malloc") == 0 ||
@@ -103,4 +102,14 @@ int library_match(const char *symname)
 	       strcmp(symname, "__libc_valloc") == 0 ||
 	       strcmp(symname, "__libc_pvalloc") == 0 ||
 	       strcmp(symname, "posix_memalign") == 0);
+}
+
+struct plg_api *init()
+{
+	static struct plg_api ma = {
+		.api_version = mem_api_version,
+		.function_exit = mem_function_exit,
+		.library_match = mem_library_match,
+	};
+	return &ma;
 }

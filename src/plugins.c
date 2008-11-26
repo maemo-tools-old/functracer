@@ -31,11 +31,13 @@
 #include "config.h"
 #include "debug.h"
 #include "options.h"
+#include "plugins.h"
 #include "process.h"
 
-#define FT_API_VERSION "1.0"
+#define FT_API_VERSION "2.0"
 
 void *handle = NULL;
+static struct plg_api *plg_api;
 
 void plg_init();
 void plg_finish();
@@ -47,7 +49,7 @@ static void *plg_get_symbol(char *name)
 
 static int plg_check_version()
 {
-	char *version = (char *) plg_get_symbol("api_version");
+	char *version = plg_api->api_version;
 
 	if (version == NULL)
 		return 0;
@@ -56,6 +58,8 @@ static int plg_check_version()
 
 static int plg_load_module(const char *modname)
 {
+	struct plg_api *(*function)();
+
 	if (modname == NULL)
 		return 0;
 
@@ -67,7 +71,15 @@ static int plg_load_module(const char *modname)
 		msg_warn("Could not open plugin: %s", dlerror());
 		return 0;
 	}
+
 	dlerror();    /* Clear any existing error */
+	function = (struct plg_api *(*)()) plg_get_symbol("init");
+        if (function == NULL) {
+		msg_warn("Could not initialize plugin API");
+		goto err;
+	}
+	plg_api = function();
+
 	if (!plg_check_version()) {
 		msg_warn("%s: Module version information not found or"
 			 " incompatible. Refusing to use.", modname);
@@ -83,34 +95,28 @@ err:
 
 void plg_function_exit(struct process *proc, const char *name)
 {
-	void (*function)(struct process *proc, const char *name);
-	
 	if (handle == NULL)
 		return;
 
-	function = (void (*)()) plg_get_symbol("function_exit");
-	if (function == NULL) {
+	if (plg_api->function_exit == NULL) {
 		msg_warn("Could not read symbol");
 		return;
 	}
 
-	function(proc, name);
+	plg_api->function_exit(proc, name);
 }
 
 int plg_match(const char *symname)
 {
-	int (*function)(const char *symname);
-
 	if (handle == NULL)
 		return 0;
 
-	function = (int (*)()) plg_get_symbol("library_match");
-        if (function == NULL) {
+	if (plg_api->library_match == NULL) {
 		msg_warn("Could not read symbol");
 		return 0;
 	}
 
-	return function(symname);
+	return plg_api->library_match(symname);
 }
 
 void plg_init()
