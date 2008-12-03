@@ -130,7 +130,7 @@ AC_CONFIG_FILES([
   Makefile
   src/Makefile
   src/modules/Makefile
-  tests/Makefile
+  testsuite/Makefile
   utests/Makefile
 ])
 

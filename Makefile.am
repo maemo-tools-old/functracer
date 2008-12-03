@@ -1,1 +1,1 @@
-SUBDIRS = src src/modules tests utests
+SUBDIRS = src src/modules testsuite utests
