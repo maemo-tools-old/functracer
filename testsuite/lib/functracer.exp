@@ -1,0 +1,193 @@
+# This file is part of Functracer.
+#
+# Copyright (C) 1997-2007 Juan Cespedes <cespedes@debian.org>
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# version 2 as published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+# 02110-1301 USA
+#
+# Based on testsuite code from ltrace.
+
+global FT
+if [info exists TOOL_EXECUTABLE] {
+	set FT $TOOL_EXECUTABLE
+} else {
+	set FT "../src/functracer"
+}
+
+global FT_OPTIONS
+set FT_OPTIONS "";
+
+# ft_compile SOURCE DEST TYPE OPTIONS 
+#
+# Compile PUT(program under test) by native compiler.   ft_compile runs 
+# the right compiler, and TCL captures the output, and I evaluate the output.
+#
+# SOURCE is the name of program under test, with full directory.
+# DEST is the name of output of compilation, with full directory.
+# TYPE is an enum-like variable to affect the format or result of compiler
+#   output.  Values:
+#   executable   if output is an executable.
+#   object       if output is an object.
+# OPTIONS is option to compiler in this compilation.
+proc ft_compile {source dest type options} {
+    global FT_TESTCASE_OPTIONS;
+    
+  # Add platform-specific options if a shared library was specified using
+  # "shlib=librarypath" in OPTIONS.
+  set new_options ""
+  set shlib_found 0
+
+  foreach opt $options {
+      if [regexp {^shlib=(.*)} $opt dummy_var shlib_name] {
+	 lappend source $shlib_name
+	  
+	  if {$shlib_found == 0} {
+	      set shlib_found 1
+	  }
+	  
+      } else {
+	  lappend new_options $opt
+      }
+  }
+    #end of for loop
+    set options $new_options
+    # dump some information for debug purpose.
+    verbose "options are $options"
+    verbose "source is $source $dest $type $options"
+    
+    set result [target_compile $source $dest $type $options];
+    verbose "result is $result"
+    regsub "\[\r\n\]*$" "$result" "" result;
+    regsub "^\[\r\n\]*" "$result" "" result;
+    if { $result != "" && [lsearch $options quiet] == -1} {
+	clone_output "compile failed for ft test, $result"
+    }
+    return $result;
+}
+
+proc ft_compile_shlib {sources dest options} {
+    set obj_options $options
+    lappend obj_options "additional_flags=-fpic"
+    
+    set outdir [file dirname $dest]
+    set objects ""
+    foreach source $sources {
+	set sourcebase [file tail $source]
+       if {[ft_compile $source "${outdir}/${sourcebase}.o" object $obj_options] != ""} {
+           return -1
+       }
+	lappend objects ${outdir}/${sourcebase}.o
+    }
+
+    set link_options $options
+    lappend link_options "additional_flags=-shared"
+
+    if {[ft_compile "${objects}" "${dest}" executable $link_options] != ""} {
+	return -1
+    }
+}
+
+#
+# ft_options OPTIONS_LIST
+# Pass ft commandline options.
+# 
+proc ft_options { args } {
+	
+	global FT_OPTIONS
+	set FT_OPTIONS $args
+}
+
+#
+# ft_runtest LD_LIBRARY_PATH BIN FILE
+# Trace the execution of BIN and return result.
+#
+# BIN is program-under-test.
+# LD_LIBRARY_PATH is the env for program-under-test to run.
+# FILE is to save the output from ft with default name $BIN.ft.
+# Retrun output from ft.
+#
+proc ft_runtest { args } {
+
+	global FT
+	global FT_OPTIONS
+
+	verbose "FT = $FT"
+	
+	set LD_LIBRARY_PATH_ [lindex $args 0]
+	set BIN [lindex $args 1]
+
+	# specify the output file, the default one is $BIN.ft
+	#if [llength $args]==3 then {
+	#	set file [lindex $args 2]
+	#} else {
+	#	set file $BIN.ft
+	#}
+	# append this option to FT_OPTIONS.
+	#lappend FT_OPTIONS "-o"
+	#lappend FT_OPTIONS "$file"
+	verbose "FT_OPTIONS = $FT_OPTIONS"
+	#ft the PUT.
+	catch "exec sh -c {export LD_LIBRARY_PATH=$LD_LIBRARY_PATH_; $FT $FT_OPTIONS $BIN;exit}" output
+	
+	# return output from ft.
+	return $output
+}
+
+#
+# ft_saveoutput OUTPUT FILE
+# Save OUTPUT from ft to file FILE.
+# OUTPUT is output from ft or return value of ft_runtest.
+# FILE is file save output.
+#
+proc ft_saveoutput { args } {
+	
+	set output [lindex $args 0]
+	set file [lindex $args 1]
+
+	set fd [open $file w]
+     	puts $fd $output
+	close $fd
+}
+
+
+#
+# ft_verify_output FILE_TO_SEARCH PATTERN MAX_LINE
+# Verify the ft output by comparing the number of PATTERN in 
+# FILE_TO_SEARCH with INSTANCE_NO.  Do not specify INSTANCE_NO if
+# instance number is ignored in this test.
+# Reutrn:
+#      0 = number of PATTERN in FILE_TO_SEARCH inqual to INSTANCE_NO.
+#      1 = number of PATTERN in FILE_TO_SEARCH qual to INSTANCE_NO.
+#
+proc ft_verify_output { file_to_search pattern {instance_no 0}} {
+
+	# compute the number of PATTERN in FILE_TO_SEARCH by grep and wc.
+	catch "exec sh -c {grep \"$pattern\" $file_to_search | wc -l ;exit}" output
+	verbose "output = $output"
+
+	if [ regexp "syntax error" $output ] then {
+		fail "Invalid regular expression $pattern"
+        } elseif { $instance_no == 0 } then {
+		if { $output == 0 } then {
+			fail "Fail to find $pattern in $file_to_search"
+		} else {
+			pass "$pattern in $file_to_search"
+		}
+	} elseif { $output >= $instance_no } then {
+		pass "$pattern in $file_to_search for $output times"
+		verbose "$pattern in $file_to_search for $output times"
+	} else {
+		fail "$pattern in $file_to_search for $output times ,should be $instance_no"
+	}
+}

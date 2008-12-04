@@ -1,0 +1,51 @@
+# This file is part of Functracer.
+#
+# Copyright (C) 1997-2007 Juan Cespedes <cespedes@debian.org>
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# version 2 as published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+# 02110-1301 USA
+#
+# Based on testsuite code from ltrace.
+
+set testfile "callchain"
+set srcfile ${testfile}.c
+set binfile ${testfile}
+set binfile ${testfile}
+set libfile "libcallchain"
+set libsrc $srcdir/$subdir/$libfile.c
+set lib_sl $srcdir/$subdir/$libfile.so
+
+verbose "remove any allocs-*.trace....."
+catch "exec sh -c {rm -rf ${srcdir}/${subdir}/allocs-*.trace}"
+
+verbose "compiling source file now....."
+if { [ft_compile_shlib $libsrc $lib_sl debug ] != ""
+    || [ ft_compile "${srcdir}/${subdir}/${testfile}.c" "${srcdir}/${subdir}/${binfile}" executable [list debug shlib=$lib_sl] ] != "" } {
+     send_user "Testcase compile failed, so all tests in this file will automatically fail.\n"
+}
+
+# set options for functracer
+ft_options "-s" "-r" "-f" "-l" "${srcdir}/${subdir}/" "-e" "${srcdir}/../src/modules/.libs/memory.so" 
+
+# Run PUT for functracer.
+set exec_output [ft_runtest $srcdir/$subdir $srcdir/$subdir/$binfile]
+
+# Check the output of this program.
+verbose "ft runtest output: $exec_output\n"
+
+# Verify the output by checking numbers of malloc/free on .trace files.
+set pattern "malloc(100)"
+ft_verify_output ${srcdir}/${subdir}/*.trace $pattern 2
+set pattern "free("
+ft_verify_output ${srcdir}/${subdir}/*.trace $pattern 2
