@@ -54,14 +54,6 @@ AC_ARG_ENABLE(debug,
 [  --enable-debug		turn on debug support (slow down execution)],
 [enable_debug=yes], [])
 
-# Ask user for enable utests with check (http://check.sourceforge.net)
-AC_ARG_ENABLE(check,
-  [AS_HELP_STRING([--enable-check],
-    [enable utests with Check utest framework])],
-    [enable_check=yes],
-    [enable_check=no]
-)
-
 # Check for libunwind availability
 AC_CHECK_LIB([unwind-ptrace], [_UPT_access_mem],
   [FT_LIBS="${FT_LIBS} -lunwind-ptrace -lunwind-generic"],
@@ -105,7 +97,6 @@ AS_IF([test "x${PKG_CONFIG}" != "x"],
 
 fi
 
-AM_CONDITIONAL(CHECK_FOUND, [test "x${CHECK_CFLAGS}" != "x"])
 AM_CONDITIONAL(GLIB_FOUND, [test "x${GLIB_CFLAGS}" != "x"])
 
 # Detect architecture
@@ -134,7 +125,6 @@ AC_CONFIG_FILES([
   testsuite/functracer.test1/Makefile
   testsuite/functracer.test2/Makefile
   testsuite/functracer.test3/Makefile
-  utests/Makefile
 ])
 
 AC_OUTPUT
