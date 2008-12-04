@@ -64,6 +64,9 @@ Functracer will produce the following trace events:
 
 Functracer has support to plugins and currently only the memory plugin is
 implemented (it is default). Plugins will be installed in /usr/lib/functracer.
+There is a sequence to load plugin module when using "-e" option. First check
+if full path/filename exists, otherwise then prefixing it with default plugin
+directory and postfixing with .so.
 
 For generating backtraces, libunwind[1] is used (see INSTALL for detailed 
 compilation instructions).
@@ -81,6 +84,7 @@ Run PROGRAM and track selected functions.
   -e, --track=PLUGIN         which set of functions to track
   -f, --file                 use a file to save backtraces instead of dump to
                              stdout
+  -i, --time                 print absolute timestamps for every event
   -l, --path=DIR             dump reports to a custom location (defaults to
                              homedir)
   -p, --pid=PID              which PID to track
@@ -130,10 +134,9 @@ but in most cases this should not affect anything either.
 8. Bugs
 -------
 
-
 To do:
 - better documentation, source code comments
-- testsuite framework infrastructure (just some basic tests are available)
+- Improve testsuite with more tests.
 
 9. License
 ----------

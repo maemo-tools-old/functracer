@@ -1,3 +1,17 @@
+functracer (0.13) unstable; urgency=low
+
+  * Add a new exec event on callback.
+  * Add new data to trace file header.
+  * Add support to timestamps.
+  * Remove unnecessary check to lock functions.
+  * Add a sequence to load plugin module.
+  * Change plugin infrastructure.
+  * Rename tests directory to testsuite.
+  * Implement support to dejagnu test framework.
+  * Remove utests directory.
+
+ -- Bruna Moreira <bruna.moreira@indt.org.br>  Thu, 04 Dec 2008 10:11:21 -0400
+
 functracer (0.12) unstable; urgency=low
 
   * Add initial support to plugins.
