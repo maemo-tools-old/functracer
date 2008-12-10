@@ -131,6 +131,8 @@ static void register_dl_debug_breakpoint(struct process *proc)
 {
 	addr_t addr = solib_dl_debug_address(proc);
 
+	if (addr == 0)
+		return;
 	debug(3, "solib_dl_debug_address=0x%x", addr);
 	register_breakpoint(proc, addr, BKPT_SOLIB);
 }
