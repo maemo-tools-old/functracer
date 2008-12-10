@@ -39,6 +39,7 @@ struct arguments {
 	int resolve_name;
 	int enable_free_bkt;
 	int time;
+	int verbose;
 	char *plugin;
 	char *path;
 };

@@ -60,6 +60,7 @@ static const struct argp_option options[] = {
 	 "use a file to save backtraces instead of dump to stdout", 0},
 	{"path",  'l', "DIR", 0,
          "dump reports to a custom location (defaults to homedir)", 0},
+	{"verbose", 'v', NULL, 0, "Show internal events", 0},
 	{"help", 'h', NULL, 0, "Give this help list", -1},
 	{"usage", OPT_USAGE, NULL, 0, "Give a short usage message", -1},
 	{"version", 'V', NULL, 0, "Print program version", -1},
@@ -129,6 +130,9 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 			argp_error(state, "Path must be a valid directory path");
 			return ENOENT;
 		}
+		break;
+	case 'v':
+		arg_data->verbose++;
 		break;
 	case 'V':
 		printf("%s\n", argp_program_version);

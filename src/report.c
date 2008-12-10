@@ -32,6 +32,8 @@
 #include "report.h"
 #include "options.h"
 
+#define FNAME_FMT "%s/allocs-%d.%d.trace"
+
 void rp_write_backtraces(struct process *proc)
 {
 	int bt_depth, j;
@@ -98,9 +100,9 @@ static int rp_write_header(struct process *proc)
 		 * non-existing path.
 		 */
 		do {
-			snprintf(path, sizeof(path), "%s/allocs-%d.%d.trace",
-				arguments.path ? : getenv("HOME"), rd->pid,
-				rd->step++);
+			snprintf(path, sizeof(path), FNAME_FMT,
+				 arguments.path ? : getenv("HOME"), rd->pid,
+				 rd->step++);
 		} while (stat(path, &buf) == 0);
 		rd->step--;
 
@@ -179,7 +181,8 @@ int rp_init(struct process *proc)
 			return ret;
 	}
 	proc->bt_data = bt_init(proc->pid);
-
+	if (arguments.verbose)
+		fprintf(stderr, "Started tracing %d\n", proc->pid);
 	return 0;
 }
 
@@ -194,5 +197,16 @@ void rp_finish(struct process *proc)
 		rd->step++;
 		if (arguments.save_to_file)
 			fclose(rd->fp);
+	}
+	if (arguments.verbose) {
+		char fname[256];
+		if (arguments.save_to_file)
+			snprintf(fname, sizeof(fname), FNAME_FMT,
+				 arguments.path ? : getenv("HOME"), rd->pid,
+				 rd->step - 1);
+		else
+			snprintf(fname, sizeof(fname), "stdout");
+		fprintf(stderr, "Stopped tracing %d, trace saved to "
+			"%s\n", proc->pid, fname);
 	}
 }

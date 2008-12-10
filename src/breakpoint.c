@@ -31,6 +31,7 @@
 #include "debug.h"
 #include "dict.h"
 #include "function.h"
+#include "options.h"
 #include "plugins.h"
 #include "process.h"
 #include "solib.h"
@@ -115,6 +116,10 @@ static void register_entry_breakpoint(struct process *proc, const char *libname,
 		bkpt = register_breakpoint(proc, symaddr, BKPT_ENTRY);
 		bkpt->symbol = strdup(symname);
 		bkpt2 = register_breakpoint(proc, ssol_new_slot(proc), BKPT_SENTINEL);
+		if (arguments.verbose)
+			fprintf(stderr, "Registered breakpoint for function "
+				"\"%s\" (%#x) from %s (PID %d)\n",
+				bkpt->symbol, bkpt->addr, libname, proc->pid);
 		debug(2, "entry breakpoint registered for \"%s\" at %#x, "
 		      "SSOL %#x, sentinel %#x, PID %d", bkpt->symbol,
 		      bkpt->addr, bkpt->ssol_addr, bkpt2->addr, proc->pid);
