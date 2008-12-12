@@ -94,8 +94,8 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 		break;
 	case 't':
 		arg_data->depth = atoi(arg);
-		if (arg_data->depth <= 0 || arg_data->depth > MAX_BT_DEPTH) {
-			argp_error(state, "Depth must be between 1 and %d", MAX_BT_DEPTH);
+		if (arg_data->depth < 0 || arg_data->depth > MAX_BT_DEPTH) {
+			argp_error(state, "Depth must be between 0 and %d", MAX_BT_DEPTH);
 			return EINVAL;
 		}
 		break;

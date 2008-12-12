@@ -62,6 +62,9 @@ int bt_backtrace(struct bt_data *btd, char **buffer, int size)
 	char buf[512];
 	size_t len = 0;
 
+	if (size == 0)
+		return 0;
+
 	if ((ret = unw_init_remote(&c, btd->as, btd->ui)) < 0) {
 		debug(1, "bt_backtrace(): unw_init_remote() failed, ret=%d", ret);
 		return -1;
