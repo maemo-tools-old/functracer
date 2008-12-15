@@ -25,20 +25,22 @@
 
 static void lib_do_backtrace(void)
 {
-	free(malloc(100));
+	free(malloc(456));
 }
 
-static void lib_h(int i)
+/* Note: this function is usually inlined */
+static void lib_x(int i, ...)
 {
 	lib_do_backtrace();
 }
 
-static void lib_g(int i)
-{
-	lib_h(i + 1);
+#define def_func(func, callee) \
+void func(int i, ...) { \
+	callee(i + 1, &func); \
 }
 
-void lib_f(int i)
-{
-	lib_g(i + 1);
-}
+def_func(lib_h, lib_x)
+def_func(lib_g, lib_h)
+def_func(lib_f, lib_g)
+
+#undef def_func

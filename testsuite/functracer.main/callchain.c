@@ -23,32 +23,31 @@
 
 #include <stdlib.h>
 
-extern void lib_f(int i);
+extern void lib_f(int i, ...);
 
 static void do_backtrace(void)
 {
-	free(malloc(100));
+	free(malloc(123));
 }
 
-static void h(int i)
+/* Note: this function is usually inlined */
+static void x(int i, ...)
 {
 	do_backtrace();
-	lib_f(i + 1);
+	lib_f(1, &x);
 }
 
-static void g(int i)
-{
-	h(i + 1);
+#define def_func(func, callee) \
+static void func(int i, ...) { \
+	callee(i + 1, &func); \
 }
 
-static void f(int i)
-{
-	g(i + 1);
-}
+def_func(h, x)
+def_func(g, h)
+def_func(f, g)
 
 int main(void)
 {
-	f(1);
-
+	f(1, &main);
 	return 0;
 }
