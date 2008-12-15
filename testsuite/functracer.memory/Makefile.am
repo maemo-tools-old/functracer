@@ -1,7 +1,7 @@
 SUFFIXES:      
 clean-local:
-	-rm -f fork clone gthreads 
-	-rm -f *.o 
+	-rm -f malloc_recursive malloc_simple
+	-rm -f *.o *.so 
 	-rm -f *.trace
 	-rm -f $(CLEANFILES)
 

@@ -46,7 +46,7 @@ void *thread1(void *arg)
 {
 	info("CHILD: TID is %d, TGID is %d\n", gettid(), getpid());
 	printf("%s\n", (char *)arg);
-	malloc(456);
+	free(malloc(456));
 	info("CHILD: finished\n");
 /*	g_thread_exit(0); */
 	return NULL;

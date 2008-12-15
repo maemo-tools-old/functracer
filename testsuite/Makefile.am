@@ -1,6 +1,6 @@
 AUTOMAKE_OPTIONS = dejagnu
 
-SUBDIRS = functracer.test1 functracer.test2 functracer.test3
+SUBDIRS = functracer.main functracer.memory
 
 # Reset compiler/linker variables so that tests do not link with Functracer
 # dependencies
