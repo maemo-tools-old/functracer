@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sched.h>
+#include <sys/wait.h>
 
 #define VERBOSE 0
 

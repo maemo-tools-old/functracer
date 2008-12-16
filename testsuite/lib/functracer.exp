@@ -28,6 +28,9 @@ if [info exists TOOL_EXECUTABLE] {
 global FT_OPTIONS
 set FT_OPTIONS "";
 
+global COMPILE_OPTIONS
+set COMPILE_OPTIONS "-Wall -Werror -O2"
+
 # ft_compile SOURCE DEST TYPE OPTIONS 
 #
 # Compile PUT(program under test) by native compiler.   ft_compile runs 
@@ -42,6 +45,7 @@ set FT_OPTIONS "";
 # OPTIONS is option to compiler in this compilation.
 proc ft_compile {source dest type options} {
     global FT_TESTCASE_OPTIONS;
+    global COMPILE_OPTIONS
     
   # Add platform-specific options if a shared library was specified using
   # "shlib=librarypath" in OPTIONS.
@@ -62,6 +66,7 @@ proc ft_compile {source dest type options} {
   }
     #end of for loop
     set options $new_options
+    lappend options additional_flags=$COMPILE_OPTIONS
     # dump some information for debug purpose.
     verbose "options are $options"
     verbose "source is $source $dest $type $options"

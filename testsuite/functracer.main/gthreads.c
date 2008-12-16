@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <glib.h>
+#include <unistd.h>
 #include <sys/syscall.h>
 
 #define VERBOSE 0
