@@ -81,6 +81,15 @@ proc ft_compile {source dest type options} {
     return $result;
 }
 
+# Compile C++ programs
+proc ft_compile_cpp {source dest type options} {
+    lappend options "compiler=g++"
+
+    if {[ft_compile $source $dest $type $options] != ""} {
+	return -1
+    }
+}
+
 proc ft_compile_shlib {sources dest options} {
     set obj_options $options
     lappend obj_options "additional_flags=-fpic"
@@ -103,6 +112,14 @@ proc ft_compile_shlib {sources dest options} {
     }
 }
 
+# Compile C++ shared libraries
+proc ft_compile_shlib_cpp {sources dest options} {
+    lappend options "compiler=g++"
+
+    if {[ft_compile_shlib $sources $dest $options] != ""} {
+        return -1
+    }
+}
 #
 # ft_options OPTIONS_LIST
 # Pass ft commandline options.
