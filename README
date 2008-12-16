@@ -14,8 +14,9 @@ Contents
  5. Where does it work
  6. Performance impact
  7. Other effects
- 8. Bugs
- 9. License
+ 8. Documentation
+ 9. Bugs
+ 10. License
 
 
 0. Authors
@@ -130,15 +131,26 @@ Program being slowed down may also effect its behavior slightly (timers, thread
 synchronization etc), but if the program is robust, it should still function
 normally.  Ptrace() used for tracing changes unix signaling semantics slightly,
 but in most cases this should not affect anything either.
+
+8. Documentation
+-----------------
+There are two types of documentation: the manpage and the "Functracer
+Internals".
+- The manpage describes briefly how to use functracer and its options (man
+  directory). help2man package is used to build it.
+- The "Functraces Internals" describes all its inner workings (doc directory).
+  There are files in pdf and plain text format already available in doc
+  directory. To convert the document to html and pdf format, asciidoc package
+  is required.
  
-8. Bugs
+9. Bugs
 -------
 
 To do:
 - better documentation, source code comments
 - Improve testsuite with more tests.
 
-9. License
+10. License
 ----------
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License version 2 as published by the Free
