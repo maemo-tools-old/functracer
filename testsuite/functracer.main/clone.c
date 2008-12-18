@@ -38,7 +38,7 @@
 int child(void *arg)
 {
 	info("CHILD: PID is %d\n", getpid());
-	malloc(456);
+	free(malloc(456));
 	info("CHILD: finished\n");
 	return 0;
 }
@@ -50,14 +50,16 @@ int main(void)
 	pid_t pid, pid2;
 	int status;
 	char stack[STACK_SIZE];
+	char *ptr;
 
 	info("PARENT: PID is %d\n", getpid());
-	malloc(123);
+	ptr = malloc(123);
 	pid = clone(child, stack + STACK_SIZE, CLONE_FS, NULL);
 	assert(pid != -1);
 	pid2 = waitpid(-1, &status, __WALL);
 	assert(pid == pid2);
-	malloc(789);
+	free(malloc(789));
+	free(ptr);
 	info("PARENT: finished\n");
 
 	return 0;

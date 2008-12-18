@@ -38,7 +38,7 @@
 void child(void)
 {
 	info("CHILD: PID is %d\n", getpid());
-	malloc(456);
+	free(malloc(456));
 	info("CHILD: finished\n");
 }
 
@@ -46,9 +46,10 @@ int main(void)
 {
 	pid_t pid, pid2;
 	int status;
+	char *ptr;
 
 	info("PARENT: PID is %d\n", getpid());
-	malloc(123);
+	ptr = malloc(123);
 	pid = fork();
 	assert(pid != -1);
 	if (pid == 0) { /* child */
@@ -58,7 +59,8 @@ int main(void)
 
 	/* parent */
 	pid2 = waitpid(-1, &status, __WALL);
-	malloc(789);
+	free(malloc(789));
+	free(ptr);
 	info("PARENT: finished\n");
 
 	return 0;
