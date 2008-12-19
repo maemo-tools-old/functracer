@@ -120,6 +120,7 @@ proc ft_compile_shlib_cpp {sources dest options} {
         return -1
     }
 }
+
 #
 # ft_options OPTIONS_LIST
 # Pass ft commandline options.
@@ -182,13 +183,12 @@ proc ft_saveoutput { args } {
 	close $fd
 }
 
-
 #
 # ft_verify_output FILE_TO_SEARCH PATTERN MAX_LINE
 # Verify the ft output by comparing the number of PATTERN in 
 # FILE_TO_SEARCH with INSTANCE_NO.  Do not specify INSTANCE_NO if
 # instance number is ignored in this test.
-# Reutrn:
+# Return:
 #      0 = number of PATTERN in FILE_TO_SEARCH inqual to INSTANCE_NO.
 #      1 = number of PATTERN in FILE_TO_SEARCH qual to INSTANCE_NO.
 #
@@ -210,6 +210,35 @@ proc ft_verify_output { file_to_search pattern {instance_no 0}} {
 		pass "$pattern in $file_to_search for $output times"
 		verbose "$pattern in $file_to_search for $output times"
 	} else {
-		fail "$pattern in $file_to_search for $output times ,should be $instance_no"
+		fail "$pattern in $file_to_search for $output times, should be $instance_no"
+	}
+}
+
+#
+# ft_verify_output_match FILE_TO_SEARCH NAME PATTERN1 PATTERN2 ID
+# Verify the ft output by matching the allocation functions (PATTERN1) with
+# deallocation functions (PATTERN2) in FILE_TO_SEARCH. This function can ensure
+# than ID from PATTERN2 (ID2) is major than ID from PATTERN1 (ID1), 
+#
+proc ft_verify_output_match { file_to_search name pattern1 pattern2 id } {
+
+	# find the allocation function using PATTERN1 and match it with the
+	# deallocation function using the PATTERN2 (ID2 > ID1).
+	catch "exec sh -c {perl -ne 'm/$pattern1/ && print \"$pattern2\"' $file_to_search}" output
+	if { [ regexp "Can't open" $output ] } then {
+		fail "Invalid file $file_to_search"
+		return
+	}
+	catch "exec sh -c {perl -ne 'm/$id$pattern1/ && print \$1' $file_to_search}" id1
+	catch "exec sh -c {perl -ne 'm/$id$output/ && $id1 < \$1 && print \"\$1\\n\"' $file_to_search | head -n1}" id2
+	verbose "output: match = $output, id1 = $id1, id2 = $id2"
+	if { $output == "" || $id1 == "" || $id2 == "" } then {
+		fail "Pattern not found!"
+	} else {
+		if { $id2 > $id1 } then {
+			pass "$name"
+		} else {
+			fail "$name"
+		}
 	}
 }

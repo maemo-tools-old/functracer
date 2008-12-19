@@ -40,7 +40,7 @@ set exec_output [ft_runtest $srcdir/$subdir $srcdir/$subdir/$binfile]
 verbose "ft runtest output: $exec_output\n"
 
 # Verify the output by checking numbers of malloc/free on .trace files.
-set pattern "malloc("
+set pattern " malloc("
 ft_verify_output ${srcdir}/${subdir}/*.trace $pattern 100
-set pattern "free("
+set pattern " free("
 ft_verify_output ${srcdir}/${subdir}/*.trace $pattern 100
