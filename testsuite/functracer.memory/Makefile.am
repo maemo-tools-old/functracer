@@ -1,6 +1,6 @@
 SUFFIXES:      
 clean-local:
-	-rm -f malloc_recursive malloc_simple
+	-rm -f calloc malloc_recursive malloc_simple memalign realloc
 	-rm -f *.o *.so 
 	-rm -f *.trace
 	-rm -f $(CLEANFILES)
