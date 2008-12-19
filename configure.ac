@@ -122,6 +122,7 @@ AC_CONFIG_FILES([
   src/Makefile
   src/modules/Makefile
   testsuite/Makefile
+  testsuite/functracer.file/Makefile
   testsuite/functracer.main/Makefile
   testsuite/functracer.memory/Makefile
 ])

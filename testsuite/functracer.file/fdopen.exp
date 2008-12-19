@@ -1,0 +1,47 @@
+# This file is part of Functracer.
+#
+# Copyright (C) 1997-2007 Juan Cespedes <cespedes@debian.org>
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# version 2 as published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+# 02110-1301 USA
+#
+# Based on testsuite code from ltrace.
+
+set testfile "fdopen"
+set srcfile ${testfile}.c
+set binfile ${testfile}
+
+verbose "remove any allocs-*.trace....."
+catch "exec sh -c {rm -rf ${srcdir}/${subdir}/allocs-*.trace}"
+
+verbose "compiling source file now....."
+if { [ ft_compile "${srcdir}/${subdir}/${testfile}.c" "${srcdir}/${subdir}/${binfile}" executable {debug} ] != "" } {
+     send_user "Testcase compile failed, so all tests in this file will automatically fail.\n"
+}
+
+# set options for functracer
+ft_options "-s" "-r" "-f" "-l" "${srcdir}/${subdir}/" "-e" "${srcdir}/../src/modules/.libs/file.so" 
+
+# Run PUT for functracer.
+set exec_output [ft_runtest $srcdir/$subdir $srcdir/$subdir/$binfile]
+
+# Check the output of this program.
+verbose "ft runtest output: $exec_output\n"
+
+# Verify the output by matching the malloc/free on .trace files.
+set id_pattern {^([0-9]+)\.}
+set pattern2 { fclose\\($1\\)}
+
+set pattern1 { fdopen\(1\) = (0x[0-9a-f]+)}
+ft_verify_output_match ${srcdir}/${subdir}/*.trace "fdopen(1)" $pattern1 $pattern2 $id_pattern
