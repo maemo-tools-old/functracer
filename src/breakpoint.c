@@ -40,23 +40,31 @@
 
 static void enable_breakpoint(struct process *proc, struct breakpoint *bkpt)
 {
-	long orig_insn;
+	long safe_insn;
 
 	debug(1, "pid=%d, addr=0x%x", proc->pid, bkpt->addr);
-	orig_insn = trace_mem_readw(proc, bkpt->addr);
-	trace_mem_writew(proc, bkpt->ssol_addr, orig_insn);
+	bkpt->orig_insn = trace_mem_readw(proc, bkpt->addr);
+	if (ssol_prepare_bkpt(bkpt, &safe_insn) < 0) {
+		msg_warn("Could not enable breakpoint at address %#x "
+			 "(instruction %#lx)", bkpt->addr, bkpt->orig_insn);
+		bkpt->enabled = 0;
+	}
+	trace_mem_writew(proc, bkpt->ssol_addr, safe_insn);
 	trace_mem_write(proc, bkpt->addr, bkpt->insn->value, bkpt->insn->size);
+	bkpt->enabled = 1;
 }
 
 static void disable_breakpoint(struct process *proc, struct breakpoint *bkpt)
 {
-	long orig_insn = trace_mem_readw(proc, bkpt->ssol_addr);
-	trace_mem_writew(proc, bkpt->addr, orig_insn);
+	if (!bkpt->enabled)
+		return;
+	trace_mem_writew(proc, bkpt->addr, bkpt->orig_insn);
 }
 
 static struct breakpoint *breakpoint_from_address(struct process *proc, addr_t addr)
 {
-	return dict_find_entry(proc->breakpoints, (void *)addr);
+	struct breakpoint *bkpt = dict_find_entry(proc->breakpoints, (void *)addr);
+	return bkpt != NULL && !bkpt->enabled ? NULL : bkpt;
 }
 
 static void register_breakpoint_(struct process *proc, addr_t addr,
@@ -102,7 +110,11 @@ static struct breakpoint *register_breakpoint(struct process *proc, addr_t addr,
 		bkpt->type = type;
 		bkpt->insn = breakpoint_instruction(addr);
 	}
-	enable_breakpoint(proc, bkpt);
+	if (type == BKPT_RETURN || type == BKPT_SENTINEL) {
+		trace_mem_write(proc, bkpt->addr, bkpt->insn->value, bkpt->insn->size);
+		bkpt->enabled = 1;
+	} else
+		enable_breakpoint(proc, bkpt);
 
 	return bkpt;
 }
@@ -167,19 +179,23 @@ void singlestep_handle(struct process *proc, addr_t addr)
 	bkpt = breakpoint_from_address(proc, addr - size);
 	assert(bkpt != NULL);
 	set_instruction_pointer(proc, bkpt->addr + size);
+	/* Call SSOL post handler (if any). */
+	if (bkpt->ssol_post_handler)
+		bkpt->ssol_post_handler(proc, bkpt);
 }
 
 void singlestep_after_signal(struct process *proc)
 {
 	addr_t addr = bkpt_get_address(proc);
+	struct breakpoint *bkpt = breakpoint_from_address(proc, addr);
 
 	debug(2, "signal received while singlestepping (pid=%d, ssol=%#x)",
 	      proc->pid, addr);
+	assert(bkpt != NULL);
 	if (proc->exiting) {
 		/* If a process is exiting/detaching, we cannot point it to a
 		 * SSOL address, so instead we point it to the original
 		 * instruction. */
-		struct breakpoint *bkpt = breakpoint_from_address(proc, addr);
 		addr = bkpt->addr;
 	} else {
 		addr += sizeof(long);
@@ -214,6 +230,9 @@ void bkpt_handle(struct process *proc, addr_t addr)
 			if (cb && cb->function.enter)
 				cb->function.enter(proc, symbol_name);
 		}
+		/* Call SSOL pre handler (if any). */
+		if (bkpt->ssol_pre_handler)
+			bkpt->ssol_pre_handler(proc, bkpt);
 		proc->singlestep = 1;
 		break;
 	case BKPT_RETURN:

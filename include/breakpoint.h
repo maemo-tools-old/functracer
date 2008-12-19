@@ -35,12 +35,19 @@ struct bkpt_insn {
 	size_t size;
 };
 
+struct breakpoint;
 struct breakpoint {
 	addr_t addr, ssol_addr;
 	struct bkpt_insn *insn;
 	enum { BKPT_ENTRY, BKPT_RETURN, BKPT_SOLIB, BKPT_SENTINEL } type;
 	char *symbol;
-        int refcnt;
+	int refcnt;
+	int enabled;
+
+	long orig_insn;
+	void (*ssol_pre_handler)(struct process *proc, struct breakpoint *bkpt);
+	void (*ssol_post_handler)(struct process *proc, struct breakpoint *bkpt);
+	void *ssol_data;
 };
 
 extern void set_instruction_pointer(struct process *proc, addr_t addr);
@@ -53,5 +60,6 @@ extern void singlestep_after_signal(struct process *proc);
 extern void bkpt_init(struct process *proc);
 extern void bkpt_finish(struct process *proc);
 extern void disable_all_breakpoints(struct process *proc);
+extern int ssol_prepare_bkpt(struct breakpoint *bkpt, long *safe_insn);
 
 #endif /* !FTK_BREAKPOINT_H */

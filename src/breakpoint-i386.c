@@ -61,3 +61,10 @@ addr_t fixup_address(addr_t addr)
 	/* no fixup needed for x86 */
 	return addr;
 }
+
+int ssol_prepare_bkpt(struct breakpoint *bkpt, long *safe_insn)
+{
+	/* no special instruction handling for SSOL in x86 yet */
+	*safe_insn = bkpt->orig_insn;
+	return 0;
+}
