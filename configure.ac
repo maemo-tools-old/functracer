@@ -102,20 +102,14 @@ AM_CONDITIONAL(GLIB_FOUND, [test "x${GLIB_CFLAGS}" != "x"])
 # Detect architecture
 AC_CANONICAL_HOST
 AS_CASE($host_cpu,
-  [arm*], [ARCH=arm; max_bt_depth=12; decr_pc_after_break=0],
-  [i?86], [ARCH=i386; max_bt_depth=64; decr_pc_after_break=1],
+  [arm*], [ARCH=arm; AC_DEFINE([ARCH_ARM], [], [ARM architecture.])],
+  [i?86], [ARCH=i386]; AC_DEFINE([ARCH_X86], [], [x86 architecutre.]),
   [AC_MSG_ERROR([host CPU $host_cpu is not supported])]
 )
 AC_SUBST([ARCH])
 
-# Define architecture-specific constants used in include/report.h
-AC_DEFINE_UNQUOTED([MAX_BT_DEPTH], [$max_bt_depth], Define maximum backtrace depth.)
-
 # Define build architecture
 AC_DEFINE_UNQUOTED([BUILD_ARCH], ["$host"], Build architecture.)
-
-# Define decrement after breakpoint
-AC_DEFINE_UNQUOTED([DECR_PC_AFTER_BREAK], [$decr_pc_after_break], Define decrement after breakpoint.)
 
 AC_CONFIG_FILES([
   Makefile

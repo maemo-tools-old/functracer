@@ -28,7 +28,6 @@
 #include <libunwind-ptrace.h>
 
 #include "backtrace.h"
-#include "config.h"
 #include "debug.h"
 #include "options.h"
 

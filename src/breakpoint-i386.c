@@ -23,8 +23,8 @@
 
 #include <linux/ptrace.h>
 
+#include "arch-defs.h"
 #include "breakpoint.h"
-#include "config.h"
 #include "debug.h"
 
 addr_t bkpt_get_address(struct process *proc)

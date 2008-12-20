@@ -26,6 +26,7 @@
 #include <errno.h>
 #include <time.h>
 
+#include "arch-defs.h"
 #include "backtrace.h"
 #include "config.h"
 #include "debug.h"

@@ -27,7 +27,6 @@
 #include <linux/ptrace.h>
 
 #include "breakpoint.h"
-#include "config.h"
 #include "debug.h"
 
 #define off_r0 0

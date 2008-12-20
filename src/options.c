@@ -29,8 +29,9 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "options.h"
+#include "arch-defs.h"
 #include "config.h"
+#include "options.h"
 #include "report.h"
 #include "backtrace.h"
 
