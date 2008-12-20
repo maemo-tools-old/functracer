@@ -263,7 +263,7 @@ static void solib_read_library(struct process *proc, char *filename,
 	asymbol *sym, **symbol_table;
 	addr_t symaddr;
 	const bfd_format bfd_fmt = bfd_object;
-	const flagword flags = BSF_EXPORT | BSF_FUNCTION;
+	const flagword flags = BSF_FUNCTION;
 
 	abfd = bfd_fopen(filename, "default", "rb", -1);
 	if (abfd == NULL)
