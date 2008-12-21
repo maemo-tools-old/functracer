@@ -35,6 +35,7 @@
 #include <sys/wait.h>
 #include <sys/procfs.h>
 
+#include "arch-defs.h"
 #include "debug.h"
 #include "ssol.h"
 #include "syscall.h"
@@ -125,7 +126,7 @@ addr_t ssol_new_slot(struct process *proc)
 	struct ssol *ssol = proc->ssol;
 
 	assert(ssol->last - ssol->first + 1 < SSOL_LENGTH);
-	ssol->last += sizeof(long);
+	ssol->last += MAX_INSN_SIZE;
 	return ssol->last;
 }
 

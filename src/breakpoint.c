@@ -40,16 +40,16 @@
 
 static void enable_breakpoint(struct process *proc, struct breakpoint *bkpt)
 {
-	long safe_insn;
+	unsigned char safe_insn[MAX_INSN_SIZE];
 
 	debug(1, "pid=%d, addr=0x%x", proc->pid, bkpt->addr);
-	bkpt->orig_insn = trace_mem_readw(proc, bkpt->addr);
+	trace_mem_read(proc, bkpt->addr, bkpt->orig_insn, MAX_INSN_SIZE);
 	if (ssol_prepare_bkpt(bkpt, &safe_insn) < 0) {
-		msg_warn("Could not enable breakpoint at address %#x "
-			 "(instruction %#lx)", bkpt->addr, bkpt->orig_insn);
+		msg_warn("Could not enable breakpoint at address %#x",
+			 bkpt->addr);
 		bkpt->enabled = 0;
 	}
-	trace_mem_writew(proc, bkpt->ssol_addr, safe_insn);
+	trace_mem_write(proc, bkpt->ssol_addr, safe_insn, MAX_INSN_SIZE);
 	trace_mem_write(proc, bkpt->addr, bkpt->insn->value, bkpt->insn->size);
 	bkpt->enabled = 1;
 }
@@ -58,7 +58,7 @@ static void disable_breakpoint(struct process *proc, struct breakpoint *bkpt)
 {
 	if (!bkpt->enabled)
 		return;
-	trace_mem_writew(proc, bkpt->addr, bkpt->orig_insn);
+	trace_mem_write(proc, bkpt->addr, bkpt->orig_insn, MAX_INSN_SIZE);
 }
 
 static struct breakpoint *breakpoint_from_address(struct process *proc, addr_t addr)
@@ -160,12 +160,12 @@ static int ssol_insn_size(struct process *proc, addr_t addr)
 
 	/* Skip first SSOL entry (reserved for return breakpoint). */
 	if (addr <= proc->ssol->first ||
-	    addr > proc->ssol->last + sizeof(long))
+	    addr > proc->ssol->last + MAX_INSN_SIZE)
 		return -1;
 
-	size = addr - (addr / sizeof(long)) * sizeof(long);
+	size = addr - (addr / MAX_INSN_SIZE) * MAX_INSN_SIZE;
 	if (size == 0)
-		size = sizeof(long);
+		size = MAX_INSN_SIZE;
 	return size;
 }
 
@@ -175,7 +175,7 @@ void singlestep_handle(struct process *proc, addr_t addr)
 	int size = ssol_insn_size(proc, addr);
 
 	debug(1, "pid=%d, addr=0x%x", proc->pid, addr);
-	assert(size > 0 && size <= sizeof(long));
+	assert(size > 0 && size <= MAX_INSN_SIZE);
 	bkpt = breakpoint_from_address(proc, addr - size);
 	assert(bkpt != NULL);
 	set_instruction_pointer(proc, bkpt->addr + size);
@@ -198,7 +198,9 @@ void singlestep_after_signal(struct process *proc)
 		 * instruction. */
 		addr = bkpt->addr;
 	} else {
-		addr += sizeof(long);
+		/* Set instruction pointer to the sentinel breakpoint
+		 * address. */
+		addr += MAX_INSN_SIZE;
 	}
 	set_instruction_pointer(proc, addr);
 	proc->singlestep = 0;
@@ -257,7 +259,7 @@ void bkpt_handle(struct process *proc, addr_t addr)
 	case BKPT_SENTINEL:
 		/* A singlestep was interrupted by a signal. Restart it here.
 		 */
-		set_instruction_pointer(proc, addr - sizeof(long));
+		set_instruction_pointer(proc, addr - MAX_INSN_SIZE);
 		proc->singlestep = 1;
 		break;
 	default:

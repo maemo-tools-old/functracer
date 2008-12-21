@@ -107,44 +107,47 @@ static void post_rn_pc(struct process *proc, struct breakpoint *bkpt)
 static void post_branch(struct process *proc, struct breakpoint *bkpt)
 {
 	addr_t pc = bkpt->addr;
-	long insn = bkpt->orig_insn;
+	long insn = *(long *)bkpt->orig_insn;
 	int disp = branch_displacement(insn);
 	set_instruction_pointer(proc, pc + 8 + disp);
 }
 
-int ssol_prepare_bkpt(struct breakpoint *bkpt, long *safe_insn)
+/* TODO: add support for more instructions */
+int ssol_prepare_bkpt(struct breakpoint *bkpt, void *safe_insn)
 {
-	/* TODO: add support for more instructions */
-	long insn = bkpt->orig_insn;
+	long orig_insn = *(long *)bkpt->orig_insn;
+	long *insn = (long *)safe_insn;
 
 	/* by default, the instruction is unmodified */
-	*safe_insn = insn;
+	*insn = orig_insn;
 
 	/* SOLIB breakpoints are handled specially, and their original
 	 * instruction is not even executed. */
 	if (bkpt->type == BKPT_SOLIB)
 		return 0;
-
 	/* Store multiple (Rn != PC and PC not in register list) */
-	if (STM(insn) && ARM_Rn(insn) != ARM_PC && !ARM_reglist(insn, ARM_PC)) {
+	if (STM(orig_insn) && ARM_Rn(orig_insn) != ARM_PC &&
+	    !ARM_reglist(orig_insn, ARM_PC)) {
 		return 0;
 	}
 	/* Load immediate offset (Rd != PC and Rn == PC) */
-	if (LDR_imm(insn) && ARM_Rd(insn) != ARM_PC && ARM_Rn(insn) == ARM_PC) {
-		*safe_insn &= ~(0xf << 16); /* Set Rn to R0 */
+	if (LDR_imm(orig_insn) && ARM_Rd(orig_insn) != ARM_PC &&
+	    ARM_Rn(orig_insn) == ARM_PC) {
+		*insn = orig_insn & ~(0xf << 16); /* Set Rn to R0 */
 		bkpt->ssol_pre_handler = pre_rn_pc;
 		bkpt->ssol_post_handler = post_rn_pc;
 		return 0;
 	}
 	/* Move immediate to register (Rd != PC and Rn != PC) */
-	if (MOV_imm(insn) && ARM_Rd(insn) != ARM_PC && ARM_Rn(insn) != ARM_PC) {
+	if (MOV_imm(orig_insn) && ARM_Rd(orig_insn) != ARM_PC &&
+	    ARM_Rn(orig_insn) != ARM_PC) {
 		return 0;
 	}
 	/* Branch (always) */
-	if (BRANCH(insn)) {
+	if (BRANCH(orig_insn)) {
 		/* replace instruction with a no-op. It will be simulated on
 		 * the pre handler */
-		*safe_insn = ARM_NOP;
+		*insn = ARM_NOP;
 		bkpt->ssol_post_handler = post_branch;
 		return 0;
 	}

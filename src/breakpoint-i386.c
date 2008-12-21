@@ -22,6 +22,7 @@
  */
 
 #include <linux/ptrace.h>
+#include <string.h>
 
 #include "arch-defs.h"
 #include "breakpoint.h"
@@ -62,9 +63,9 @@ addr_t fixup_address(addr_t addr)
 	return addr;
 }
 
-int ssol_prepare_bkpt(struct breakpoint *bkpt, long *safe_insn)
+int ssol_prepare_bkpt(struct breakpoint *bkpt, void *safe_insn)
 {
 	/* no special instruction handling for SSOL in x86 yet */
-	*safe_insn = bkpt->orig_insn;
+	memcpy(safe_insn, bkpt->orig_insn, MAX_INSN_SIZE);
 	return 0;
 }

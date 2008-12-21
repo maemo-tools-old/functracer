@@ -24,6 +24,7 @@
 #ifndef FTK_BREAKPOINT_H
 #define FTK_BREAKPOINT_H
 
+#include "arch-defs.h"
 #include "process.h"
 #include "target_mem.h"
 
@@ -44,7 +45,7 @@ struct breakpoint {
 	int refcnt;
 	int enabled;
 
-	long orig_insn;
+	unsigned char orig_insn[MAX_INSN_SIZE];
 	void (*ssol_pre_handler)(struct process *proc, struct breakpoint *bkpt);
 	void (*ssol_post_handler)(struct process *proc, struct breakpoint *bkpt);
 	void *ssol_data;
@@ -60,6 +61,6 @@ extern void singlestep_after_signal(struct process *proc);
 extern void bkpt_init(struct process *proc);
 extern void bkpt_finish(struct process *proc);
 extern void disable_all_breakpoints(struct process *proc);
-extern int ssol_prepare_bkpt(struct breakpoint *bkpt, long *safe_insn);
+extern int ssol_prepare_bkpt(struct breakpoint *bkpt, void *safe_insn);
 
 #endif /* !FTK_BREAKPOINT_H */
