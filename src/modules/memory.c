@@ -31,6 +31,7 @@
 #include "plugins.h"
 #include "process.h"
 #include "report.h"
+#include "target_mem.h"
 
 #define MEM_API_VERSION "2.0"
 
@@ -55,7 +56,7 @@ static void mem_function_exit(struct process *proc, const char *name)
 
 	} else if (strcmp(name, "__libc_memalign") == 0) {
 		size_t arg1 = fn_argument(proc, 1);
-                rp_alloc(proc, rd->rp_number, "memalign", arg0 * arg1,
+		rp_alloc(proc, rd->rp_number, "memalign", arg1,
 			 retval);
 
 	} else if (strcmp(name, "__libc_realloc") == 0) {
@@ -83,6 +84,17 @@ static void mem_function_exit(struct process *proc, const char *name)
 			return;
                 rp_free(proc, rd->rp_number, "free", arg0);
 
+	} else if (strcmp(name, "posix_memalign") == 0) {
+		size_t arg0 = fn_argument(proc, 0);
+		size_t arg2 = fn_argument(proc, 2);
+		if (retval != 0)
+			return;
+		/* posix_memalign() stores the allocated memory pointer on the
+		 * first argument (of type (void **)) */
+		retval = trace_mem_readw(proc, arg0);
+		rp_alloc(proc, rd->rp_number, "posix_memalign", arg2,
+			 retval);
+
 	} else {
 		msg_warn("unexpected function exit (%s)\n", name);
 		return;
@@ -99,8 +111,6 @@ static int mem_library_match(const char *symname)
 	       strcmp(symname, "__libc_realloc") == 0 ||
 	       strcmp(symname, "__libc_free") == 0 ||
 	       strcmp(symname, "__libc_memalign") == 0 ||
-	       strcmp(symname, "__libc_valloc") == 0 ||
-	       strcmp(symname, "__libc_pvalloc") == 0 ||
 	       strcmp(symname, "posix_memalign") == 0);
 }
 
