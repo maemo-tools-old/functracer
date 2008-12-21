@@ -18,7 +18,7 @@
 #
 # Based on testsuite code from ltrace.
 
-set testfile "memalign"
+set testfile "posix_memalign"
 set srcfile ${testfile}.c
 set binfile ${testfile}
 
@@ -43,5 +43,5 @@ verbose "ft runtest output: $exec_output\n"
 set id_pattern {^([0-9]+)\.}
 set pattern2 { free\\($1\\)}
 
-set pattern1 { memalign\(123\) = (0x[0-9a-f]+)}
-ft_verify_output_match ${srcdir}/${subdir}/*.trace "memalign(123)" $pattern1 $pattern2 $id_pattern
+set pattern1 { posix_memalign\(123\) = (0x[0-9a-f]+)}
+ft_verify_output_match ${srcdir}/${subdir}/*.trace "posix_memalign(123)" $pattern1 $pattern2 $id_pattern
