@@ -281,12 +281,13 @@ static void solib_read_library(struct process *proc, char *filename,
 		for (i = 0; i < number_of_symbols; i++) {
 			sym = symbol_table[i];
 			if ((sym->flags & flags) == flags) {
+				symaddr = sym->value + sym->section->vma;
+				/* Ignore symbols with no defined address. */
+				if (symaddr == 0)
+					continue;
 				if (!solib_is_prelinked(abfd))
-					symaddr = start_addr;
-				else
-					symaddr = 0;
+					symaddr += start_addr;
 				/* Bfd symbols are section relative. */
-				symaddr += sym->value + sym->section->vma;
 				/* FIXME: pass SONAME instead of library filename. */
 				callback(proc, filename, sym->name, symaddr);
 			}
