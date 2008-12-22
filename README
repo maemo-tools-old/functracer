@@ -63,11 +63,11 @@ Functracer will produce the following trace events:
 1. realloc(16) = 0x001ae858  <- allocation event
    [backtrace lines ...]
 
-Functracer has support to plugins and currently only the memory plugin is
-implemented (it is default). Plugins will be installed in /usr/lib/functracer.
-There is a sequence to load plugin module when using "-e" option. First check
-if full path/filename exists, otherwise then prefixing it with default plugin
-directory and postfixing with .so.
+Functracer has support to plugins and currently it has two implemented: the
+memory plugin (it is default) and file plugin. Plugins will be installed in
+/usr/lib/functracer.  There is a sequence to load plugin module when using "-e"
+option. First check if full path/filename exists, otherwise then prefixing it
+with default plugin directory and postfixing with .so.
 
 For generating backtraces, libunwind[1] is used (see INSTALL for detailed 
 compilation instructions).

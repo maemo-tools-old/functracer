@@ -4,6 +4,8 @@ functracer - list backtraces to allocations.
 [DESCRIPTION]
 \fBfunctracer\fR is a debugging tool. It gets backtraces of all allocations done in ARM/x86 processes. It works with optimized (-O2) code, where debugging symbols are available either in the application  binaries themselves, or in separate debug files.
 
+It supports plugins. Currently, there are two plugins implemented: memory and file. They are installed in /usr/lib/functracer.
+
 [AUTHOR]
 \fBFunctracer\fR has been developed by:
 

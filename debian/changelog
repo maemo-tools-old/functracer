@@ -1,3 +1,27 @@
+functracer (0.14) unstable; urgency=low
+
+  * Add verbose option.
+  * Avoid ptrace() errors due to missing libraries.
+  * Change minimal backtrace depth to zero.
+  * Organize testsuite directories.
+  * Fix leaks in clone and fork tests.
+  * Add new flags and fix warnings in testsuite.
+  * Add support to C++ programs on testsuite.
+  * Add new test to C++ programs in testsuite.
+  * Add "Functracer Internals" sources.
+  * Testsuite improvements.
+  * Add new tests for calloc, realloc and memalign functions.
+  * Add new tests for open/close operations.
+  * Modify instructions for SSOL support.
+  * Debian packaging fixes.
+  * Move architecture specific defines out of configure.ac.
+  * x86: allow inserting breakpoints in instructions with size 8.
+  * Memory plugin fixes (memalign, posix_memalign).
+  * solib.c: ignore symbols with no defined address.
+  * Fix copyright header in testsuite files.
+
+ -- Bruna Moreira <bruna.moreira@indt.org.br>  Mon, 19 Dec 2008 14:08:14 -0400
+
 functracer (0.13) unstable; urgency=low
 
   * Add a new exec event on callback.
