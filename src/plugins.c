@@ -36,11 +36,9 @@
 
 #define FT_API_VERSION "2.0"
 
-void *handle = NULL;
+static void *handle = NULL;
 static struct plg_api *plg_api;
 
-void plg_init();
-void plg_finish();
 
 static void *plg_get_symbol(char *name)
 {
