@@ -33,6 +33,7 @@
 #define off_pc 60
 #define off_cpsr 64
 
+#define ARM_Rm(insn)		(insn & 0xf)
 #define ARM_Rn(insn)		(insn >> 16 & 0xf)
 #define ARM_Rd(insn)		(insn >> 12 & 0xf)
 #define ARM_cc(insn)		(insn >> 28 & 0xf)
@@ -41,6 +42,9 @@
 #define STM(insn)		((insn & 0x0e500000) == 0x08000000 && ARM_cc(insn) != 0xf)
 #define LDR_imm(insn)		((insn & 0x0f300000) == 0x05100000)
 #define MOV_imm(insn)		((insn & 0x0fe00000) == 0x03a00000)
+#define MOV_reg(insn)		((insn & 0x0fef0ff0) == 0x01a00000)
+/* Same as above, but with SBZ (should be zero) bits not masked. */
+/*#define MOV_reg(insn)		((insn & 0x0fe00ff0) == 0x01a00000)*/
 #define ARM_NOP			0xe1a00000	/* nop (mov r0,r0) */
 
 #define BRANCH(insn)		((insn & 0xff000000) == 0xea000000)
@@ -141,6 +145,11 @@ int ssol_prepare_bkpt(struct breakpoint *bkpt, void *safe_insn)
 	/* Move immediate to register (Rd != PC and Rn != PC) */
 	if (MOV_imm(orig_insn) && ARM_Rd(orig_insn) != ARM_PC &&
 	    ARM_Rn(orig_insn) != ARM_PC) {
+		return 0;
+	}
+	/* Move register to register (Rd != PC, Rm != PC and Rn != PC) */
+	if (MOV_reg(orig_insn) && ARM_Rd(orig_insn) != ARM_PC &&
+	    ARM_Rm(orig_insn) != ARM_PC && ARM_Rn(orig_insn) != ARM_PC) {
 		return 0;
 	}
 	/* Branch (always) */
