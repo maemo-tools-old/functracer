@@ -218,7 +218,12 @@ static int handle_child_process(struct process *parent_proc, pid_t child_pid)
 		 * handle_interrupt() ? */
 		disable_all_breakpoints(child_proc);
 		child_proc->breakpoints = NULL;
-	}
+		if (cb && cb->process.fork) {
+			/* Callback should be called only when child is not a
+			 * thread. */
+			cb->process.fork(parent_proc, child_pid);
+		}
+	} 
 	bkpt_init(child_proc);
 	trace_set_options(child_pid);
 	continue_process(child_proc);

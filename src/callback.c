@@ -86,6 +86,22 @@ static void process_exit(struct process *proc, int exit_code)
 	}
 }
 
+static void process_fork(struct process *proc, pid_t child_pid)
+{
+	char *buf;
+
+	debug(3, "process has forked (pid=%d, filename=%s, child_pid=%d)",
+	      proc->pid, proc->filename, child_pid);
+
+	if (trace_enabled(proc)) {
+		buf = cmd_from_pid(proc->pid, 0);
+		rp_event(proc, "Process %d (%s) has forked %d\n", proc->pid,
+			 buf, child_pid);
+		free(buf);
+
+	}
+}
+
 static void process_kill(struct process *proc, int signo)
 {
 	debug(3, "process killed by signal (pid=%d, signo=%d)", proc->pid,
@@ -181,6 +197,7 @@ void cb_init(void)
 			.create	   = process_create,
 			.exec	   = process_exec,
 			.exit	   = process_exit,
+			.fork	   = process_fork,
 			.kill	   = process_kill,
 			.signal	   = process_signal,
 			.interrupt = process_interrupt,

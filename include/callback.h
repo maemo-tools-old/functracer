@@ -36,6 +36,7 @@ struct callback {
 		void (*create)(struct process *proc);
 		void (*exec)(struct process *proc);
 		void (*exit)(struct process *proc, int exit_code);
+		void (*fork)(struct process *proc, pid_t child_pid);
 		void (*kill)(struct process *proc, int signo);
 		void (*signal)(struct process *proc, int signo);
 		void (*interrupt)(struct process *proc);
