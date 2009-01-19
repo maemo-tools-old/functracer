@@ -262,6 +262,17 @@ static void solib_read_library(struct process *proc, char *filename,
 	const bfd_format bfd_fmt = bfd_object;
 	const flagword flags = BSF_FUNCTION;
 
+	/* Do not read symbols from the target program itself. */
+	if (strcmp(proc->filename, filename) == 0)
+		return;
+
+	/* Do not read symbols from the dynamic linker.
+	   FIXME: ideally this should be done on the callback, but filtering it
+	   here is avoids reading the library altogether. On future, it should
+	   match the library SONAME instead of the path. */
+	if (strcmp(filename, "/lib/ld-2.5.so") == 0)
+		return;
+
 	abfd = bfd_fopen(filename, "default", "rb", -1);
 	if (abfd == NULL)
 		error_bfd(filename, "could not open shared library file");
