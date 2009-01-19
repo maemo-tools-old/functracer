@@ -214,12 +214,10 @@ static void current_solibs(struct process *proc, struct solib_list **solist)
 {
 	struct maps_data md;
 	struct solib_list *so = NULL;
-	char *exec_path;
 
 	*solist = NULL;
 	if (maps_init(&md, proc->pid) == -1)
 		return;
-	resolve_path(proc->filename, &exec_path);
 	while (maps_next(&md) == 1) {
 		if (MAP_EXEC(&md) && md.off == 0 && md.inum != 0) {
 			struct solib_list *tmp = xmalloc(sizeof(struct solib_list));
@@ -231,7 +229,6 @@ static void current_solibs(struct process *proc, struct solib_list **solist)
 			so = tmp;
 		}
 	}
-	free(exec_path);
 	maps_finish(&md);
 	*solist = so;
 }
