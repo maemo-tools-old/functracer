@@ -45,7 +45,8 @@ static void enable_breakpoint(struct process *proc, struct breakpoint *bkpt)
 	debug(1, "pid=%d, addr=0x%x", proc->pid, bkpt->addr);
 	trace_mem_read(proc, bkpt->addr, bkpt->orig_insn, MAX_INSN_SIZE);
 	if (ssol_prepare_bkpt(bkpt, &safe_insn) < 0) {
-		msg_warn("Could not enable breakpoint at address %#x",
+		msg_warn("Could not enable breakpoint at address %#x "
+			 "(SSOL unsafe; see README for details)",
 			 bkpt->addr);
 		bkpt->enabled = 0;
 	}
