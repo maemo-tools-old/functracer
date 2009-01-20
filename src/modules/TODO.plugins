@@ -1,0 +1,61 @@
+                         TODO for functracer plugins
+                   Copyright (C) 2008 by Nokia Corporation
+
+
+* List all open files at the beginning of trace.
+
+* file.c plugin catches fopen()/fclose() which are C-library
+  calls and do not handle FDs directly (but call open/close?).
+
+* Open calls do not list file names.  The file name is important
+  to identify which file was opened.
+
+  Adding support for printing the file names (not only the file descriptors,
+which only need reading a single word from the process) requires adding code to
+read strings from the remote process. ltrace has such code, and it can used as
+base for implementing functracer support.
+
+In ltrace, high level argument formatting is handled in display_args.c. For
+string arguments, only the character escaping code would be interesting. The
+rest of the code on that file deals with things such as formatting integers as
+hexadecimal, octal, pointers etc.
+
+In ltrace, The actual reading of argument data from target process is handled
+by the umovestr/umovelong functions in sysdeps/linux-gnu/trace.c. Functracer
+already has a umovelong equivalent (trace_mem_readw from target_mem.c), so only
+a umovestr equivalent needs to be implemented. This new function would be very
+similar to the existing trace_mem_read function, plus having a check for the
+NUL byte and returning the number of bytes read.
+
+In Functracer, plugins use the fn_argument function to read long-sized
+arguments. A new function (e.g. fn_argument_string) would need to be created
+that returns either a callee allocated pointer to the string (mimicking a
+strdup() behaviour) or that receives a pointer and a "size" argument, and
+stores up to "size" bytes of the string argument on the given memory location
+(mimicking a strncpy() behaviour). That new function would use the newly
+created umovestr equivalent function to do the low level reading from the
+target process.
+
+An extension to the trace format is necessary to support any plugin-specific
+data. functracer-postproc also needs change to support parsing the new format.
+A possible new format is shown below:
+
+<index>. [<timestamp>] <function>(<size>) = <return value>[, plugin-specific]
+
+For example, the file plugin can be:
+    8. open(1) = 0x00000006, "/some/file"
+
+The plugins could add whatever they want after "," and post-processor would not
+touch it unless it knows the function and what to do with the value.
+
+* Add some missing functions to the file plugin that also create or close file
+  descriptors (some may require parsing more complex arguments, such as
+  structs):
+  - file descriptor duplication:
+    - fcntl() (tricky, it dups depending on args)
+  - IPC stuff creating FDs:
+    - socketpair(), pipe() (are tricky, get array[2] where they set FDs)
+    - bind(), doesn't create FDs, but is needed to get the socket address
+      (AF_INET protocol) or file name (AF_UNIX protocol).
+    - mkfifo(), a C-library call, maybe this needs to be catched to get the
+      filename (I assume it uses pipe() syscall which is unnamed)

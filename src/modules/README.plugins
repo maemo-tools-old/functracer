@@ -1,0 +1,211 @@
+                        README for functracer plugins
+
+                  Copyright (C) 2008 by Nokia Corporation
+
+Contents
+--------
+ 1. Introduction
+ 2. Plugin Infrastrucuture
+ 3. Plugin extension
+ 4. How to use
+ 5. Issues and Limitations
+ 6. License
+
+
+1. Introduction
+---------------
+Functracer supports plugins. The plugins tell to functracer which set of
+functions will be tracked. Only one plugin can be used at each functracer
+execution.
+
+Currently, there are two plugins implemented: memory and file, which track the
+following functions:
+- memory: calloc, free, malloc, memalign, posix_memalign, realloc.
+- file: creat, close, fdopen, fopen, freopen, open.
+
+Plugins are usually installed in /usr/lib/functracer. Memory is the default
+plugin, and to switch to the "file" plugin you must use the "-e" option (e.g.
+"-e file"). A user-defined plugin can be used by specifying a path to the "-e"
+option (e.g. "-e /home/user/plg/foo.so").
+
+2. Plugin infrastructure
+------------------------
+The basic plugin infrastructure consists of three functions:
+
+- api_version: tells to functracer what API version is supported by the plugin.
+  This version is verified by functracer and if it is not compatible, the tool
+  refuses to load the plugin.
+
+- library_match: this should return the function names that will be tracked by
+  functracer. The function names should match those as exported by the library
+  (see more details in "Issues and Limitations" section).
+
+- function_exit: this is the place where the data is collected. In this
+  function, the user tells to functracer what to report about the tracked
+  function. Usually, function_exit identifies the function name, the resource ID
+  and the return value, and events are reported to the trace files using the
+  rp_alloc() function for resource allocation and rp_free() for resource
+  destruction.
+
+The functracer API must be used for retrieving or logging any data (just add
+the correct header in user-defined plugin). See functracer source code for more
+details on how to use each function, for example:
+
+- fn_return_value(): get the function return value.
+- fn_argument(): get the function argument (numbered starting from zero).
+- rp_write_backtraces(): generate backtraces for function call site.
+- rp_alloc(): log resource allocation.
+- rp_free(): log resource destruction.
+
+3. Plugin extension
+-------------------
+This section will show step-by-step how to create a new plugin and what is
+mandatory.
+
+First, we need to add some header files. See functracer API to know the
+functions available and the respective header file. In general, we will use
+report functions (report.h), debug messages (debug.h), definitions to processes
+(process.h), read function arguments (function.h) and the plugin manager
+definitions (plugins.h).
+
+#include "debug.h"
+#include "function.h"
+#include "plugins.h"
+#include "process.h"
+#include "report.h"
+
+Secondly, we have to define the plugin version, which must be compatible with
+the current functracer plugin API.
+
+#define FOO_API_VERSION "2.0"
+static char foo_api_version[] = FOO_API_VERSION;
+
+Third, we define what functions will be tracked, in this example the malloc and
+free functions will be tracked. See some considerations about function names in
+section "Issues and Limitations".
+
+static int foo_library_match(const char *symname)
+{
+        return(strcmp(symname, "__libc_malloc") == 0 ||
+               strcmp(symname, "__libc_free") == 0);
+}
+
+The next step is to define what to do when the function exits. A small example
+using some parts of the memory plugin is shown below:
+
+static void foo_function_exit(struct process *proc, const char *name)
+{
+        /* Get the report data to loggin information. */ 
+        struct rp_data *rd = proc->rp_data;
+
+        /* Get the function return value. */
+        addr_t retval = fn_return_value(proc);
+
+        /* Get the first function argument. */
+        size_t arg0 = fn_argument(proc, 0);
+
+        /* Verify what is the function. */
+        if (strcmp(name, "__libc_malloc") == 0) {
+                /* Write the data to trace file. */
+                rp_alloc(proc, rd->rp_number, "malloc", arg0, retval);
+
+        } else if (strcmp(name, "__libc_free") == 0 ) {
+                /* Suppress "free(NULL)" calls from trace output. 
+                 * They are a no-op according to ISO 
+                 */
+                if (arg0 == 0)
+                        return;
+                /* Write the data to trace file. */
+                rp_free(proc, rd->rp_number, "free", arg0);
+
+        } else {
+                msg_warn("unexpected function exit (%s)\n", name);
+                return;
+        }
+
+	/* Increment ID number (this is need to have the ID number correct to
+         * next events).
+         */
+        (rd->rp_number)++;
+	/* Write the respective backtraces line to trace file */
+        rp_write_backtraces(proc);
+}
+
+The last step is to initialize the plugin structure. See example below:
+
+struct plg_api *init()
+{
+        static struct plg_api ma = {
+                .api_version = foo_api_version,
+                .function_exit = foo_function_exit,
+                .library_match = foo_library_match,
+        };
+        /* ... */
+}
+
+To add the new plugin to functracer sources:
+1. Edit the src/modules/Makefile.am and add the foo plugin:
+   pkglib_LTLIBRARIES = memory.la file.la
+   memory_la_SOURCES = memory.c
+   memory_la_LDFLAGS = -no-undefined -module -avoid-version
+   file_la_SOURCES = file.c
+   file_la_LDFLAGS = -no-undefined -module -avoid-version
+   # Add new build lines to foo plugin
+   pkglib_LTLIBRARIES += foo.la
+   foo_la_SOURCES = foo.c
+   foo_la_LDFLAGS = -no-undefined -module -avoid-version
+
+2. Run autoreconf to update Makefiles:
+   $ cd functracer-x.y.z
+   $ autoreconf -i -f
+3. Build and install
+   $ ./configure && make
+   # make install
+
+The plugin is ready to use! See functracer-x.y.z/src/modules/ for complete
+sources of other plugins.
+
+4. How to use
+-------------
+There are two ways for using plugins:
+- Add it to functracer sources (shown in previous section) and install it.
+- Give the complete plugin path to functracer.
+
+For the first option you just type the plugin name so the functracer will
+look for it in plugins default directory (/usr/lib/functracer):
+
+# functracer -e foo ./my_program
+
+or, if the plugin is installed in another place:
+
+# functracer -e /work/plugins/foo.so ./my_program
+
+Plugins specified by the "-e" option are located using the following logic:
+1) Check if a file by that name exists; otherwise
+2) Prefix the name with the plugin directory path and append ".so" to it.
+
+5. Issues and Limitations
+-------------------------
+Not all functions can be currently tracked by plugins. This happens for two
+reasons:
+
+-  Functions should be tracked by using their "public" name as found in the
+   library export table. This means that any existing name mangling added by
+   the compiler/linker should be used too, otherwise the function is not found
+   by BFD. Examples: __close, _IO_fopen, _IO_fclose etc. See the current
+   plugins sources for details.
+
+- The instruction rewriting support on ARM is currently limited to a set of
+  instructions used by current plugins. This means that some new functions may
+  not be allowed to be tracked until the instruction located
+  on the function entry is added to the rewrite rules. For such cases, a "SSOL
+  unsafe" warning will be print, and the breakpoint will be disabled.
+  This is important so that plugins tracking arbitrary functions do not crash
+  the target application. For more details, see the source for the
+  ssol_prepare_bkpt() function in src/breakpoint-arm.c.
+
+6. License
+----------
+This program is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License version 2 as published by the Free
+Software Foundation.
