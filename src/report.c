@@ -71,7 +71,7 @@ static char *rp_date(void)
 	time(&t);
 	tm = localtime(&t);
 	snprintf(buf, sizeof(buf), "%04d-%02d-%02d", 1900 + tm->tm_year,
-		 tm->tm_mon, tm->tm_mday);
+		 tm->tm_mon + 1, tm->tm_mday);
 
 	return buf;
 }
