@@ -1,8 +1,8 @@
                                 Functracer
 
-                        An Allocation Backtrace Tool
+                 A specialized, tracing-based debugging tool
 
-                  Copyright (C) 2008 by Nokia Corporation
+                Copyright (C) 2008, 2009 by Nokia Corporation
 
 Contents
 --------
@@ -15,8 +15,9 @@ Contents
  6. Performance impact
  7. Other effects
  8. Documentation
- 9. Bugs
- 10. License
+ 9. Issues and Limitations
+ 10. To Do
+ 11. License
 
 
 0. Authors
@@ -28,14 +29,19 @@ Allan Bezerra <allan.bezerra@indt.org.br>
 Bruna Moreira <bruna.moreira@indt.org.br>
 Bruno Abinader <bruno.abinader@indt.org.br>
 Ricardo Guimaraes <ricardo.guimaraes@indt.org.br>
-Thiago Marcos P. Santos <thiago.santos@indt.org.br>
+Thiago Santos <thiago.santos@indt.org.br>
 
 1. Introduction
 ---------------
-Functracer is a debugging tool. It gets backtraces of all allocations done in
-ARM/x86 processes. It works with optimized (-O2) code, where debugging symbols
-are available either in the application  binaries themselves, or in separate
-debug files.
+Functracer is a specialized, tracing-based debugging tool. It collects
+backtraces, arguments and return value of functions specified in a plugin. It
+works with optimized (-O2) code, where debugging symbols are available either
+in the application binaries themselves, or in separate debug files.
+
+Currently, functracer has two plugins implemented: the "memory" plugin (used by
+default, when no plugin is specified) and the "file" plugin. For more details,
+see the README.plugins document located in src/modules (inside sources) or
+/usr/share/doc/functracer (when installed).
 
 2. Where can I find it
 ----------------------
@@ -43,13 +49,58 @@ FIXME: there is no website setup for it yet.
 
 3. How does it work
 -------------------
-Using software breakpoints, just like GDB and ltrace. Breakpoints are inserted
-on entrypoint of Glibc allocation functions (malloc, calloc and realloc) and
-when one of them is called, the breakpoint is hit and the allocation address,
-size and callchain backtrace are reported.
+Using software breakpoints, just like GDB and ltrace. A breakpoint is inserted
+on the entrypoint of selected functions specified in the plugins. When one of
+them is called, the breakpoint is hit and the resource address, size and
+callchain backtrace are collected and reported.
 
-One output file is created by Functracer in $HOME (by default):
-- allocs-PID.n.trace: allocation backtraces of traced process
+The functracer output format is independent of function type is tracked. The
+function format is a generic one and it was designed to be uniform/compatible
+with any function. This is need to do a post-processing tool
+(functracer-postproc) be independent from them.
+
+There is a need to identify following things from the resource allocation
+functions:
+- timestamp
+- exact function name
+- resource ID (address, object ID, FD, thread ID)
+- resource size
+- backtrace
+
+And following from the resource free functions:
+- timestamp
+- exact function name
+- resource ID (to match it)
+- backtrace
+
+Some extra considerations for these:
+- If user does not need timestamp or backtrace (depth=0), they can be left out
+  from the output.
+- Resource size is not relevant for threads or FDs, for those it can be
+  set/output as 1.
+- Memset/copy and probably many user defined operations are not resource
+  alloc/free operations, for those the "resource ID" can be zero.
+
+Formats could be for resource allocation functions:
+  <index>. [timestamp] <function name>(<size>) = <resource ID>
+  [backtrace functions]
+
+And for resource free functions:
+  <index>. [timestamp] <function name>(<resource ID>)
+  [backtrace functions]
+
+For examble, on the memory plugin the resource allocation functions (e.g.
+calloc, malloc, memalign, realloc) are tracked and functracer reports the
+following:
+
+ function size   resource
+   name    |      address 
+    |      |        |
+    v      v        v
+0. malloc(456) = 0x0896adb0
+   0x0804868c            ---
+   0xb7e87118              |-> backtrace lines
+   0xb7d94e6d            ---
 
 For functions that perform both resource allocation and destruction (e.g.
 realloc), it will be produced two separate events, first the destruction event,
@@ -61,20 +112,10 @@ Functracer will produce the following trace events:
 
 0. realloc(0x001ae840)       <- destruction event
 1. realloc(16) = 0x001ae858  <- allocation event
-   [backtrace lines ...]
-
-Functracer has support to plugins and currently it has two implemented: the
-memory plugin (it is default) and file plugin. Plugins will be installed in
-/usr/lib/functracer.  There is a sequence to load plugin module when using "-e"
-option. First check if full path/filename exists, otherwise then prefixing it
-with default plugin directory and postfixing with .so.
-
-For generating backtraces, libunwind[1] is used (see INSTALL for detailed 
-compilation instructions).
+   [backtrace lines]
 
 4. How to use
 --------------
-
 Output from "functracer --help":
 
 Usage: functracer [OPTION...] PROGRAM [ARGS...]
@@ -92,66 +133,127 @@ Run PROGRAM and track selected functions.
   -r, --resolve-name         enable symbol name resolution
   -s, --start                enable tracking memory from beginning
   -t, --depth=NUMBER         maximum backtrace depth
+  -v, --verbose              Show internal events
   -h, --help                 Give this help list
       --usage                Give a short usage message
   -V, --version              Print program version
 
 You can control the dumping of output files. To use it, just send SIGUSR1
 to the tracked application (NOT functracer itself) to toggle the tracing on/off.
-Tracing is not enabled by default on application start (use -s to enable this).
-The control logic is:
+Tracing is not enabled by default on application start, unless "-s" option is
+used. The control logic is:
   - If not tracing:
-    - SIGUSR1 start tracing
+    - SIGUSR1 starts tracing
   - If tracing:
-    - SIGUSR1: stop tracing, dump backtraces and clear them
+    - SIGUSR1 stops tracing and dumps backtraces
 
-Internal symbol resolving in functracer (option "-r") has several limitations
-compared to its postprocessor symbol resolving (functracer-postproc):
+The output file is created by default in the current user home directory. This
+can be changed using the -l option. The file is named "allocs-<PID>.<n>.trace",
+where <PID> is the process ID (for multithreaded applications it is the TGID of
+the thread group, and events for all threads are reported on the same file) and
+<n> is the "step number" used for numbering and not overwriting trace files
+created for the same PID. 
+
+The built-in symbol resolving in functracer (option "-r") has some limitations
+compared to the postprocessor symbol resolving (functracer-postproc):
 - it does not resolve source file name and line number.
 - it does not do demangling for C++ symbol names (low-level symbol names into
-  user-level names).
+  human readable names).
+
+To see the list of process invocations, just type the following where the trace
+files were saved:
+# grep ^Process allocs*.trace
+
+Note that messages in allocs*.trace about processes use "process/thread"
+instead of just "process". This is a ptrace limitation, because it does not
+distinguish between threads and process IDs.
 
 5. Where does it work
 ---------------------
-It works with ELF based Linux systems running on x86 or ARM architecture.
+It works with ELF based Linux systems running on x86 or ARM architecture. Other
+architectures might be added in future if the required architecture specific
+code is written for them.
 
 6. Performance impact
 ---------------------
-Functracer sets ptrace() breakpoints to suitable functions to be able to trace
-their use.  This can have quite noticeable impact on the traced program
-performance, even when the Functracer reporting and backtracing is not enabled.
+Functracer sets breakpoints to selected functions to be able to trace their
+use. This can have quite noticeable impact on the traced program performance,
+even when the Functracer reporting and backtracing is not enabled.
 
 Unless one wants to trace the whole program life-cycle, one should (re-)attach
-to a program only during the use-cases that one is interested about and to
+to a program only during the use-cases that one is interested about and
 terminate functracer with CTRL-C when the use-case ends.
 
 7. Other effects
 ----------------
 Program being slowed down may also effect its behavior slightly (timers, thread
-synchronization etc), but if the program is robust, it should still function
-normally.  Ptrace() used for tracing changes unix signaling semantics slightly,
-but in most cases this should not affect anything either.
+synchronization etc.), but if the program is robust (e.g. checks for error
+codes returned by system calls, accounts for timeout conditions etc.), it
+should still function normally. Additionally, ptrace() changes unix signaling
+semantics slightly, but in most cases this should not affect anything either.
 
 8. Documentation
 -----------------
-There are two types of documentation: the manpage and the "Functracer
-Internals".
-- The manpage describes briefly how to use functracer and its options (man
-  directory). help2man package is used to build it.
-- The "Functraces Internals" describes all its inner workings (doc directory).
-  There are files in pdf and plain text format already available in doc
-  directory. To convert the document to html and pdf format, asciidoc package
-  is required.
- 
-9. Bugs
--------
+Functracer is documented by means of a manpage, a internals document,
+and two READMEs (this one and README.plugins, mentioned on the Introduction
+section):
 
-To do:
-- better documentation, source code comments
-- Improve testsuite with more tests.
+- The manpage describes briefly how to use functracer and its options. It is
+  located in the man directory and the help2man tool is used to build it.
+- The "Functraces Internals", located in the doc directory, describes all the
+  inner workings. There are files in pdf and plain text format already. To
+  convert the document from plain text to html and pdf formats, the asciidoc
+  tool is required.
+- README.plugins, located in src/modules.
+- TODO.plugins, located in src/modules.
 
-10. License
+9. Issues and Limitations
+-------------------------
+Not all functions can be tracked by plugins. This happens for two reasons:
+- Currently the function names are matched against the library export table.
+  This means that only functions exported by libraries are visible, and that
+  one should use the global name, that can be "mangled" by the compiler (e.g.
+  "__open" instead of just "open").
+
+- The SSOL approach has some restrictions regarding at which instructions a
+  breakpoint can be inserted. In later releases, it was implemented a
+  instruction rewriting mechanism that covers all functions tracked by current
+  plugins. 
+  Some instructions do not work well when single-stepped out of place, because
+  their behavior is location dependent (e.g. they use the PC register value for
+  calculations, or write to it). Therefore, it is necessary to rewrite these
+  instructions so that they become "SSOL safe". This consists on replacing the
+  location dependent register operand (PC, for instance), with other with no
+  side-effects (e.g. R0). After the instruction is safely single-stepped, the
+  result is written back to the correct register before the process continues.
+  In functracer, for sake of simplicity, it only rewrites those instructions
+  that occur in breakpoints inserted by current functracer plugins. Functracer
+  only inserts breakpoints on the beggining of functions, therefore there are
+  only a few instructions that appear there.
+  Ideally, all (or most) instructions should be supported. For this one has to
+  write code to recognize and rewrite other instructions.
+  The concept and the branch displacement macro were based on kprobes code from
+  the Linux kernel. The kernel code, on the other hand, has support for
+  rewriting almost all instructions on ARM.
+  Also note that for x86, no instruction rewriting rules were implemented (yet),
+  because so far none of the current plugins inserted breakpoints at "SSOL
+  unsafe" instructions.
+
+10. To Do
 ----------
+- Add a new option "trace-children" for optional tracking to children
+  processes. Functracer slows down the process(es) quite a bit so it may be
+  nice to have that as optional similarly to ltrace/strace/valgrind.
+  To implement this, it is need to verify if the event is creating a new
+  process or a thread by reading the file /proc/pid/status. There is a existent
+  code on process.c that read the process Tgid: get_tgid(). If tgid is 
+  different of current pid, so we have a thread otherwise is a new process. See
+  details in add_process() in process.c file.
+- Add support for reading complex data of functions parameters like strings,
+  arrays, etc. (for more details, see TODO.plugins).
+
+11. License
+-----------
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License version 2 as published by the Free
 Software Foundation.

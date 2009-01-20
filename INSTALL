@@ -1,5 +1,5 @@
 Functracer installation instructions
-=====================================
+====================================
 
 1. Compiling from sources
 -------------------------
@@ -7,45 +7,24 @@ Functracer installation instructions
 1.1 Dependencies
 ----------------
 
-The libunwind package has to be compiled and installed prior to Functracer. To
-compile libunwind for ARM, binutils-dev needs to be installed inside
-Scratchbox:
+The libunwind package has to be installed prior to Functracer. To install
+libunwind for ARM/x86:
 
-[sbox-ARMEL] > apt-get install binutils-dev
-
-To compile and install libunwind inside Scratchbox, issue:
-[sbox-ARMEL] > ./configure --prefix=/usr/local/libunwind && make && make install
-
-Make a tarball:
-[sbox-ARMEL] > tar -C /usr/local -cvzf /tmp/libunwind-indt.tar.gz libunwind
-
-Copy tarball to device and unpack it:
-[sbox-ARMEL] > scp /tmp/libunwind-indt.tar.gz root@192.168.2.15:/root && 
-	ssh root@192.168.2.15 tar -C /usr/local -xvzf /root/libunwind-indt.tar.gz
-
-Add libunwind to the dynamic linker's links and cache on device:
-[N800] # echo "/usr/local/libunwind/lib" >> /etc/ld.so.conf
-[N800] # ldconfig 
+# apt-get install libunwind7-dev
 
 1.2 Compiling Functracer
 --------------------------
 
-On x86/ARM, to compile Functracer, issue:
+To compile Functracer, run "./configure && make".
 
-./configure --with-libunwind=<PATH_TO_LIBUNWIND>
-make
-
-Copy functracer binary to device:
-scp src/functracer  root@192.168.2.15:/root/
-
-1.3 Optional
+1.3 Debugging
 -------------
 
 The --enable-debug option compiles functracer with debugging options. It is
-not enabled by default for better performance. For enabling:
+not enabled by default for better performance. To enable it, compile functracer
+with:
 
-./configure --enable-debug
-make
+$ ./configure --enable-debug && make
 
-NOTE: if functracer is not compiled using --enable-debug, the option -d does
-not have any affect!
+NOTE: if functracer is not compiled using --enable-debug, the -d option does
+not have any effect!

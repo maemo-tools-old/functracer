@@ -8,20 +8,20 @@ Standards-Version: 3.8.0
 Package: functracer
 Architecture: any
 Depends: ${shlibs:Depends}
-Description: An Allocation Backtrace Tool
- Functracer is a debugging tool. It gets backtraces of all allocations done in
- ARM/x86 processes. It works with optimized (-O2) code, where debugging symbols
- are available either in the application  binaries themselves, or in separate
- debug files.
+Description: A Function Backtrace Tool
+ Functracer is a debugging tool. It collects backtraces, arguments and return
+ value of functions specified in a plugin. It works with optimized (-O2) code,
+ where debugging symbols are available either in the application binaries
+ themselves, or in separate debug files.
 
 Package: functracer-dbg
 Section: devel
 Priority: extra
 Architecture: any
 Depends: functracer (= ${binary:Version})
-Description: An Allocation Backtrace Tool - debug
- Functracer is a debugging tool. It gets backtraces of all allocations done in
- ARM/x86 processes. It works with optimized (-O2) code, where debugging symbols
- are available either in the application  binaries themselves, or in separate
- debug files.
+Description: A Function Backtrace Tool - debug
+ Functracer is a debugging tool. It collects backtraces, arguments and return
+ value of functions specified in a plugin. It works with optimized (-O2) code,
+ where debugging symbols are available either in the application binaries
+ themselves, or in separate debug files.
  This package includes the debug symbols.
