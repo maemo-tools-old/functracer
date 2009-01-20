@@ -45,14 +45,14 @@ static void process_create(struct process *proc)
 {
 	char *buf;
 
-	debug(3, "new process (pid=%d)", proc->pid);
+	debug(3, "new process/thread (pid=%d)", proc->pid);
 
 	if (trace_enabled(proc)) {
 		if (rp_init(proc) < 0) {
 			proc->trace_control = 0;
 		} else {
 			buf = cmd_from_pid(proc->pid, 1);
-			rp_event(proc, "Process %d (%s) was created\n",
+			rp_event(proc, "Process/Thread %d (%s) was created\n",
 				 proc->pid, buf);
 			free(buf);
 		}
@@ -63,13 +63,13 @@ static void process_exec(struct process *proc)
 {
 	char *buf;
 
-	debug(3, "process has executed (pid=%d, filename=%s)", proc->pid,
-	      proc->filename);
+	debug(3, "process/thread has executed (pid=%d, filename=%s)",
+	      proc->pid, proc->filename);
 
 	if (trace_enabled(proc)) {
 		buf = cmd_from_pid(proc->pid, 0);
-		rp_event(proc, "Process %d has executed: %s\n", proc->pid,
-			 buf);
+		rp_event(proc, "Process/Thread %d has executed: %s\n",
+			 proc->pid, buf);
 		free(buf);
 
 	}
@@ -77,10 +77,11 @@ static void process_exec(struct process *proc)
 
 static void process_exit(struct process *proc, int exit_code)
 {
-	debug(3, "process exited (pid=%d, exit_code=%d)", proc->pid, exit_code);
+	debug(3, "process/thread exited (pid=%d, exit_code=%d)", proc->pid,
+	      exit_code);
 
 	if (trace_enabled(proc)) {
-		rp_event(proc, "Process %d has exited with code %d\n",
+		rp_event(proc, "Process/Thread %d has exited with code %d\n",
 			 proc->pid, exit_code);
 		rp_finish(proc);
 	}
@@ -90,13 +91,13 @@ static void process_fork(struct process *proc, pid_t child_pid)
 {
 	char *buf;
 
-	debug(3, "process has forked (pid=%d, filename=%s, child_pid=%d)",
-	      proc->pid, proc->filename, child_pid);
+	debug(3, "process/thread has forked (pid=%d, filename=%s,"
+	      "child_pid=%d)", proc->pid, proc->filename, child_pid);
 
 	if (trace_enabled(proc)) {
 		buf = cmd_from_pid(proc->pid, 0);
-		rp_event(proc, "Process %d (%s) has forked %d\n", proc->pid,
-			 buf, child_pid);
+		rp_event(proc, "Process/Thread %d (%s) has forked %d\n",
+			 proc->pid, buf, child_pid);
 		free(buf);
 
 	}
@@ -104,11 +105,11 @@ static void process_fork(struct process *proc, pid_t child_pid)
 
 static void process_kill(struct process *proc, int signo)
 {
-	debug(3, "process killed by signal (pid=%d, signo=%d)", proc->pid,
-	      signo);
+	debug(3, "process/thread killed by signal (pid=%d, signo=%d)",
+	      proc->pid, signo);
 
 	if (trace_enabled(proc)) {
-		rp_event(proc, "Process %d was killed by signal %d\n",
+		rp_event(proc, "Process/Thread %d was killed by signal %d\n",
 			 proc->pid, signo);
 	}
 }
@@ -125,22 +126,23 @@ static void toggle_tracing(struct process *proc)
 
 static void process_signal(struct process *proc, int signo)
 {
-	debug(3, "process received signal (pid=%d, signo=%d)", proc->pid, signo);
+	debug(3, "processi/thread received signal (pid=%d, signo=%d)",
+	      proc->pid, signo);
 
 	if (signo == SIGUSR1) {
 		for_each_process(toggle_tracing);
 	} else if (trace_enabled(proc)) {
-		rp_event(proc, "Process %d received signal %d\n",
+		rp_event(proc, "Process/Thread %d received signal %d\n",
 			 proc->pid, signo);
 	}
 }
 
 static void process_interrupt(struct process *proc)
 {
-	debug(3, "process interrupted (pid=%d)", proc->pid);
+	debug(3, "process/thread interrupted (pid=%d)", proc->pid);
 
 	if (trace_enabled(proc)) {
-		rp_event(proc, "Process %d was detached\n", proc->pid);
+		rp_event(proc, "Process/Thread %d was detached\n", proc->pid);
 		rp_finish(proc);
 	}
 }
