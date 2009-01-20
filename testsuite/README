@@ -1,0 +1,161 @@
+                     README for functracer testsuite
+
+                  Copyright (C) 2008 by Nokia Corporation
+
+Contents
+--------
+ 0. Quick Overview
+ 1. Componets in functracer testsuite
+ 2. Trouble shootings
+ 3. Test case extension
+
+
+0. Quick Overview
+-----------------
+This testsuite is based on the dejagnu framework, which is again dependent on
+Expect and Tcl. So all these three package (tcl, expect and dejagnu) should be
+installed on your system before running these tests.
+
+After unpacking file functracer-XX.tar.gz:
+# tar -zxvfm functracer-XX.tar.gz
+
+you will find a directory named functracer-XX, which contains:
+debian doc include man src testsuite
+
+you can first build this package, then run the testsuite in the 
+following steps:
+1. Enter in functracer source code directory:
+# cd functracer-XX
+
+2. Configure and build functracer
+# ./configure
+# make
+
+3. Run all the test in default mode.
+# make check
+
+The default is to test the functracer just built, using the default compiler
+options.  You can control this by adding a symbol to 'make check':
+
+To test the shipped functracer tool (as opposed to the just built by "make"),
+use: --tool_exec=/usr/bin/functracer
+
+You can run all the tests in different mode respectively as follows,
+# make check RUNTESTFLAGS="--tool_exec=/usr/bin/functracer"
+(run shipped functracer)
+
+1. Components in functracer testsuite
+-------------------------------------
+This testsuite include all the source code you need for functracer
+test in a single directory, which is "functracer-XX/testsuite".
+
+This directory includes the following files and sub-directories:
+
+`lib/functracer.exp`
+   some basic functions used in all the test cases.
+
+`functracer.main/`
+   some basic tests for major features of functracer. All these tests use the
+memory plugin.
+
+   (1) functracer.main/callchain.exp does tests on tracing a function 
+implemented in a shared library implemented in callchain.c.
+
+   (2) functracer.main/callchain_cpp.exp does tests on tracing a function
+from a C++ program implemented in callchain.cpp.
+
+   (3) functracer.main/clone.exp does tests on tracing a function and verifying
+the following clone to child process.
+
+   (4) functracer.main/fork.exp does tests on tracing a function and verifying
+the following fork to child process.
+
+   (5) functracer.main/gthreads.exp does tests on tracing a function from a
+multithreaded program. 
+
+`functracer.file/`
+   some tests for file plugin of functracer. All these tests verify if the
+output (*.trace) contains the resource allocation and deallocation to the
+respective function tested.
+   
+   (1) functracer.file/creat.exp does test on tracing the creat() function.
+
+   (2) functracer.file/fdopen.exp does test on tracing the fdopen() function. 
+
+   (3) functracer.file/fopen.exp does test on tracing the fopen() function.
+
+   (4) functracer.file/freopen.exp does test on tracing the freopen() function.
+
+   (5) functracer.file/open.exp does test on tracing the open() function.
+
+`functracer.memory/`
+   some tests for memory plugin of functracer. All these tests verify if the
+output (*.trace) contains the resource allocation and deallocation to the
+respective function tested.
+
+   (1) functracer.memory/malloc_simple.exp does test on tracing the malloc()
+function.
+
+   (2) functracer.memory/malloc_recursivoe.exp does test on tracing the malloc()
+function and verify the number of occurrences.
+
+   (3) functracer.memory/memalign.exp does test on tracing the memalign()
+function.
+
+   (4) functracer.memory/posix_memalign.exp does test on tracing the
+posix_memalign() function.
+
+   (5) functracer.memory/realloc.exp does test on tracing the realloc()
+function.
+
+2. Trouble shootings
+--------------------
+Check the *.trace files in each functracer.* directories if there are some
+FAILs in the output. They can be informative.
+
+Add --verbose option in RUNTESTFLAGS when 'make check' if you want to see more
+details of these tests.
+
+3. Test case extension
+----------------------
+Current testsuite is quite basic. The framework of testsuite is extendable, so
+you can add new testcases into it easily. We will describe how to do that in
+different ways.
+
+(1) Add new test case in an existed testcase directory.
+
+Just add a foo.exp script and a relevant foo.c if necessary.  The dejagnu
+framework can run that script automatically when you run "make check". The
+executable and object file would be generate in the test, please add them in
+'clean' entry in Makefile.am to ensure that they could be cleaned up
+automatically when run 'make clean'.
+
+Rerun the autoconf and ./configure in ./functracer-XX, the Makefile will be
+updated.
+
+(2) Add new test case in a new testcase directory.
+
+First, create a new directory in testsuite/ with the same pattern as others,
+for example functracer.bar, and then create a Makefile.am, an Expect script
+foo.exp, and relative foo.c if necessary. Then modify the configure.ac in
+functracer-XX/, and add "testsuite/functracer.bar/Makefile" into macro
+AC_OUTPUT, testsuite/functracer.bar/Makefile will be generated when you
+configure this package.
+
+Adding Makefile.am in the new directory is just to remove intermediate files
+and log files automatically later, such as foo.trace, object files and
+executables. For example, if you want to remove A and B at the time of cleanup,
+you can write Makefile.am like this:
+
+   clean:
+        -rm -f A B
+        -rm -f *.o
+        -rm -f *.trace
+   distclean: clean
+        -rm -f Makefile
+
+At last add the new directory 'functracer.bar' into the macro SUBDIRS in
+testsuite/Makefile.am.
+
+Rerun the autoconf and ./configure in ./functracer-XX, the Makefile will be
+updated.
