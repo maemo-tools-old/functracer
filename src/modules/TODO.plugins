@@ -1,16 +1,35 @@
                          TODO for functracer plugins
-                   Copyright (C) 2008 by Nokia Corporation
+                   Copyright (C) 2008, 2009 by Nokia Corporation
 
+
+File plugin TODOs
+=================
 
 * List all open files at the beginning of trace.
 
 * file.c plugin catches fopen()/fclose() which are C-library
   calls and do not handle FDs directly (but call open/close?).
 
+* Add some missing functions to the file plugin that also create or
+  close file descriptors (some may require parsing more complex
+  arguments, such as structs):
+  - file descriptor duplication:
+    - fcntl() (tricky, it dups depending on args)
+  - IPC stuff creating FDs:
+    - socketpair(), pipe() (are tricky, get array[2] where they set FDs)
+    - bind(), doesn't create FDs, but is needed to get the socket address
+      (AF_INET protocol) or file name (AF_UNIX protocol).
+    - mkfifo(), a C-library call, maybe this needs to be catched to get the
+      filename (I assume it uses pipe() syscall which is unnamed)
+
 * Open calls do not list file names.  The file name is important
   to identify which file was opened.
 
-  Adding support for printing the file names (not only the file descriptors,
+
+Adding filename support
+-----------------------
+
+Adding support for printing the file names (not only the file descriptors,
 which only need reading a single word from the process) requires adding code to
 read strings from the remote process. ltrace has such code, and it can used as
 base for implementing functracer support.
@@ -47,15 +66,3 @@ For example, the file plugin can be:
 
 The plugins could add whatever they want after "," and post-processor would not
 touch it unless it knows the function and what to do with the value.
-
-* Add some missing functions to the file plugin that also create or close file
-  descriptors (some may require parsing more complex arguments, such as
-  structs):
-  - file descriptor duplication:
-    - fcntl() (tricky, it dups depending on args)
-  - IPC stuff creating FDs:
-    - socketpair(), pipe() (are tricky, get array[2] where they set FDs)
-    - bind(), doesn't create FDs, but is needed to get the socket address
-      (AF_INET protocol) or file name (AF_UNIX protocol).
-    - mkfifo(), a C-library call, maybe this needs to be catched to get the
-      filename (I assume it uses pipe() syscall which is unnamed)

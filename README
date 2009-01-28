@@ -194,9 +194,8 @@ semantics slightly, but in most cases this should not affect anything either.
 
 8. Documentation
 -----------------
-Functracer is documented by means of a manpage, a internals document,
-and two READMEs (this one and README.plugins, mentioned on the Introduction
-section):
+Functracer is documented by means of a manpage, an internals document,
+and several READMEs:
 
 - The manpage describes briefly how to use functracer and its options. It is
   located in the man directory and the help2man tool is used to build it.
@@ -204,8 +203,12 @@ section):
   inner workings. There are files in pdf and plain text format already. To
   convert the document from plain text to html and pdf formats, the asciidoc
   tool is required.
-- README.plugins, located in src/modules.
-- TODO.plugins, located in src/modules.
+- src/modules/README.plugins, describes current plugins and how to write
+  new plugins.
+- src/modules/TODO.plugins, describes missing plugin features and
+  contains some hints on how they could be implemented.
+- testsuite/README, describes how to run the test-suite.
+
 
 9. Issues and Limitations
 -------------------------
