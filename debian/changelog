@@ -1,3 +1,10 @@
+functracer (0.15.1) unstable; urgency=low
+
+  * Small fixes in documentation: README, README.plugins, TODO.plugins and
+    manpage.
+
+ -- Bruna Moreira <bruna.moreira@indt.org.br>  Thu, 29 Jan 2009 07:53:01 -0400
+
 functracer (0.15) unstable; urgency=low
 
   * Plugins cleanup.
