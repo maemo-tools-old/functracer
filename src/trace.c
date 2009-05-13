@@ -182,27 +182,11 @@ static void trace_set_options(pid_t pid)
 	xptrace(PTRACE_SETOPTIONS, pid, NULL, (void *)options);
 }
 
-/* FIXME: this function shares too much code with the EV_NEW_PROC event
- * handling. */
-static int handle_child_process(struct process *parent_proc, pid_t child_pid)
+static int new_process(struct process *parent_proc, pid_t child_pid)
 {
-	struct callback *cb = cb_get();
 	struct process *child_proc;
-	int status, pid;
+	struct callback *cb = cb_get();
 
-	pid = ft_waitpid(child_pid, &status, __WALL);
-	if (pid == -1) {
-		msg_err("waitpid: error waiting for new child");
-		return -1;
-	}
-	if (pid != child_pid) {
-		msg_err("waitpid: unexpected PID %d returned", pid);
-		return -1;
-	}
-	if (!(WIFSTOPPED(status) && WSTOPSIG(status) == SIGSTOP)) {
-		msg_err("waitpid: unexpected status 0x%x returned", status);
-		return -1;
-	}
 	child_proc = add_process(child_pid);
 	if (cb && cb->process.create)
 		cb->process.create(child_proc);
@@ -212,7 +196,7 @@ static int handle_child_process(struct process *parent_proc, pid_t child_pid)
 	 * because at the time the children was forked/cloned, the breakpoints
 	 * were enabled and were copied to the new process' address space.
 	 * Therefore, we disable these breakpoints for the new process. */
-	if (child_proc->parent == NULL) {
+	if (parent_proc && (child_proc->parent == NULL)) {
 		child_proc->breakpoints = parent_proc->breakpoints;
 		/* FIXME: should we call fn_callstack_restore() as done in
 		 * handle_interrupt() ? */
@@ -230,6 +214,128 @@ static int handle_child_process(struct process *parent_proc, pid_t child_pid)
 
 	return 0;
 }
+
+static int handle_child_process(struct process *parent_proc, pid_t child_pid)
+{
+	int status, pid;
+
+	pid = ft_waitpid(child_pid, &status, __WALL);
+	if (pid == -1) {
+		msg_err("waitpid: error waiting for new child");
+		return -1;
+	}
+	if (pid != child_pid) {
+		msg_err("waitpid: unexpected PID %d returned", pid);
+		return -1;
+	}
+	if (!(WIFSTOPPED(status) && WSTOPSIG(status) == SIGSTOP)) {
+		msg_err("waitpid %d: unexpected status 0x%x returned", child_pid, status);
+		return -1;
+	}
+
+	return new_process(parent_proc, child_pid);
+}
+
+static int new_thread(pid_t tid, pid_t tgid)
+{
+	int retval;
+	struct process *main_thread = process_from_pid(tgid);
+
+	/* Make sure that main thread is already tracing */
+	if (!main_thread) {
+		/*
+		 * If no, starting trace main thread first.
+		 * It should only happens during attaching to threaded application
+		 */
+		pid_t pid;
+		int status;
+
+		/* Getting rid from fork ptrace event of the main thread */
+		pid = ft_waitpid(tgid, &status, __WALL);
+
+		/* Check if we got correct event */
+
+		if (pid == -1) {
+			msg_err("waitpid: error waiting for main thread");
+			return -1;
+		}
+		if (pid != tgid) {
+			msg_err("waitpid: unexpected PID %d returned", pid);
+			return -1;
+		}
+		if (!(WIFSTOPPED(status) && WSTOPSIG(status) == SIGSTOP)) {
+			msg_err("waitpid %d: unexpected status 0x%x returned", tgid, status);
+			return -1;
+		}
+
+		/* Start tracing main thread */
+		if (new_process(NULL, tgid))
+			return -1;
+	}
+
+	retval = new_process(NULL, tid);
+	continue_process(main_thread);
+
+	return retval;
+}
+
+static int handle_new_process(pid_t child_pid)
+{
+	struct process *parent_proc;
+	int retval;
+	pid_t tgid = get_tgid(child_pid);
+
+	/* If it's not the main thread of the process, we should handle it separately */
+	if (child_pid != tgid)
+		return new_thread(child_pid, tgid);
+
+	parent_proc = process_from_pid(get_ppid(child_pid));
+
+	/* If the parent process is tracing by functracer, the current process was forked from it */
+	if (parent_proc) {
+		pid_t pid;
+		int status;
+
+		/* Getting rid from fork ptrace event of the parrent */
+		pid = ft_waitpid(parent_proc->pid, &status, __WALL);
+
+		/* Check if we got correct event */
+
+		if (pid == -1) {
+			msg_err("waitpid: error waiting parent fork event");
+			return -1;
+		}
+
+		if (pid != parent_proc->pid) {
+			msg_err("waitpid: unexpected PID %d returned", pid);
+			return -1;
+		}
+
+		if (!(WIFSTOPPED(status) && (WSTOPSIG(status) == SIGTRAP)
+					&& (status >> 16))) {
+			msg_err("waitpid %d: unexpected status 0x%x returned", child_pid, status);
+			return -1;
+		}
+
+		switch (status >> 16) {
+			case PTRACE_EVENT_FORK:
+			case PTRACE_EVENT_VFORK:
+			case PTRACE_EVENT_CLONE:
+				break;
+			default:
+				msg_err("unexpected ptrace() event %d", status >> 16);
+				return -1;
+		}
+	}
+
+	retval = new_process(parent_proc, child_pid);
+
+	if (parent_proc)
+		continue_process(parent_proc);
+
+	return retval;
+}
+
 
 static void trace_detach(pid_t pid)
 {
@@ -264,12 +370,7 @@ static int dispatch_event(struct event *event)
 		debug(2, "no more children");
 		break;
 	case EV_NEW_PROC:
-		event->proc = add_process(event->data.pid);
-		if (cb && cb->process.create)
-			cb->process.create(event->proc);
-		bkpt_init(event->proc);
-		trace_set_options(event->proc->pid);
-		continue_process(event->proc);
+		handle_new_process(event->data.pid);
 		break;
 	case EV_EXEC:
 		free(event->proc->filename);

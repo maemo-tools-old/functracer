@@ -65,5 +65,7 @@ extern char *cmd_from_pid(pid_t pid, int nargs);
 extern struct process *add_process(pid_t pid);
 extern void remove_process(struct process *proc);
 extern void remove_all_processes(void);
+extern pid_t get_tgid(pid_t pid);
+extern pid_t get_ppid(pid_t pid);
 
 #endif /* TT_PROCESS_H */

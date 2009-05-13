@@ -39,17 +39,16 @@
 #include "trace.h"
 
 #define BUF_SIZE	4096
-#define FIELD_NAME	"Tgid:"
-#define FIELD_SIZE	(sizeof(FIELD_NAME) - 1)
 
 static struct process *list_of_processes = NULL;
 
-static pid_t get_tgid(pid_t pid)
+static pid_t get_pid_from_status(pid_t pid, const char *field_name)
 {
 	char path[255];
 	char *file_buf, *pos;
 	FILE *fp;
 	pid_t retval;
+	size_t field_size = strlen(field_name);
 
 	file_buf = malloc(BUF_SIZE);
 	if (file_buf == NULL)
@@ -74,9 +73,9 @@ static pid_t get_tgid(pid_t pid)
 	retval = -1;
 	pos = file_buf;
 	while (1) {
-		if (pos + FIELD_SIZE + 1 > file_buf + BUF_SIZE)
+		if (pos + field_size + 1 > file_buf + BUF_SIZE)
 			break;
-		if (strncmp(pos, FIELD_NAME, FIELD_SIZE) == 0) {
+		if (strncmp(pos, field_name, field_size) == 0) {
 			char *val = strchr(pos, ':');
 			assert(val != NULL);
 			retval = atoi(val + 2);
@@ -94,6 +93,16 @@ open_error:
 	free(file_buf);
 
 	return retval;
+}
+
+pid_t get_tgid(pid_t pid)
+{
+	return get_pid_from_status(pid, "Tgid:");
+}
+
+pid_t get_ppid(pid_t pid)
+{
+	return get_pid_from_status(pid, "PPid:");
 }
 
 void for_each_process(for_each_process_t callback)
