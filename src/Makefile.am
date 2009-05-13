@@ -1,3 +1,4 @@
+SUBDIRS = modules
 bin_PROGRAMS = functracer
 
 functracer_SOURCES = functracer.c backtrace.c breakpoint.c callback.c	\
