@@ -21,6 +21,9 @@ ifneq (,$(findstring debug,$(DEB_BUILD_OPTIONS)))
 	debugopts += --enable-debug
 endif
 
+configure: configure.ac
+	autoreconf -fisv
+
 config.status: configure
 	dh_testdir
 	# Add here commands to configure the package.
