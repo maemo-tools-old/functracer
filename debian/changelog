@@ -1,3 +1,12 @@
+functracer (0.15.1maemo1) unstable; urgency=low
+
+  * Fix a crash occurring when process does not yet have parent
+    information available. Fixes: NB#99869
+  * Applied a patch to fix realpath() portability problems by using
+    readlink() instead. Fixes: NB#100765
+
+ -- Eero Tamminen <eero.tamminen@nokia.com>  Tue, 17 Feb 2009 15:59:11 +0200
+
 functracer (0.15.1) unstable; urgency=low
 
   * Small fixes in documentation: README, README.plugins, TODO.plugins and
