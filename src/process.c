@@ -200,7 +200,8 @@ struct process *add_process(pid_t pid)
 		tmp->parent = process_from_pid(tgid);
 		/* Set tracing status according to whether parent has tracing
 		 * enabled or not. */
-		tmp->trace_control = tmp->parent->trace_control;
+		if (tmp->parent)
+			tmp->trace_control = tmp->parent->trace_control;
 	}
 
 	debug(1, "Adding PID %d, filename = \"%s\"", pid, tmp->filename);
