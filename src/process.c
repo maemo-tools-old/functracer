@@ -22,6 +22,7 @@
  */
 
 #include <assert.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -118,13 +119,21 @@ struct process *process_from_pid(pid_t pid)
 
 char *name_from_pid(pid_t pid)
 {
-	char proc_exe[1024];
+	char proc_exe[PATH_MAX];
+	char *buf;
+	ssize_t len;
 
 	if (kill(pid, 0) == 0) {
-		snprintf(proc_exe, 1024, "/proc/%d/exe", pid);
+		snprintf(proc_exe, sizeof(proc_exe), "/proc/%d/exe", pid);
 		if (access(proc_exe, F_OK) < 0)
 			error_exit("access");
-		return realpath(proc_exe, NULL);
+		if ((buf = malloc(PATH_MAX)) == NULL)
+			error_exit("malloc");
+		if ((len = readlink(proc_exe, buf, PATH_MAX)) <= 0)
+			error_exit("readlink");
+		buf[len] = '\0';
+		/* caller frees buf */
+		return buf;
 	}
 	return NULL;
 }
