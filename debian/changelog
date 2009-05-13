@@ -1,3 +1,10 @@
+functracer (0.16) unstable; urgency=low
+
+  * Rewrite processes and threads hangling to avoid assumptions about ptrace's
+    messages order. It should work correctly on Fremantle now.
+
+ -- Kiryl Shutsemau <kiryl.shutsemau@nokia.com>  Tue, 7 May 2009 10:53:05 +0200
+
 functracer (0.15.1maemo1) unstable; urgency=low
 
   * Fix a crash occurring when process does not yet have parent
