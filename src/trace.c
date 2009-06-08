@@ -271,6 +271,8 @@ static int new_thread(pid_t tid, pid_t tgid)
 		/* Start tracing main thread */
 		if (new_process(NULL, tgid))
 			return -1;
+
+		return 0;
 	}
 
 	retval = new_process(NULL, tid);
