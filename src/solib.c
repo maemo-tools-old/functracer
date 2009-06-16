@@ -179,7 +179,7 @@ addr_t solib_dl_debug_address(struct process *proc)
 	abfd = bfd_fopen(interp_file, "default", "rb", -1);
 	if (abfd == NULL) {
 		warning_bfd(interp_file, "could not open dynamic linker file");
-		goto close_abfd;
+		goto error;
 	}
 	if (!bfd_check_format(abfd, bfd_fmt)) {
 		warning_bfd(interp_file, "not in shared file format");
