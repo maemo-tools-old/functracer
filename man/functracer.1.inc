@@ -149,8 +149,9 @@ Thiago Santos <thiago.santos@indt.org.br>
 [COPYRIGHT]
 Copyright (C) 2008, 2009 Nokia Corporation.
 
-This is free software.  You may redistribute copies of it under the
-terms of the GNU General Public License v2 included with the software.
+This is free software.  You may redistribute copies of it under the terms
+of the GNU General Public License as published by the Free Software Foundation;
+either version 2 of the License, or (at your option) any later version.
 There is NO WARRANTY, to the extent permitted by law.
 
 [SEE ALSO]
