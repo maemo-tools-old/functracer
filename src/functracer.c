@@ -99,8 +99,9 @@ int main(int argc, char *argv[])
 	cb_init();
 	for (i = 0; i < arguments.npids; i++)
 		trace_attach_child(arguments.pid[i]);
-	if (prog_index < argc)
-		trace_execute(argv[prog_index], argv + prog_index);
+	if (!arguments.npids)
+		trace_execute(arguments.remaining_args[0],
+				arguments.remaining_args);
 	ret = trace_main_loop();
 
 	/* Do cleanup before exiting to keep valgrind happy.

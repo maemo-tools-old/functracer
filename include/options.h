@@ -31,6 +31,7 @@
 #define OPT_USAGE -3
 
 struct arguments {
+	char **remaining_args;
 	pid_t pid[MAX_NPIDS];
 	int npids;
 	int depth;

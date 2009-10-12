@@ -41,7 +41,7 @@ const char *argp_program_version = PACKAGE_STRING;
 struct arguments arguments;
 
 /* strings for arguments in help texts */
-static const char args_doc[] = "PROGRAM [ARGS...]";
+static const char args_doc[] = "[PROGRAM [ARGS...]]";
 
 /* short description of program */
 static const char doc[] = "Run PROGRAM and track selected functions.";
@@ -145,10 +145,17 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 		/* Does not return. */
 		break;
 	case ARGP_KEY_END:
-		if (arg_data->npids == 0) {
+		if (!arg_data->npids && !state->arg_num) {
 			/* Not enough arguments. */
 			argp_usage(state);
 		}
+		break;
+	case ARGP_KEY_ARGS:
+		if (arg_data->npids) {
+			/* Too many arguments */
+			argp_usage(state);
+		}
+		arg_data->remaining_args = state->argv + state->next;
 		break;
 	default:
 		return ARGP_ERR_UNKNOWN;
