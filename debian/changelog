@@ -1,3 +1,9 @@
+functracer (0.18.1) unstable; urgency=low
+
+  * Rebuild with updated libunwind to fix executable stack. Fixes: NB#139340.
+
+ -- Kiryl Shutsemau <kiryl.shutsemau@nokia.com>  Mon, 19 Oct 2009 11:28:30 +0300
+
 functracer (0.18) unstable; urgency=low
 
   * Change license of functracer to GPL version 2 or later. Fixes: NB#142158.
