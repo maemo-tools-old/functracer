@@ -57,9 +57,9 @@ struct process {
 	struct process *next;
 };
 
-typedef void (*for_each_process_t)(struct process *);
+typedef void (*for_each_process_t)(struct process *, void *);
 
-extern void for_each_process(for_each_process_t callback);
+extern void for_each_process(for_each_process_t callback, void *data);
 extern struct process *process_from_pid(pid_t pid);
 extern char *name_from_pid(pid_t pid);
 extern char *cmd_from_pid(pid_t pid, int nargs);

@@ -106,13 +106,13 @@ pid_t get_ppid(pid_t pid)
 	return get_pid_from_status(pid, "PPid:");
 }
 
-void for_each_process(for_each_process_t callback)
+void for_each_process(for_each_process_t callback, void *data)
 {
 	struct process *tmp;
 
 	tmp = list_of_processes;
 	while (tmp) {
-		callback(tmp);
+		callback(tmp, data);
 		tmp = tmp->next;
 	}
 }

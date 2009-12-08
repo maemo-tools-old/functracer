@@ -131,7 +131,7 @@ static void process_signal(struct process *proc, int signo)
 	      proc->pid, signo);
 
 	if (signo == SIGUSR1) {
-		for_each_process(toggle_tracing);
+		for_each_process(toggle_tracing, NULL);
 	} else if (trace_enabled(proc)) {
 		rp_event(proc, "Process/Thread %d received signal %d\n",
 			 proc->pid, signo);
