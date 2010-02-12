@@ -1,3 +1,18 @@
+functracer (0.19) unstable; urgency=low
+
+  * Fix SIGINT/SIGTERM signals handling. Fixes: NB#120608
+  * Huge update. Fixes: NB#145945
+    + fix handling of processes and threads
+    + functracer module to track GObject allocations and releases
+    + functracer module to track memory transfer operations
+    + memory: suppress allocation failures and track valloc
+    + file: track more calls and enhance output
+    + functracer module to keep track on memory allocation/release
+      caused by creating/joining/detaching threads
+    + update documentation
+
+ -- Kiryl Shutsemau <kiryl.shutsemau@nokia.com>  Fri, 12 Feb 2010 11:53:48 +0200
+
 functracer (0.18.1) unstable; urgency=low
 
   * Rebuild with updated libunwind to fix executable stack. Fixes: NB#139340.
