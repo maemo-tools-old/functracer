@@ -145,6 +145,19 @@ void rp_alloc(struct process *proc, int rp_number, const char *name,
 		rp_event(proc, "%d. %s(%d) = 0x%08x\n", rp_number, name, arg0, arg1);
 }
 
+void rp_alloc_details(struct process *proc, int rp_number, const char *name,
+				size_t arg0, size_t arg1, char *details)
+{
+	struct rp_data *rd = proc->rp_data;
+
+	assert(rd != NULL);
+	if (arguments.time)
+		rp_event(proc, "%d. [%s] %s(%d) = 0x%08x (%s)\n", rp_number,
+			 rp_timestamp(), name, arg0, arg1, details);
+	else
+		rp_event(proc, "%d. %s(%d) = 0x%08x (%s)\n", rp_number, name, arg0, arg1, details);
+}
+
 void rp_free(struct process *proc, int rp_number, const char *name, size_t arg)
 {
 	struct rp_data *rd = proc->rp_data;
