@@ -38,9 +38,13 @@ backtraces, arguments and return value of functions specified in a plugin. It
 works with optimized (-O2) code, where debugging symbols are available either
 in the application binaries themselves, or in separate debug files.
 
-Currently, functracer has two plugins implemented: the "memory" plugin (used by
-default, when no plugin is specified) and the "file" plugin. For more details,
-see the README.plugins document located in src/modules (inside sources) or
+Currently, functracer has 5 plugins implemented: 
+ "memory" plugin (used by default, when no plugin is specified),
+ "file" plugin,
+ "memtransfer" plugin,
+ "gobject" plugin,
+ "thread-resource" plugin. 
+For more details see the README.plugins document located in src/modules (inside sources) or
 /usr/share/doc/functracer (when installed).
 
 2. Where can I find it

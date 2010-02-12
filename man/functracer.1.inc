@@ -4,11 +4,22 @@ functracer - list backtraces to tracked functions.
 [DESCRIPTION]
 \fBfunctracer\fR is a specialized, tracing-based debugging tool. It collects backtraces, arguments and return value of functions specified in a plugin. It works with optimized (-O2) code, where debugging symbols are available either in the application binaries themselves, or in separate debug files.
 
-Currently, functracer has two plugins implemented: the "memory" plugin (used by default, when no plugin is specified) and the "file" plugin. They are installed in /usr/lib/functracer.
+Currently, functracer has two plugins implemented: the "memory" (used by default, when no plugin is specified), "file",
+"memtransfer", "gobject" and "thread-resource" plugins. They are installed in /usr/lib/functracer.
 
-The memory plugin can track the functions: calloc, malloc, realloc, free, memalign and posix_memalign.
+The memory plugin is used to track memory allocation usage (calloc, malloc, realloc, free, memalign, posix_memalign and valloc).
 
-The file plugin can track the functions: fopen, fclose, open, close, fcloseall, creat, freopen, fdopen, accept, dup, dup2 and socket.
+The file plugin is used to track file descriptor/pointer usage (open, fclose, open, close, fcloseall, creat, freopen, 
+fdopen, accept, dup, dup2, socket,  socketpair, fcntl, pipe and inotify_init).
+
+The memtransfer plugin is used to track memory transfer operations (memcpy, mempcpy, memmove, memccpy, memset, strcpy, strncpy,
+stpcpy, stpncpy, strcat, strncat, bcopy, bzero, strdup, strndup, strdupa, strndupa, wmemcpy, wmempcpy, wmemmove, 
+wmemset, wcscpy, wcsncpy, wcpcpy, wcpncpy, wcscat, wcsncat, wcsdup).
+
+The gobject plugin is used to track GObject allocation and release (g_object_newv, g_object_ref, g_object_unref).
+
+The thread-resource plugin is used to track resource allocation/release by creating/joining threads
+(pthread_create, pthread_join, pthread_detatch).
 
 The function format output is defined below:
 

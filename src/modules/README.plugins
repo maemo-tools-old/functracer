@@ -18,11 +18,17 @@ Functracer supports plugins. The plugins tell to functracer which set of
 functions will be tracked. Only one plugin can be used at each functracer
 execution.
 
-Currently, there are two plugins implemented: memory and file, which track the
+Currently, there are 5 plugins implemented: memory and file, which track the
 following functions:
-- memory: calloc, free, malloc, memalign, posix_memalign, realloc.
+- memory: calloc, free, malloc, memalign, posix_memalign, realloc, valloc.
 - file: fopen, fclose, open, close, fcloseall, creat, freopen, fdopen,
-  accept, dup, dup2 and socket.
+  accept, dup, dup2, socket, socketpair, fcntl, pipe, inotify_init.
+- memtransfer: memcpy, mempcpy, memmove, memccpy, memset, strcpy, strncpy,
+  stpcpy, stpncpy, strcat, strncat, bcopy, bzero, strdup, strndup, strdupa, 
+  strndupa, wmemcpy, wmempcpy, wmemmove, wmemset, wcscpy, wcsncpy, wcpcpy, 
+  wcpncpy, wcscat, wcsncat, wcsdup.
+- gobject: g_object_newv, g_object_ref, g_object_unref.
+- thread-resource: pthread_create, pthread_join, pthread_detach.  
 
 Plugins are usually installed in /usr/lib/functracer. Memory is the default
 plugin, and to switch to the "file" plugin you must use the "-e" option (e.g.
@@ -56,7 +62,11 @@ details on how to use each function, for example:
 - fn_argument(): get the function argument (numbered starting from zero).
 - rp_write_backtraces(): generate backtraces for function call site.
 - rp_alloc(): log resource allocation.
+- rp_alloc_details: log resoruce allocation with additional description.
 - rp_free(): log resource destruction.
+
+- trace_mem_readstr(): get C style string located at the specified address.
+- trace_mem_readwstr(): get C style wide string located at the specified address.
 
 3. Plugin extension
 -------------------
