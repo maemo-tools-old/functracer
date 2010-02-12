@@ -1,4 +1,7 @@
 /*
+ * memory is functracer module used to track memory allocation
+ * and release.
+ *
  * This file is part of Functracer.
  *
  * Copyright (C) 2008 by Nokia Corporation
@@ -48,17 +51,23 @@ static void mem_function_exit(struct process *proc, const char *name)
 
 	assert(proc->rp_data != NULL);
 	if (strcmp(name, "__libc_malloc") == 0) {
+		/* suppress allocation failures */
+		if (retval == 0) return;
 		rp_alloc(proc, rd->rp_number, "malloc", arg0, retval);
 
 	} else if (strcmp(name, "__libc_calloc") == 0) {
-		size_t arg1 = fn_argument(proc, 1);
-                rp_alloc(proc, rd->rp_number, "calloc", arg0 * arg1,
-			 retval);
+		size_t arg1;
+		/* suppress allocation failures */
+		if (retval == 0) return;
+		arg1 = fn_argument(proc, 1);
+		rp_alloc(proc, rd->rp_number, "calloc", arg0 * arg1, retval);
 
 	} else if (strcmp(name, "__libc_memalign") == 0) {
-		size_t arg1 = fn_argument(proc, 1);
-		rp_alloc(proc, rd->rp_number, "memalign", arg1,
-			 retval);
+		size_t arg1;
+		/* suppress allocation failures */
+		if (retval == 0) return;
+		arg1 = fn_argument(proc, 1);
+		rp_alloc(proc, rd->rp_number, "memalign", arg1, retval);
 
 	} else if (strcmp(name, "__libc_realloc") == 0) {
 		size_t arg1 = fn_argument(proc, 1);
@@ -74,7 +83,7 @@ static void mem_function_exit(struct process *proc, const char *name)
 		/* show a new resource allocation (can be same or different
 		 * address) 
 		 */
-                rp_alloc(proc, rd->rp_number, "realloc", arg1, retval);
+		rp_alloc(proc, rd->rp_number, "realloc", arg1, retval);
 
 	} else if (strcmp(name, "__libc_free") == 0 ) {
 		/* Suppress "free(NULL)" calls from trace output. 
@@ -83,7 +92,7 @@ static void mem_function_exit(struct process *proc, const char *name)
 		is_free = 1;
 		if (arg0 == 0)
 			return;
-                rp_free(proc, rd->rp_number, "free", arg0);
+		rp_free(proc, rd->rp_number, "free", arg0);
 
 	} else if (strcmp(name, "posix_memalign") == 0) {
 		size_t arg0 = fn_argument(proc, 0);
@@ -93,10 +102,17 @@ static void mem_function_exit(struct process *proc, const char *name)
 		/* posix_memalign() stores the allocated memory pointer on the
 		 * first argument (of type (void **)) */
 		retval = trace_mem_readw(proc, arg0);
-		rp_alloc(proc, rd->rp_number, "posix_memalign", arg2,
-			 retval);
+		/* suppress allocation failures */
+		if (retval == 0) return;
+		rp_alloc(proc, rd->rp_number, "posix_memalign", arg2, retval);
 
-	} else {
+	} else if (strcmp(name, "__libc_valloc") == 0 || strcmp(name, "valloc") == 0) {
+		/* suppress allocation failures */
+		if (retval == 0) return;
+		rp_alloc(proc, rd->rp_number, "valloc", arg0, retval);
+
+	}
+	else {
 		msg_warn("unexpected function exit (%s)\n", name);
 		return;
 	}
@@ -112,7 +128,8 @@ static int mem_library_match(const char *symname)
 	       strcmp(symname, "__libc_realloc") == 0 ||
 	       strcmp(symname, "__libc_free") == 0 ||
 	       strcmp(symname, "__libc_memalign") == 0 ||
-	       strcmp(symname, "posix_memalign") == 0);
+				 strcmp(symname, "posix_memalign") == 0 ||
+				 strcmp(symname, "valloc") == 0);
 }
 
 struct plg_api *init()
