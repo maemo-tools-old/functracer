@@ -94,3 +94,44 @@ void trace_setregs(struct process *proc, void *regs)
 {
 	xptrace(PTRACE_SETREGS, proc->pid, NULL, regs);
 }
+
+size_t trace_mem_readstr(struct process* proc, size_t addr, char* buffer, size_t size)
+{
+	int bytes = 0;
+	unsigned char c = 0xff;
+	int i = 0;
+	int limit = size - 1;
+
+	while (c) {
+		size_t n = trace_mem_readw(proc, addr);
+		addr += sizeof(char*);
+		for (i = 0; i < 4; i++) {
+			c = n & 0xff;
+			if (!c) break;
+			if (limit > bytes++) {
+				*buffer++ = c;
+			}
+			n >>= 8;
+		}
+	}
+	if (size) *buffer = '\0';
+	return bytes;
+}
+
+
+size_t trace_mem_readwstr(struct process* proc, size_t addr, int* buffer, size_t size)
+{
+	int bytes = 0;
+	int c = 0xff;
+	int limit = size - 1;
+
+	while ( (c = trace_mem_readw(proc, addr)) ) {
+		addr += sizeof(int*);
+		if (limit > bytes++) {
+			*buffer++ = c;
+		}
+	}
+	if (size) *buffer = L'\0';
+	return bytes;
+}
+

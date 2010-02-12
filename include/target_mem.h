@@ -40,5 +40,7 @@ extern void trace_mem_read(struct process *proc, addr_t addr, void *buf, size_t 
 extern void trace_mem_write(struct process *proc, addr_t addr, void *buf, size_t count);
 extern void trace_getregs(struct process *proc, void *regs);
 extern void trace_setregs(struct process *proc, void *regs);
+extern size_t trace_mem_readstr(struct process* proc, addr_t addr, char* buffer, size_t size);
+extern size_t trace_mem_readwstr(struct process* proc, addr_t addr, int* buffer, size_t size);
 
 #endif /* TT_PTRACE_H */
