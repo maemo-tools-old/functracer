@@ -1,0 +1,178 @@
+/*
+ * thread-resource is functracer module used to keep track on memory
+ * allocation/release caused by creating/joining/detaching threads.
+ *
+ * Warning, the code used to determine thread attributes passed to
+ * pthread_create relies on the pthread_attr_t structure internal
+ * implementation.
+ *
+ * This file is part of Functracer.
+ *
+ * Copyright (C) 2009 by Nokia Corporation
+ *
+ * Contact: Eero Tamminen <eero.tamminen@nokia.com>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA
+ *
+ */
+ 
+#include <assert.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/wait.h>
+#include <unistd.h>
+#include <sched.h>
+#include <pthread.h>
+
+#include "debug.h"
+#include "function.h"
+#include "options.h"
+#include "plugins.h"
+#include "process.h"
+#include "report.h"
+
+#define THREAD_API_VERSION "2.0"
+#define RES_SIZE 1
+
+static char thread_api_version[] = THREAD_API_VERSION;
+
+static void thread_function_exit(struct process *proc, const char *name)
+{
+	struct rp_data *rd = proc->rp_data;
+
+	addr_t retval = fn_return_value(proc);
+	assert(proc->rp_data != NULL);
+	/* TODO: finalize process tracking
+	if (strcmp(name, "system") == 0) {
+		rp_alloc(proc, rd->rp_number, "system", RES_SIZE, retval); 
+
+	} else if (strcmp(name, "__fork") == 0) {
+		rp_alloc(proc, rd->rp_number, "fork", RES_SIZE, retval);
+
+	} else if (strcmp(name, "__vfork") == 0) {
+		rp_alloc(proc, rd->rp_number, "vfork", RES_SIZE, retval);
+
+	} else if (strcmp(name, "clone") == 0) {
+		rp_alloc(proc, rd->rp_number, "clone", RES_SIZE, retval);
+
+	} else if (strcmp(name, "execv") == 0) {
+		rp_alloc(proc, rd->rp_number, "execv", RES_SIZE, retval);
+
+	} else if (strcmp(name, "execl") == 0) {
+		rp_alloc(proc, rd->rp_number, "execl", RES_SIZE, retval);
+
+	} else if (strcmp(name, "execve") == 0) {
+		rp_alloc(proc, rd->rp_number, "execve", RES_SIZE, retval);
+
+	} else if (strcmp(name, "execle") == 0) {
+		rp_alloc(proc, rd->rp_number, "execle", RES_SIZE, retval);
+
+	} else if (strcmp(name, "execvp") == 0) {
+		rp_alloc(proc, rd->rp_number, "execvp", RES_SIZE, retval);
+
+	} else if (strcmp(name, "execlp") == 0) {
+		rp_alloc(proc, rd->rp_number, "execlp", RES_SIZE, retval);
+
+	} else if (strcmp(name, "waitpid") == 0) {
+		rp_alloc(proc, rd->rp_number, "waitpid", RES_SIZE, retval);
+
+	} else if (strcmp(name, "wait") == 0) {
+		rp_alloc(proc, rd->rp_number, "wait", RES_SIZE, retval);
+
+	} else if (strcmp(name, "wait4") == 0) {
+		rp_alloc(proc, rd->rp_number, "wait4", RES_SIZE, retval);
+
+	} else if (strcmp(name, "wait3") == 0) {
+		rp_alloc(proc, rd->rp_number, "wait3", RES_SIZE, retval);
+
+	} else
+	*/
+	if (strcmp(name, "pthread_join") == 0) {
+		if (retval != 0) {
+			/* failures doesn't allocate resources - skip */
+			return;
+		}
+		rp_free(proc, rd->rp_number, "pthread_join", fn_argument(proc, 0));
+
+	} else if (strcmp(name, "pthread_create") == 0) {
+		if (retval != 0) {
+			/* failures doesn't allocate resources - skip */
+			return;
+		}
+		int attr_addr = fn_argument(proc, 1);
+		int state = PTHREAD_CREATE_JOINABLE;
+		if (attr_addr) {
+			pthread_attr_t attr;
+			trace_mem_read(proc, attr_addr, &attr, sizeof(pthread_attr_t));
+			pthread_attr_getdetachstate(&attr, &state);
+		}
+		/* track only joinable threads */
+		if (state == PTHREAD_CREATE_DETACHED) {
+			return;
+		}
+		rp_alloc(proc, rd->rp_number, "pthread_create", RES_SIZE, trace_mem_readw(proc, fn_argument(proc, 0)) );
+
+	} else if (strcmp(name, "pthread_detach") == 0) {
+		if (retval != 0) {
+			/* failures doesn't allocate resources - skip */
+			return;
+		}
+		rp_free(proc, rd->rp_number, "pthread_detach", fn_argument(proc, 0));
+
+	} else {
+		msg_warn("unexpected function exit (%s)\n", name);
+		return;
+	}
+	(rd->rp_number)++;
+	rp_write_backtraces(proc);
+}
+
+static int thread_library_match(const char *symname)
+{
+	return(
+			/* TODO: finalize process tracking
+			strcmp(symname, "system") == 0 ||
+			strcmp(symname, "__fork") == 0 ||
+			strcmp(symname, "__vfork") == 0 ||
+			strcmp(symname, "clone") == 0 ||
+			strcmp(symname, "execv") == 0 ||
+			strcmp(symname, "execl") == 0 ||
+			strcmp(symname, "execve") == 0 ||
+			strcmp(symname, "execle") == 0 ||
+			strcmp(symname, "execvp") == 0 ||
+			strcmp(symname, "execlp") == 0 ||
+			strcmp(symname, "waitpid") == 0 ||
+			strcmp(symname, "wait") == 0 ||
+			strcmp(symname, "wait4") == 0 ||
+			strcmp(symname, "wait3") == 0 ||
+			*/
+			strcmp(symname, "pthread_join") == 0 ||
+			strcmp(symname, "pthread_create") == 0 ||
+			strcmp(symname, "pthread_detach") == 0);
+}
+
+struct plg_api *init()
+{
+	static struct plg_api ma = {
+		.api_version = thread_api_version,
+		.function_exit = thread_function_exit,
+		.library_match = thread_library_match,
+	};
+	return &ma;
+}
