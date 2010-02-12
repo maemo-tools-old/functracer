@@ -220,6 +220,9 @@ static int handle_child_process(struct process *parent_proc, pid_t child_pid)
 {
 	int status, pid;
 
+	if (process_from_pid(child_pid)) {
+	        return 0;
+	}
 	pid = ft_waitpid(child_pid, &status, __WALL);
 	if (pid == -1) {
 		msg_err("waitpid: error waiting for new child");
@@ -233,13 +236,11 @@ static int handle_child_process(struct process *parent_proc, pid_t child_pid)
 		msg_err("waitpid %d: unexpected status 0x%x returned", child_pid, status);
 		return -1;
 	}
-
 	return new_process(parent_proc, child_pid);
 }
 
 static int new_thread(pid_t tid, pid_t tgid)
 {
-	int retval;
 	struct process *main_thread = process_from_pid(tgid);
 
 	/* Make sure that main thread is already tracing */
@@ -272,14 +273,9 @@ static int new_thread(pid_t tid, pid_t tgid)
 		/* Start tracing main thread */
 		if (new_process(NULL, tgid))
 			return -1;
-
-		return 0;
 	}
 
-	retval = new_process(NULL, tid);
-	continue_process(main_thread);
-
-	return retval;
+	return new_process(NULL, tid);
 }
 
 static int handle_new_process(pid_t child_pid)
