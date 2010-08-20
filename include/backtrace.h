@@ -1,7 +1,7 @@
 /*
  * This file is part of Functracer.
  *
- * Copyright (C) 2008 by Nokia Corporation
+ * Copyright (C) 2008,2010 by Nokia Corporation
  *
  * Contact: Eero Tamminen <eero.tamminen@nokia.com>
  *
@@ -30,7 +30,7 @@
 struct bt_data;
 
 extern struct bt_data *bt_init(pid_t pid);
-extern int bt_backtrace(struct bt_data *btd, char **buffer, int size);
+extern int bt_backtrace(struct bt_data *btd, void** frames, char **buffer, int size);
 extern void bt_finish(struct bt_data *btd);
 
 #endif /* FTK_BACKTRACE_H */

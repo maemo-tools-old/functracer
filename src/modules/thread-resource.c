@@ -8,7 +8,7 @@
  *
  * This file is part of Functracer.
  *
- * Copyright (C) 2009 by Nokia Corporation
+ * Copyright (C) 2009-2010 by Nokia Corporation
  *
  * Contact: Eero Tamminen <eero.tamminen@nokia.com>
  *
@@ -28,7 +28,7 @@
  * 02110-1301 USA
  *
  */
- 
+
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
@@ -39,6 +39,8 @@
 #include <unistd.h>
 #include <sched.h>
 #include <pthread.h>
+#include <sp_rtrace_formatter.h>
+
 
 #include "debug.h"
 #include "function.h"
@@ -60,46 +62,46 @@ static void thread_function_exit(struct process *proc, const char *name)
 	assert(proc->rp_data != NULL);
 	/* TODO: finalize process tracking
 	if (strcmp(name, "system") == 0) {
-		rp_alloc(proc, rd->rp_number, "system", RES_SIZE, retval); 
+		sp_rtrace_print_call(rd->rp, rd->rp_number, 0, -1, "system", RES_SIZE, retval);
 
 	} else if (strcmp(name, "__fork") == 0) {
-		rp_alloc(proc, rd->rp_number, "fork", RES_SIZE, retval);
+		sp_rtrace_print_call(rd->rp, rd->rp_number, 0, -1, "fork", RES_SIZE, retval);
 
 	} else if (strcmp(name, "__vfork") == 0) {
-		rp_alloc(proc, rd->rp_number, "vfork", RES_SIZE, retval);
+		sp_rtrace_print_call(rd->rp, rd->rp_number, 0, -1, "vfork", RES_SIZE, retval);
 
 	} else if (strcmp(name, "clone") == 0) {
-		rp_alloc(proc, rd->rp_number, "clone", RES_SIZE, retval);
+		sp_rtrace_print_call(rd->rp, rd->rp_number, 0, -1, "clone", RES_SIZE, retval);
 
 	} else if (strcmp(name, "execv") == 0) {
-		rp_alloc(proc, rd->rp_number, "execv", RES_SIZE, retval);
+		sp_rtrace_print_call(rd->rp, rd->rp_number, 0, -1, "execv", RES_SIZE, retval);
 
 	} else if (strcmp(name, "execl") == 0) {
-		rp_alloc(proc, rd->rp_number, "execl", RES_SIZE, retval);
+		sp_rtrace_print_call(rd->rp, rd->rp_number, 0, -1, "execl", RES_SIZE, retval);
 
 	} else if (strcmp(name, "execve") == 0) {
-		rp_alloc(proc, rd->rp_number, "execve", RES_SIZE, retval);
+		sp_rtrace_print_call(rd->rp, rd->rp_number, 0, -1, "execve", RES_SIZE, retval);
 
 	} else if (strcmp(name, "execle") == 0) {
-		rp_alloc(proc, rd->rp_number, "execle", RES_SIZE, retval);
+		sp_rtrace_print_call(rd->rp, rd->rp_number, 0, -1, "execle", RES_SIZE, retval);
 
 	} else if (strcmp(name, "execvp") == 0) {
-		rp_alloc(proc, rd->rp_number, "execvp", RES_SIZE, retval);
+		sp_rtrace_print_call(rd->rp, rd->rp_number, 0, -1, "execvp", RES_SIZE, retval);
 
 	} else if (strcmp(name, "execlp") == 0) {
-		rp_alloc(proc, rd->rp_number, "execlp", RES_SIZE, retval);
+		sp_rtrace_print_call(rd->rp, rd->rp_number, 0, -1, "execlp", RES_SIZE, retval);
 
 	} else if (strcmp(name, "waitpid") == 0) {
-		rp_alloc(proc, rd->rp_number, "waitpid", RES_SIZE, retval);
+		sp_rtrace_print_call(rd->rp, rd->rp_number, 0, -1, "waitpid", RES_SIZE, retval);
 
 	} else if (strcmp(name, "wait") == 0) {
-		rp_alloc(proc, rd->rp_number, "wait", RES_SIZE, retval);
+		sp_rtrace_print_call(rd->rp, rd->rp_number, 0, -1, "wait", RES_SIZE, retval);
 
 	} else if (strcmp(name, "wait4") == 0) {
-		rp_alloc(proc, rd->rp_number, "wait4", RES_SIZE, retval);
+		sp_rtrace_print_call(rd->rp, rd->rp_number, 0, -1, "wait4", RES_SIZE, retval);
 
 	} else if (strcmp(name, "wait3") == 0) {
-		rp_alloc(proc, rd->rp_number, "wait3", RES_SIZE, retval);
+		sp_rtrace_print_call(rd->rp, rd->rp_number, 0, -1, "wait3", RES_SIZE, retval);
 
 	} else
 	*/
@@ -108,7 +110,7 @@ static void thread_function_exit(struct process *proc, const char *name)
 			/* failures doesn't allocate resources - skip */
 			return;
 		}
-		rp_free(proc, rd->rp_number, "pthread_join", fn_argument(proc, 0));
+		sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "pthread_join", 0, (void*)fn_argument(proc, 0));
 
 	} else if (strcmp(name, "pthread_create") == 0) {
 		if (retval != 0) {
@@ -126,14 +128,15 @@ static void thread_function_exit(struct process *proc, const char *name)
 		if (state == PTHREAD_CREATE_DETACHED) {
 			return;
 		}
-		rp_alloc(proc, rd->rp_number, "pthread_create", RES_SIZE, trace_mem_readw(proc, fn_argument(proc, 0)) );
+		sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "pthread_craete",
+				RES_SIZE, (void*)trace_mem_readw(proc, fn_argument(proc, 0)) );
 
 	} else if (strcmp(name, "pthread_detach") == 0) {
 		if (retval != 0) {
 			/* failures doesn't allocate resources - skip */
 			return;
 		}
-		rp_free(proc, rd->rp_number, "pthread_detach", fn_argument(proc, 0));
+		sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "pthread_detach", 0, (void*)fn_argument(proc, 0));
 
 	} else {
 		msg_warn("unexpected function exit (%s)\n", name);

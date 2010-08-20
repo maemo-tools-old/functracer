@@ -1,7 +1,7 @@
 /*
  * This file is part of Functracer.
  *
- * Copyright (C) 2008 by Nokia Corporation
+ * Copyright (C) 2008,2010 by Nokia Corporation
  *
  * Contact: Eero Tamminen <eero.tamminen@nokia.com>
  *
@@ -54,13 +54,12 @@ struct bt_data *bt_init(pid_t pid)
 	return btd;
 }
 
-int bt_backtrace(struct bt_data *btd, char **buffer, int size)
+int bt_backtrace(struct bt_data *btd, void** frames, char **buffer, int size)
 {
 	unw_cursor_t c;
 	unw_word_t ip, off;
 	int n = 0, ret;
-	char buf[512];
-	size_t len = 0;
+	char buf[512] = "in ";
 
 	if (size == 0)
 		return 0;
@@ -78,24 +77,26 @@ int bt_backtrace(struct bt_data *btd, char **buffer, int size)
 		/* Small workaround: decrement the current address to get the
 		 * correct line in post-processing
 		 */
-		sprintf(buf,  "0x%08x", (uintptr_t)(ip - 1));
+		frames[n] = (void*)ip;
+//		sprintf(buf,  "0x%08x", (uintptr_t)(ip - 1));
 
 		if (arguments.resolve_name) {
-			strcat(buf,  ": ");
-			len = strlen(buf);
-			ret = unw_get_proc_name(&c, buf + len, sizeof(buf) - len, &off);
-			if (ret < 0)
-				sprintf(buf + len, "<undefined>");
+			char* ptr = buf;
+			ret = unw_get_proc_name(&c, buf + 3, sizeof(buf), &off);
+			if (ret < 0) {
+				ptr = buf + 3;
+				strcpy(ptr, "<undefined>");
+			}
 			else if (off) {
-				len = strlen(buf);
+				size_t len = strlen(buf);
 				/* Reserve the last 64 bytes for the offset */
 				if (len >= sizeof(buf) - 64)
 					len = sizeof(buf) - 64;
 				sprintf(buf + len, "+0x%lx", (unsigned long)off);
 			}
+			buffer[n] = strdup(ptr);
 		}
-
-		buffer[n++] = strdup(buf);
+		n++;
 		if ((ret = unw_step(&c)) < 0) {
 			debug(1, "bt_backtrace(): unw_step() failed, ret=%d", ret);
 			return -1;

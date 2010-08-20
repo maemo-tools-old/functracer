@@ -75,6 +75,12 @@ AC_CHECK_LIB([dl], [dlopen],
   [AC_MSG_ERROR([dlopen library is required for plugins])],
 )
 
+# Check for libsp-rtrace1 libary
+AC_CHECK_LIB([sp-rtrace1], [sp_rtrace_print_comment],
+  [FT_LIBS="${FT_LIBS} -lsp-rtrace1"],
+  [AC_MSG_ERROR([libsp-rtrace1 library is required for output formatting])],
+)
+
 AC_SUBST(FT_LIBS)
 
 # Check for glib-2.0 availability (used for gthreads test)

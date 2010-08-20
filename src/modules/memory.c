@@ -4,7 +4,7 @@
  *
  * This file is part of Functracer.
  *
- * Copyright (C) 2008 by Nokia Corporation
+ * Copyright (C) 2008,2010 by Nokia Corporation
  *
  * Contact: Eero Tamminen <eero.tamminen@nokia.com>
  *
@@ -28,6 +28,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sp_rtrace_formatter.h>
 
 #include "debug.h"
 #include "function.h"
@@ -53,46 +54,46 @@ static void mem_function_exit(struct process *proc, const char *name)
 	if (strcmp(name, "__libc_malloc") == 0) {
 		/* suppress allocation failures */
 		if (retval == 0) return;
-		rp_alloc(proc, rd->rp_number, "malloc", arg0, retval);
+		sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "malloc", arg0, (void*)retval);
 
 	} else if (strcmp(name, "__libc_calloc") == 0) {
 		size_t arg1;
 		/* suppress allocation failures */
 		if (retval == 0) return;
 		arg1 = fn_argument(proc, 1);
-		rp_alloc(proc, rd->rp_number, "calloc", arg0 * arg1, retval);
+		sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "calloc", arg0 * arg1, (void*)retval);
 
 	} else if (strcmp(name, "__libc_memalign") == 0) {
 		size_t arg1;
 		/* suppress allocation failures */
 		if (retval == 0) return;
 		arg1 = fn_argument(proc, 1);
-		rp_alloc(proc, rd->rp_number, "memalign", arg1, retval);
+		sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "memalign", arg1, (void*)retval);
 
 	} else if (strcmp(name, "__libc_realloc") == 0) {
 		size_t arg1 = fn_argument(proc, 1);
 		if (arg0 != 0) {
 			/* realloc acting normally (returning same or different
 			 * address) OR acting as free so showing the freeing */
-			rp_free(proc, rd->rp_number++, "realloc", arg0);
+			sp_rtrace_print_call(rd->fp, rd->rp_number++, 0, RP_TIMESTAMP, "realloc", 0, (void*)arg0);
 		}
 		if (arg1 == 0 && retval == 0) {
 			/* realloc acting as free so return */
 			return;
 		}
 		/* show a new resource allocation (can be same or different
-		 * address) 
+		 * address)
 		 */
-		rp_alloc(proc, rd->rp_number, "realloc", arg1, retval);
+		sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "realloc", arg1, (void*)retval);
 
 	} else if (strcmp(name, "__libc_free") == 0 ) {
-		/* Suppress "free(NULL)" calls from trace output. 
-		 * They are a no-op according to ISO 
+		/* Suppress "free(NULL)" calls from trace output.
+		 * They are a no-op according to ISO
 		 */
 		is_free = 1;
 		if (arg0 == 0)
 			return;
-		rp_free(proc, rd->rp_number, "free", arg0);
+		sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "free", 0, (void*)arg0);
 
 	} else if (strcmp(name, "posix_memalign") == 0) {
 		size_t arg0 = fn_argument(proc, 0);
@@ -104,12 +105,12 @@ static void mem_function_exit(struct process *proc, const char *name)
 		retval = trace_mem_readw(proc, arg0);
 		/* suppress allocation failures */
 		if (retval == 0) return;
-		rp_alloc(proc, rd->rp_number, "posix_memalign", arg2, retval);
+		sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "posix_memalign", arg2, (void*)retval);
 
 	} else if (strcmp(name, "__libc_valloc") == 0 || strcmp(name, "valloc") == 0) {
 		/* suppress allocation failures */
 		if (retval == 0) return;
-		rp_alloc(proc, rd->rp_number, "valloc", arg0, retval);
+		sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "valloc", arg0, (void*)retval);
 
 	}
 	else {

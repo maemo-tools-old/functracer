@@ -4,7 +4,7 @@
  *
  * This file is part of Functracer.
  *
- * Copyright (C) 2009 by Nokia Corporation
+ * Copyright (C) 2009-2010 by Nokia Corporation
  *
  * Contact: Eero Tamminen <eero.tamminen@nokia.com>
  *
@@ -28,6 +28,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sp_rtrace_formatter.h>
 
 #include "debug.h"
 #include "function.h"
@@ -50,17 +51,16 @@ static void gobject_function_exit(struct process *proc, const char *name)
 	if (strcmp(name, "g_object_newv") == 0) {
 		/* suppress allocation failure reports */
 		if (retval == 0) return;
-		rp_alloc(proc, rd->rp_number, "g_object_newv", RES_SIZE, retval);
+		sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "g_object_newv", RES_SIZE, (void*)retval);
 
 	} else if (strcmp(name, "g_object_ref") == 0) {
 		/* suppress allocation failure reports */
 		if (retval == 0) return;
-		rp_alloc(proc, rd->rp_number, "g_object_ref", RES_SIZE, retval);
+		sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "g_object_ref", RES_SIZE, (void*)retval);
 
 	} else if (strcmp(name, "g_object_unref") == 0) {
 				size_t arg0 = fn_argument(proc, 0);
-		rp_free(proc, rd->rp_number, "g_object_unref", arg0);
-
+		sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "g_object_unref", 0, (void*)retval);
 	} else {
 		msg_warn("unexpected function exit (%s)\n", name);
 		return;

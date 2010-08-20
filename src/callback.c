@@ -1,7 +1,7 @@
 /*
  * This file is part of Functracer.
  *
- * Copyright (C) 2008 by Nokia Corporation
+ * Copyright (C) 2008,2010 by Nokia Corporation
  *
  * Contact: Eero Tamminen <eero.tamminen@nokia.com>
  *
@@ -26,6 +26,7 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sp_rtrace_formatter.h>
 
 #include "callback.h"
 #include "debug.h"
@@ -53,7 +54,7 @@ static void process_create(struct process *proc)
 			proc->trace_control = 0;
 		} else {
 			buf = cmd_from_pid(proc->pid, 1);
-			rp_event(proc, "Process/Thread %d (%s) was created\n",
+			sp_rtrace_print_comment(proc->rp_data->fp, "Process/Thread %d (%s) was created\n",
 				 proc->pid, buf);
 			free(buf);
 		}
@@ -69,7 +70,7 @@ static void process_exec(struct process *proc)
 
 	if (trace_enabled(proc)) {
 		buf = cmd_from_pid(proc->pid, 0);
-		rp_event(proc, "Process/Thread %d has executed: %s\n",
+		sp_rtrace_print_comment(proc->rp_data->fp, "Process/Thread %d has executed: %s\n",
 			 proc->pid, buf);
 		free(buf);
 
@@ -82,7 +83,7 @@ static void process_exit(struct process *proc, int exit_code)
 	      exit_code);
 
 	if (trace_enabled(proc)) {
-		rp_event(proc, "Process/Thread %d has exited with code %d\n",
+		sp_rtrace_print_comment(proc->rp_data->fp, "Process/Thread %d has exited with code %d\n",
 			 proc->pid, exit_code);
 		rp_finish(proc);
 	}
@@ -97,7 +98,7 @@ static void process_fork(struct process *proc, pid_t child_pid)
 
 	if (trace_enabled(proc)) {
 		buf = cmd_from_pid(proc->pid, 0);
-		rp_event(proc, "Process/Thread %d (%s) has forked %d\n",
+		sp_rtrace_print_comment(proc->rp_data->fp, "Process/Thread %d (%s) has forked %d\n",
 			 proc->pid, buf, child_pid);
 		free(buf);
 
@@ -110,7 +111,7 @@ static void process_kill(struct process *proc, int signo)
 	      proc->pid, signo);
 
 	if (trace_enabled(proc)) {
-		rp_event(proc, "Process/Thread %d was killed by signal %d\n",
+		sp_rtrace_print_comment(proc->rp_data->fp, "Process/Thread %d was killed by signal %d\n",
 			 proc->pid, signo);
 	}
 }
@@ -131,9 +132,9 @@ static void process_signal(struct process *proc, int signo)
 	      proc->pid, signo);
 
 	if (signo == SIGUSR1) {
-		for_each_process(toggle_tracing, NULL);
+		for_each_process((for_each_process_t)toggle_tracing, NULL);
 	} else if (trace_enabled(proc)) {
-		rp_event(proc, "Process/Thread %d received signal %d\n",
+		sp_rtrace_print_comment(proc->rp_data->fp, "Process/Thread %d received signal %d\n",
 			 proc->pid, signo);
 	}
 }
@@ -143,7 +144,7 @@ static void process_interrupt(struct process *proc)
 	debug(3, "process/thread interrupted (pid=%d)", proc->pid);
 
 	if (trace_enabled(proc)) {
-		rp_event(proc, "Process/Thread %d was detached\n", proc->pid);
+		sp_rtrace_print_comment(proc->rp_data->fp, "Process/Thread %d was detached\n", proc->pid);
 		rp_finish(proc);
 	}
 }
@@ -167,7 +168,7 @@ static void function_exit(struct process *proc, const char *name)
 {
 	debug(3, "function return (pid=%d, name=%s)", proc->pid, name);
 
-	/* Avoid reporting internal/recursive calls */ 
+	/* Avoid reporting internal/recursive calls */
 	if (proc->callstack == NULL || proc->callstack->next != NULL)
 		return;
 
@@ -182,8 +183,7 @@ static void library_load(struct process *proc, addr_t start_addr,
 	      proc->pid, start_addr, end_addr, path);
 
 	if (trace_enabled(proc))
-		rp_event(proc, "%s => 0x%08x-0x%08x\n", path, start_addr,
-			 end_addr);
+		sp_rtrace_print_mmap(proc->rp_data->fp, path, (void*)start_addr, (void*)end_addr);
 }
 
 static void cb_register(struct callback *cb)
