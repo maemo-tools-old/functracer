@@ -110,7 +110,7 @@ static void thread_function_exit(struct process *proc, const char *name)
 			/* failures doesn't allocate resources - skip */
 			return;
 		}
-		sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "pthread_join", 0, (void*)fn_argument(proc, 0));
+		sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "pthread_join", 0, (void*)fn_argument(proc, 0), NULL);
 
 	} else if (strcmp(name, "pthread_create") == 0) {
 		if (retval != 0) {
@@ -129,14 +129,14 @@ static void thread_function_exit(struct process *proc, const char *name)
 			return;
 		}
 		sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "pthread_craete",
-				RES_SIZE, (void*)trace_mem_readw(proc, fn_argument(proc, 0)) );
+				RES_SIZE, (void*)trace_mem_readw(proc, fn_argument(proc, 0)), NULL);
 
 	} else if (strcmp(name, "pthread_detach") == 0) {
 		if (retval != 0) {
 			/* failures doesn't allocate resources - skip */
 			return;
 		}
-		sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "pthread_detach", 0, (void*)fn_argument(proc, 0));
+		sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "pthread_detach", 0, (void*)fn_argument(proc, 0), NULL);
 
 	} else {
 		msg_warn("unexpected function exit (%s)\n", name);
@@ -170,12 +170,19 @@ static int thread_library_match(const char *symname)
 			strcmp(symname, "pthread_detach") == 0);
 }
 
+static void thread_report_init(struct process *proc)
+{
+	assert(proc->rp_data != NULL);
+	sp_rtrace_print_resource(proc->rp_data->fp, 1, "pthread_t", "threads");
+}
+
 struct plg_api *init()
 {
 	static struct plg_api ma = {
 		.api_version = thread_api_version,
 		.function_exit = thread_function_exit,
 		.library_match = thread_library_match,
+		.report_init = thread_report_init,
 	};
 	return &ma;
 }

@@ -51,16 +51,16 @@ static void gobject_function_exit(struct process *proc, const char *name)
 	if (strcmp(name, "g_object_newv") == 0) {
 		/* suppress allocation failure reports */
 		if (retval == 0) return;
-		sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "g_object_newv", RES_SIZE, (void*)retval);
+		sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "g_object_newv", RES_SIZE, (void*)retval, NULL);
 
 	} else if (strcmp(name, "g_object_ref") == 0) {
 		/* suppress allocation failure reports */
 		if (retval == 0) return;
-		sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "g_object_ref", RES_SIZE, (void*)retval);
+		sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "g_object_ref", RES_SIZE, (void*)retval, NULL);
 
 	} else if (strcmp(name, "g_object_unref") == 0) {
 				size_t arg0 = fn_argument(proc, 0);
-		sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "g_object_unref", 0, (void*)retval);
+		sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "g_object_unref", 0, (void*)retval, NULL);
 	} else {
 		msg_warn("unexpected function exit (%s)\n", name);
 		return;
@@ -76,12 +76,19 @@ static int gobject_library_match(const char *symname)
 			strcmp(symname, "g_object_unref") == 0);
 }
 
+static void gobject_report_init(struct process *proc)
+{
+	assert(proc->rp_data != NULL);
+	sp_rtrace_print_resource(proc->rp_data->fp, 1, "gobject", "gobjects");
+}
+
 struct plg_api *init()
 {
 	static struct plg_api ma = {
 		.api_version = gobject_api_version,
 		.function_exit = gobject_function_exit,
 		.library_match = gobject_library_match,
+		.report_init = gobject_report_init,
 	};
 	return &ma;
 }

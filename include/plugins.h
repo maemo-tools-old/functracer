@@ -40,11 +40,21 @@ struct plg_api {
 	void (*syscall_enter)(struct process *proc, int sysno);
 	void (*syscall_exit)(struct process *proc, int sysno);
 	int (*library_match)(const char *name);
+	void (*report_init)(struct process *proc);
 };
 
 void plg_init();
 void plg_finish();
 void plg_function_exit(struct process *proc, const char *name);
 int plg_match(const char *symname);
+
+/**
+ * Initializes plugin report printing.
+ *
+ * This function is called every time after a new report is created
+ * and header record is written.
+ * @param proc
+ */
+void plg_rp_init(struct process *proc);
 
 #endif /* !FTK_PLUGINS_H */

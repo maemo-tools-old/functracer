@@ -127,7 +127,7 @@ void plg_init()
  	 * otherwise then prefixing it with default plugin directory and
 	 * postfixing with .so */
 	if (stat(arguments.plugin, &buf) == 0 && S_ISREG(buf.st_mode))
-		snprintf(plg_name, sizeof(plg_name), arguments.plugin);
+		strncpy(plg_name, arguments.plugin, sizeof(plg_name));
 	else
 		snprintf(plg_name, sizeof(plg_name), "%s/%s.so", PLG_PATH,
 		 	 arguments.plugin);
@@ -140,4 +140,15 @@ void plg_finish()
 		dlclose(handle);
 		handle = NULL;
 	}
+}
+
+void plg_rp_init(struct process *proc)
+{
+	if (handle == NULL)
+		return;
+	if (plg_api->report_init == NULL) {
+		msg_warn("Could not read symbol: report_init");
+		return;
+	}
+	plg_api->report_init(proc);
 }

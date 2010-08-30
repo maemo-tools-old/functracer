@@ -34,6 +34,7 @@
 #include "debug.h"
 #include "report.h"
 #include "options.h"
+#include "plugins.h"
 
 #define FNAME_FMT "%s/allocs-%d.%d.trace"
 
@@ -111,6 +112,7 @@ int rp_init(struct process *proc)
 		int ret = rp_write_header(proc);
 		if (ret < 0)
 			return ret;
+		plg_rp_init(proc);
 	}
 	proc->bt_data = bt_init(proc->pid);
 	if (arguments.verbose)
