@@ -155,6 +155,19 @@ static void file_function_exit(struct process *proc, const char *name)
 			sp_rtrace_print_args(rd->fp, args);
 		}
 
+	} else if (strcmp(name, "__open64") == 0) {
+		if (retval == -1) return;
+		else {
+			char details[MAX_DETAILS_LEN] = "", *args[8] = {details}, **pargs = args, *ptr = *pargs++;
+			sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "open64", RES_SIZE, (void*)retval, RES_FD);
+
+			*pargs = ptr + STRCAT_ARG_STR(ptr, MAX_DETAILS_LEN, "filename:", proc, 0) + 1;
+			STRCAT_ARG_INT(*pargs, MAX_DETAILS_LEN - (*pargs - details), "flags:", proc, 1);
+
+			*++pargs = NULL;
+			sp_rtrace_print_args(rd->fp, args);
+		}
+
 	} else if (strcmp(name, "creat") == 0) {
 		if (retval == -1) return;
 		else {
@@ -298,6 +311,7 @@ static int file_library_match(const char *symname)
 	return(strcmp(symname, "_IO_fopen") == 0 ||
 				strcmp(symname, "_IO_fclose") == 0 ||
 				strcmp(symname, "__open") == 0 ||
+				strcmp(symname, "__open64") == 0 ||
 				strcmp(symname, "__close") == 0 ||
 				strcmp(symname, "fcloseall") == 0 ||
 				strcmp(symname, "creat") == 0 ||
