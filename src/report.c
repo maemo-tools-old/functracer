@@ -36,7 +36,7 @@
 #include "options.h"
 #include "plugins.h"
 
-#define FNAME_FMT "%s/allocs-%d.%d.trace"
+#define FNAME_FMT "%s/%d-%d.rtrace.txt"
 
 void rp_write_backtraces(struct process *proc)
 {
