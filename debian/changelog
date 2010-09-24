@@ -1,3 +1,11 @@
+functracer (0.20) unstable; urgency=low
+
+  * Use sp-rtrace compatible output format. Fixes: NB#182049
+  * Add automake to build-dependencies. Fixes: NB#194288
+  * Update README.
+
+ -- Tommi Rantala <ext-tommi.1.rantala@nokia.com>  Fri, 24 Sep 2010 10:24:51 +0300
+
 functracer (0.19) unstable; urgency=low
 
   * Fix SIGINT/SIGTERM signals handling. Fixes: NB#120608
