@@ -115,7 +115,7 @@ AS_CASE($host_cpu,
 AC_SUBST([ARCH])
 
 # Define build architecture
-AC_DEFINE_UNQUOTED([BUILD_ARCH], ["$host"], Build architecture.)
+AC_DEFINE_UNQUOTED([BUILD_ARCH], "$DEB_BUILD_GNU_TYPE", Build architecture.)
 
 AC_CONFIG_FILES([
   Makefile
