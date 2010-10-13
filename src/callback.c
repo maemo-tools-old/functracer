@@ -172,8 +172,14 @@ static void function_exit(struct process *proc, const char *name)
 	if (proc->callstack == NULL || proc->callstack->next != NULL)
 		return;
 
-	if (trace_enabled(proc))
+	/* first check for context handling function */
+	if (!context_function_exit(proc, name)) return;
+	
+	/* then check for plugin function */
+	if (trace_enabled(proc)) {
+		
 		plg_function_exit(proc, name);
+	}
 }
 
 static void library_load(struct process *proc, addr_t start_addr,

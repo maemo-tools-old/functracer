@@ -38,6 +38,7 @@
 #include "solib.h"
 #include "ssol.h"
 #include "target_mem.h"
+#include "context.h"
 
 static void enable_breakpoint(struct process *proc, struct breakpoint *bkpt)
 {
@@ -126,7 +127,7 @@ static void register_entry_breakpoint(struct process *proc, const char *libname,
 {
 	struct breakpoint *bkpt, *bkpt2;
 
-	if (plg_match(symname)) {
+	if (context_match(symname) || plg_match(symname)) {
 		bkpt = register_breakpoint(proc, symaddr, BKPT_ENTRY);
 		bkpt->symbol = strdup(symname);
 		bkpt2 = register_breakpoint(proc, ssol_new_slot(proc), BKPT_SENTINEL);

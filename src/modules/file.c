@@ -36,6 +36,7 @@
 #include "plugins.h"
 #include "process.h"
 #include "report.h"
+#include "context.h"
 
 #define FILE_API_VERSION "2.0"
 #define RES_SIZE 1
@@ -129,7 +130,7 @@ static void file_function_exit(struct process *proc, const char *name)
 		if (retval == 0) return;
 		else {
 			char details[MAX_DETAILS_LEN] = "", *args[8] = {details}, **pargs = args, *ptr = *pargs++;
-			sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "fopen", RES_SIZE, (void*)retval, RES_FD);
+			sp_rtrace_print_call(rd->fp, rd->rp_number, context_mask, RP_TIMESTAMP, "fopen", RES_SIZE, (void*)retval, RES_FD);
 
 			*pargs = ptr + STRCAT_ARG_STR(ptr, MAX_DETAILS_LEN, "filename:", proc, 0) + 1;
 			STRCAT_ARG_STR(*pargs, MAX_DETAILS_LEN - (*pargs - details), "opentype:", proc, 1);
@@ -140,13 +141,13 @@ static void file_function_exit(struct process *proc, const char *name)
 	} else if (strcmp(name, "_IO_fclose") == 0) {
 		size_t arg0 = fn_argument(proc, 0);
 		is_free = 1;
-		sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "fclose", 0, (void*)arg0, RES_FP);
+		sp_rtrace_print_call(rd->fp, rd->rp_number, context_mask, RP_TIMESTAMP, "fclose", 0, (void*)arg0, RES_FP);
 
 	} else if (strcmp(name, "__open") == 0) {
 		if (retval == -1) return;
 		else {
 			char details[MAX_DETAILS_LEN] = "", *args[8] = {details}, **pargs = args, *ptr = *pargs++;
-			sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "open", RES_SIZE, (void*)retval, RES_FD);
+			sp_rtrace_print_call(rd->fp, rd->rp_number, context_mask, RP_TIMESTAMP, "open", RES_SIZE, (void*)retval, RES_FD);
 
 			*pargs = ptr + STRCAT_ARG_STR(ptr, MAX_DETAILS_LEN, "filename:", proc, 0) + 1;
 			STRCAT_ARG_INT(*pargs, MAX_DETAILS_LEN - (*pargs - details), "flags:", proc, 1);
@@ -159,7 +160,7 @@ static void file_function_exit(struct process *proc, const char *name)
 		if (retval == -1) return;
 		else {
 			char details[MAX_DETAILS_LEN] = "", *args[8] = {details}, **pargs = args, *ptr = *pargs++;
-			sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "open64", RES_SIZE, (void*)retval, RES_FD);
+			sp_rtrace_print_call(rd->fp, rd->rp_number, context_mask, RP_TIMESTAMP, "open64", RES_SIZE, (void*)retval, RES_FD);
 
 			*pargs = ptr + STRCAT_ARG_STR(ptr, MAX_DETAILS_LEN, "filename:", proc, 0) + 1;
 			STRCAT_ARG_INT(*pargs, MAX_DETAILS_LEN - (*pargs - details), "flags:", proc, 1);
@@ -172,7 +173,7 @@ static void file_function_exit(struct process *proc, const char *name)
 		if (retval == -1) return;
 		else {
 			char details[MAX_DETAILS_LEN] = "", *args[8] = {details}, **pargs = args, *ptr = *pargs++;
-			sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "creat", RES_SIZE, (void*)retval, RES_FD);
+			sp_rtrace_print_call(rd->fp, rd->rp_number, context_mask, RP_TIMESTAMP, "creat", RES_SIZE, (void*)retval, RES_FD);
 
 			*pargs = ptr + STRCAT_ARG_STR(ptr, MAX_DETAILS_LEN, "filename:", proc, 0) + 1;
 			STRCAT_ARG_INT(*pargs, MAX_DETAILS_LEN - (*pargs - details), "flags:", proc, 1);
@@ -183,18 +184,18 @@ static void file_function_exit(struct process *proc, const char *name)
 	} else if (strcmp(name, "__close") == 0) {
 		size_t arg0 = fn_argument(proc, 0);
 		is_free = 1;
-		sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "close", 0, (void*)arg0, RES_FD);
+		sp_rtrace_print_call(rd->fp, rd->rp_number, context_mask, RP_TIMESTAMP, "close", 0, (void*)arg0, RES_FD);
 
 	} else if (strcmp(name, "fcloseall") == 0) {
 		is_free = 1;
-		sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "fcloseall", 0, (void*)0, RES_FP);
+		sp_rtrace_print_call(rd->fp, rd->rp_number, context_mask, RP_TIMESTAMP, "fcloseall", 0, (void*)0, RES_FP);
 
 	} else if (strcmp(name, "freopen") == 0) {
-		sp_rtrace_print_call(rd->fp, rd->rp_number++, 0, RP_TIMESTAMP, "fclose", 0, (void*)fn_argument(proc, 2), RES_FP);
+		sp_rtrace_print_call(rd->fp, rd->rp_number++, context_mask, RP_TIMESTAMP, "fclose", 0, (void*)fn_argument(proc, 2), RES_FP);
 		if (retval == 0) return;
 
 		char details[MAX_DETAILS_LEN] = "", *args[8] = {details}, **pargs = args, *ptr = *pargs++;
-		sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "freopen", RES_SIZE, (void*)retval, RES_FP);
+		sp_rtrace_print_call(rd->fp, rd->rp_number, context_mask, RP_TIMESTAMP, "freopen", RES_SIZE, (void*)retval, RES_FP);
 
 		*pargs = ptr + STRCAT_ARG_STR(ptr, MAX_DETAILS_LEN, "filename:", proc, 0) + 1;
 		STRCAT_ARG_STR(*pargs, MAX_DETAILS_LEN - (*pargs - details), "opentype:", proc, 1);
@@ -203,11 +204,11 @@ static void file_function_exit(struct process *proc, const char *name)
 
 	} else if (strcmp(name, "_IO_fdopen") == 0) {
 		size_t filedes = fn_argument(proc, 0);
-		sp_rtrace_print_call(rd->fp, rd->rp_number++, 0, RP_TIMESTAMP, "fdopen", 0, (void*)filedes, RES_FD);
+		sp_rtrace_print_call(rd->fp, rd->rp_number++, context_mask, RP_TIMESTAMP, "fdopen", 0, (void*)filedes, RES_FD);
 		if (retval == 0) return;
 
 		char details[MAX_DETAILS_LEN] = "", *args[8] = {details}, **pargs = args, *ptr = *pargs++;
-		sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "fdopen", RES_SIZE, (void*)retval, RES_FD);
+		sp_rtrace_print_call(rd->fp, rd->rp_number, context_mask, RP_TIMESTAMP, "fdopen", RES_SIZE, (void*)retval, RES_FD);
 
 		*pargs = ptr + STRCAT_CONST_INT(ptr, MAX_DETAILS_LEN, "descriptor:", filedes) + 1;
 		STRCAT_ARG_STR(*pargs, MAX_DETAILS_LEN - (*pargs - details), "opentype:", proc, 1);
@@ -218,7 +219,7 @@ static void file_function_exit(struct process *proc, const char *name)
 		if (retval == -1) return;
 		else {
 			char details[MAX_DETAILS_LEN] = "", *args[8] = {details}, **pargs = args, *ptr = *pargs++;
-			sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "socket", RES_SIZE, (void*)retval, RES_FD);
+			sp_rtrace_print_call(rd->fp, rd->rp_number, context_mask, RP_TIMESTAMP, "socket", RES_SIZE, (void*)retval, RES_FD);
 
 			*pargs = ptr + sprintf(ptr, "namespace:%ld", fn_argument(proc, 0));
 			ptr = *pargs++;
@@ -232,7 +233,7 @@ static void file_function_exit(struct process *proc, const char *name)
 		if (retval == -1) return;
 		else {
 			char details[MAX_DETAILS_LEN] = "", *args[8] = {details}, **pargs = args, *ptr = *pargs++;
-			sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "accept", RES_SIZE, (void*)retval, RES_FD);
+			sp_rtrace_print_call(rd->fp, rd->rp_number, context_mask, RP_TIMESTAMP, "accept", RES_SIZE, (void*)retval, RES_FD);
 
 			sprintf(ptr, "socket:%ld", fn_argument(proc, 0));
 			*++pargs = NULL;
@@ -242,13 +243,13 @@ static void file_function_exit(struct process *proc, const char *name)
 	} else if (strcmp(name, "__dup2") == 0) {
 		if (retval == -1) return;
 		else {
-			sp_rtrace_print_call(rd->fp, rd->rp_number++, 0, RP_TIMESTAMP, "dup2", 0, (void*)fn_argument(proc, 1), RES_FD);
-			sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "dup2", RES_SIZE, (void*)retval, RES_FD);
+			sp_rtrace_print_call(rd->fp, rd->rp_number++, context_mask, RP_TIMESTAMP, "dup2", 0, (void*)fn_argument(proc, 1), RES_FD);
+			sp_rtrace_print_call(rd->fp, rd->rp_number, context_mask, RP_TIMESTAMP, "dup2", RES_SIZE, (void*)retval, RES_FD);
 		}
 
 	} else if (strcmp(name, "dup") == 0) {
 		if (retval == -1) return;
-		sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "dup", RES_SIZE, (void*)retval, RES_FD);
+		sp_rtrace_print_call(rd->fp, rd->rp_number, context_mask, RP_TIMESTAMP, "dup", RES_SIZE, (void*)retval, RES_FD);
 
 	} else if (strcmp(name, "socketpair") == 0){
 		if (retval == -1) return;
@@ -266,9 +267,9 @@ static void file_function_exit(struct process *proc, const char *name)
 			filedes[0] = trace_mem_readw(proc, filedes_addr);
 			filedes[1] = trace_mem_readw(proc, filedes_addr+4);
 
-			sp_rtrace_print_call(rd->fp, rd->rp_number++, 0, RP_TIMESTAMP, "socketpair", RES_SIZE, (void*)filedes[0], RES_FD);
+			sp_rtrace_print_call(rd->fp, rd->rp_number++, context_mask, RP_TIMESTAMP, "socketpair", RES_SIZE, (void*)filedes[0], RES_FD);
 			sp_rtrace_print_args(rd->fp, args);
-			sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "socketpair", RES_SIZE, (void*)filedes[1], RES_FD);
+			sp_rtrace_print_call(rd->fp, rd->rp_number, context_mask, RP_TIMESTAMP, "socketpair", RES_SIZE, (void*)filedes[1], RES_FD);
 			sp_rtrace_print_args(rd->fp, args);
 		}
 
@@ -278,14 +279,14 @@ static void file_function_exit(struct process *proc, const char *name)
 			size_t arg0 = fn_argument(proc, 0);
 			int fd1 = trace_mem_readw(proc, arg0);
 			int fd2 = trace_mem_readw(proc, arg0 + 4);
-			sp_rtrace_print_call(rd->fp, rd->rp_number++, 0, RP_TIMESTAMP, "pipe", RES_SIZE, (void*)fd1, RES_FD);
-			sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "pipe", RES_SIZE, (void*)fd2, RES_FD);
+			sp_rtrace_print_call(rd->fp, rd->rp_number++, context_mask, RP_TIMESTAMP, "pipe", RES_SIZE, (void*)fd1, RES_FD);
+			sp_rtrace_print_call(rd->fp, rd->rp_number, context_mask, RP_TIMESTAMP, "pipe", RES_SIZE, (void*)fd2, RES_FD);
 		}
 
 	} else if (strcmp(name, "fcntl") == 0) {
 		size_t arg1 = fn_argument(proc, 1);
 		if ( (arg1 == F_DUPFD || arg1 == F_DUPFD_CLOEXEC) && retval != -1){
-			sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "fcntl", RES_SIZE, (void*)retval, RES_FD);
+			sp_rtrace_print_call(rd->fp, rd->rp_number, context_mask, RP_TIMESTAMP, "fcntl", RES_SIZE, (void*)retval, RES_FD);
 		}
 		else {
 			/* not handling the rest of the fcntl commands */
@@ -294,7 +295,7 @@ static void file_function_exit(struct process *proc, const char *name)
 
 	} else if (strcmp(name, "inotify_init") == 0) {
 		if (retval == -1) return;
-		sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "inotify_init", RES_SIZE, (void*)retval, RES_FD);
+		sp_rtrace_print_call(rd->fp, rd->rp_number, context_mask, RP_TIMESTAMP, "inotify_init", RES_SIZE, (void*)retval, RES_FD);
 
 	 } else {
 		msg_warn("unexpected function exit (%s)\n", name);

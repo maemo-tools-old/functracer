@@ -68,6 +68,7 @@
 #include "plugins.h"
 #include "process.h"
 #include "report.h"
+#include "context.h"
 
 #define SHMSYSV_API_VERSION "2.0"
 #define RES_SIZE 1
@@ -126,7 +127,7 @@ static void function_exit(struct process *proc, const char *name)
 			/* skip failure or calls without IPC_CREAT flag */
 			return;
 		}
-		sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "shmget", fn_argument(proc, 1), (void*)retval, RES_TYPE_SEG);
+		sp_rtrace_print_call(rd->fp, rd->rp_number, context_mask, RP_TIMESTAMP, "shmget", fn_argument(proc, 1), (void*)retval, RES_TYPE_SEG);
 	}
 	else if (strcmp(name, "shmctl") == 0) {
 		/*
@@ -141,7 +142,7 @@ static void function_exit(struct process *proc, const char *name)
 		int shmid = fn_argument(proc, 0);
 		struct shmid_ds ds;
 		if (shmctl(shmid, IPC_STAT | IPC_64, &ds) != -1 || (errno != EIDRM && errno != EINVAL) ) return;
-		sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "shmctl", 0, (void*)shmid, RES_TYPE_SEG);
+		sp_rtrace_print_call(rd->fp, rd->rp_number, context_mask, RP_TIMESTAMP, "shmctl", 0, (void*)shmid, RES_TYPE_SEG);
 	}
 	else if (strcmp(name, "shmat") == 0) {
 		if (retval == -1) return;
@@ -173,7 +174,7 @@ static void function_exit(struct process *proc, const char *name)
 			}
 			tsearch((void*)node, &addr2shmid, compare_nodes);
 		}
-		sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "shmat", size, (void*)retval, RES_TYPE_ADDR);
+		sp_rtrace_print_call(rd->fp, rd->rp_number, context_mask, RP_TIMESTAMP, "shmat", size, (void*)retval, RES_TYPE_ADDR);
 		sp_rtrace_print_args(rd->fp, args);
 	}
 	else if (strcmp(name, "shmdt") == 0) {
@@ -182,7 +183,7 @@ static void function_exit(struct process *proc, const char *name)
 		struct shmid_ds ds;
 		addrmap_t node = {.addr = (void*)fn_argument(proc, 0)};
 
-		sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "shmdt", 0, (void*)node.addr, RES_TYPE_ADDR);
+		sp_rtrace_print_call(rd->fp, rd->rp_number, context_mask, RP_TIMESTAMP, "shmdt", 0, (void*)node.addr, RES_TYPE_ADDR);
 
 		/* if the address was attached by the target process (it's stored in the addr2shmid mapping) check if
 		 * the segment is still valid. It might have been destroyed if it was marked with SHM_DEST and the last
@@ -195,7 +196,7 @@ static void function_exit(struct process *proc, const char *name)
 				rp_write_backtraces(proc);
 				rd->rp_number++;
 				/* write segment destroying event */
-				sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "shmdt", 0, (void*)TNODE(pnode)->shmid, RES_TYPE_SEG);
+				sp_rtrace_print_call(rd->fp, rd->rp_number, context_mask, RP_TIMESTAMP, "shmdt", 0, (void*)TNODE(pnode)->shmid, RES_TYPE_SEG);
 			}
 			/* remove the address->segment mapping */
 			tdelete((void*)pnode, &addr2shmid, compare_nodes);

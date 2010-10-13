@@ -48,6 +48,7 @@
 #include "plugins.h"
 #include "process.h"
 #include "report.h"
+#include "context.h"
 
 #define THREAD_API_VERSION "2.0"
 #define RES_SIZE 1
@@ -110,7 +111,7 @@ static void thread_function_exit(struct process *proc, const char *name)
 			/* failures doesn't allocate resources - skip */
 			return;
 		}
-		sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "pthread_join", 0, (void*)fn_argument(proc, 0), NULL);
+		sp_rtrace_print_call(rd->fp, rd->rp_number, context_mask, RP_TIMESTAMP, "pthread_join", 0, (void*)fn_argument(proc, 0), NULL);
 
 	} else if (strcmp(name, "pthread_create") == 0) {
 		if (retval != 0) {
@@ -128,7 +129,7 @@ static void thread_function_exit(struct process *proc, const char *name)
 		if (state == PTHREAD_CREATE_DETACHED) {
 			return;
 		}
-		sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "pthread_craete",
+		sp_rtrace_print_call(rd->fp, rd->rp_number, context_mask, RP_TIMESTAMP, "pthread_craete",
 				RES_SIZE, (void*)trace_mem_readw(proc, fn_argument(proc, 0)), NULL);
 
 	} else if (strcmp(name, "pthread_detach") == 0) {
@@ -136,7 +137,7 @@ static void thread_function_exit(struct process *proc, const char *name)
 			/* failures doesn't allocate resources - skip */
 			return;
 		}
-		sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "pthread_detach", 0, (void*)fn_argument(proc, 0), NULL);
+		sp_rtrace_print_call(rd->fp, rd->rp_number, context_mask, RP_TIMESTAMP, "pthread_detach", 0, (void*)fn_argument(proc, 0), NULL);
 
 	} else {
 		msg_warn("unexpected function exit (%s)\n", name);

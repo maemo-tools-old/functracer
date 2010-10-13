@@ -36,6 +36,7 @@
 #include "plugins.h"
 #include "process.h"
 #include "report.h"
+#include "context.h"
 
 #define GOBJECT_API_VERSION "2.0"
 #define RES_SIZE 4
@@ -51,16 +52,16 @@ static void gobject_function_exit(struct process *proc, const char *name)
 	if (strcmp(name, "g_object_newv") == 0) {
 		/* suppress allocation failure reports */
 		if (retval == 0) return;
-		sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "g_object_newv", RES_SIZE, (void*)retval, NULL);
+		sp_rtrace_print_call(rd->fp, rd->rp_number, context_mask, RP_TIMESTAMP, "g_object_newv", RES_SIZE, (void*)retval, NULL);
 
 	} else if (strcmp(name, "g_object_ref") == 0) {
 		/* suppress allocation failure reports */
 		if (retval == 0) return;
-		sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "g_object_ref", RES_SIZE, (void*)retval, NULL);
+		sp_rtrace_print_call(rd->fp, rd->rp_number, context_mask, RP_TIMESTAMP, "g_object_ref", RES_SIZE, (void*)retval, NULL);
 
 	} else if (strcmp(name, "g_object_unref") == 0) {
 				size_t arg0 = fn_argument(proc, 0);
-		sp_rtrace_print_call(rd->fp, rd->rp_number, 0, RP_TIMESTAMP, "g_object_unref", 0, (void*)retval, NULL);
+		sp_rtrace_print_call(rd->fp, rd->rp_number, context_mask, RP_TIMESTAMP, "g_object_unref", 0, (void*)retval, NULL);
 	} else {
 		msg_warn("unexpected function exit (%s)\n", name);
 		return;
