@@ -36,6 +36,8 @@
 #ifndef CONTEXT_H
 #define CONTEXT_H
 
+struct process;
+
 /* the call context value */
 extern int context_mask;
 
