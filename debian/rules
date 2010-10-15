@@ -22,7 +22,7 @@ ifneq (,$(findstring debug,$(DEB_BUILD_OPTIONS)))
 endif
 
 configure: configure.ac
-	autoreconf -fisv
+	autoreconf -f -i -s -v
 
 config.status: configure
 	dh_testdir
