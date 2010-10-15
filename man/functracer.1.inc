@@ -158,7 +158,7 @@ Ricardo Guimaraes <ricardo.guimaraes@indt.org.br>
 Thiago Santos <thiago.santos@indt.org.br>
 
 [COPYRIGHT]
-Copyright (C) 2008, 2009 Nokia Corporation.
+Copyright (C) 2008-2010 Nokia Corporation.
 
 This is free software.  You may redistribute copies of it under the terms
 of the GNU General Public License as published by the Free Software Foundation;
