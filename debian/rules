@@ -93,7 +93,7 @@ binary-arch: build install
 #	dh_installinfo
 	dh_installman -p functracer man/functracer.1
 	dh_link
-	dh_strip --dbg-package=functracer
+	dh_strip --dbg-package=functracer-dbg
 	dh_compress
 	dh_fixperms
 #	dh_perl
