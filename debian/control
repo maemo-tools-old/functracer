@@ -7,7 +7,7 @@ Standards-Version: 3.8.0
 
 Package: functracer
 Architecture: any
-Depends: ${shlibs:Depends}
+Depends: ${misc:Depends}, ${shlibs:Depends}
 Description: A Function Backtrace Tool
  Functracer is a debugging tool. It collects backtraces, arguments and return
  value of functions specified in a plugin. It works with optimized (-O2) code,
@@ -18,7 +18,7 @@ Package: functracer-dbg
 Section: devel
 Priority: extra
 Architecture: any
-Depends: functracer (= ${binary:Version})
+Depends: ${misc:Depends}, functracer (= ${binary:Version})
 Description: A Function Backtrace Tool - debug
  Functracer is a debugging tool. It collects backtraces, arguments and return
  value of functions specified in a plugin. It works with optimized (-O2) code,
