@@ -28,6 +28,7 @@
 #include <string.h>
 #include <sp_rtrace_formatter.h>
 
+#include "context.h"
 #include "callback.h"
 #include "debug.h"
 #include "function.h"
