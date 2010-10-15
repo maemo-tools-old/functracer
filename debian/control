@@ -15,7 +15,7 @@ Description: A Function Backtrace Tool
  themselves, or in separate debug files.
 
 Package: functracer-dbg
-Section: devel
+Section: debug
 Priority: extra
 Architecture: any
 Depends: ${misc:Depends}, functracer (= ${binary:Version})
