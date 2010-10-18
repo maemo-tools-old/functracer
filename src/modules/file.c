@@ -130,7 +130,7 @@ static void file_function_exit(struct process *proc, const char *name)
 		if (retval == 0) return;
 		else {
 			char details[MAX_DETAILS_LEN] = "", *args[8] = {details}, **pargs = args, *ptr = *pargs++;
-			sp_rtrace_print_call(rd->fp, rd->rp_number, context_mask, RP_TIMESTAMP, "fopen", RES_SIZE, (void*)retval, RES_FD);
+			sp_rtrace_print_call(rd->fp, rd->rp_number, context_mask, RP_TIMESTAMP, "fopen", RES_SIZE, (void*)retval, RES_FP);
 
 			*pargs = ptr + STRCAT_ARG_STR(ptr, MAX_DETAILS_LEN, "filename:", proc, 0) + 1;
 			STRCAT_ARG_STR(*pargs, MAX_DETAILS_LEN - (*pargs - details), "opentype:", proc, 1);
