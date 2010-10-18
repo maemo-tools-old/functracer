@@ -191,7 +191,11 @@ static void file_function_exit(struct process *proc, const char *name)
 		sp_rtrace_print_call(rd->fp, rd->rp_number, context_mask, RP_TIMESTAMP, "fcloseall", 0, (void*)0, RES_FP);
 
 	} else if (strcmp(name, "freopen") == 0) {
-		sp_rtrace_print_call(rd->fp, rd->rp_number++, context_mask, RP_TIMESTAMP, "fclose", 0, (void*)fn_argument(proc, 2), RES_FP);
+		sp_rtrace_print_call(rd->fp, rd->rp_number++, context_mask, RP_TIMESTAMP, "freopen", 0, (void*)fn_argument(proc, 2), RES_FP);
+
+		if (arguments.enable_free_bkt) rp_write_backtraces(proc);
+		else sp_rtrace_print_comment(rd->fp, "\n"); 
+
 		if (retval == 0) return;
 
 		char details[MAX_DETAILS_LEN] = "", *args[8] = {details}, **pargs = args, *ptr = *pargs++;
@@ -205,6 +209,10 @@ static void file_function_exit(struct process *proc, const char *name)
 	} else if (strcmp(name, "_IO_fdopen") == 0) {
 		size_t filedes = fn_argument(proc, 0);
 		sp_rtrace_print_call(rd->fp, rd->rp_number++, context_mask, RP_TIMESTAMP, "fdopen", 0, (void*)filedes, RES_FD);
+
+		if (arguments.enable_free_bkt) rp_write_backtraces(proc);
+		else sp_rtrace_print_comment(rd->fp, "\n"); 
+		
 		if (retval == 0) return;
 
 		char details[MAX_DETAILS_LEN] = "", *args[8] = {details}, **pargs = args, *ptr = *pargs++;
@@ -244,6 +252,10 @@ static void file_function_exit(struct process *proc, const char *name)
 		if (retval == -1) return;
 		else {
 			sp_rtrace_print_call(rd->fp, rd->rp_number++, context_mask, RP_TIMESTAMP, "dup2", 0, (void*)fn_argument(proc, 1), RES_FD);
+
+			if (arguments.enable_free_bkt) rp_write_backtraces(proc);
+			else sp_rtrace_print_comment(rd->fp, "\n"); 
+			
 			sp_rtrace_print_call(rd->fp, rd->rp_number, context_mask, RP_TIMESTAMP, "dup2", RES_SIZE, (void*)retval, RES_FD);
 		}
 
@@ -269,6 +281,8 @@ static void file_function_exit(struct process *proc, const char *name)
 
 			sp_rtrace_print_call(rd->fp, rd->rp_number++, context_mask, RP_TIMESTAMP, "socketpair", RES_SIZE, (void*)filedes[0], RES_FD);
 			sp_rtrace_print_args(rd->fp, args);
+			rp_write_backtraces(proc);
+		
 			sp_rtrace_print_call(rd->fp, rd->rp_number, context_mask, RP_TIMESTAMP, "socketpair", RES_SIZE, (void*)filedes[1], RES_FD);
 			sp_rtrace_print_args(rd->fp, args);
 		}
@@ -280,6 +294,8 @@ static void file_function_exit(struct process *proc, const char *name)
 			int fd1 = trace_mem_readw(proc, arg0);
 			int fd2 = trace_mem_readw(proc, arg0 + 4);
 			sp_rtrace_print_call(rd->fp, rd->rp_number++, context_mask, RP_TIMESTAMP, "pipe", RES_SIZE, (void*)fd1, RES_FD);
+			rp_write_backtraces(proc);
+
 			sp_rtrace_print_call(rd->fp, rd->rp_number, context_mask, RP_TIMESTAMP, "pipe", RES_SIZE, (void*)fd2, RES_FD);
 		}
 
@@ -304,6 +320,9 @@ static void file_function_exit(struct process *proc, const char *name)
 	(rd->rp_number)++;
 	if (!is_free || arguments.enable_free_bkt) {
 		rp_write_backtraces(proc);
+	}
+	else {
+		sp_rtrace_print_comment(rd->fp, "\n"); 
 	}
 }
 

@@ -118,6 +118,7 @@ static int compare_nodes(const void* node1, const void* node2)
 static void function_exit(struct process *proc, const char *name)
 {
 	struct rp_data *rd = proc->rp_data;
+	int is_free = 0;
 
 	addr_t retval = fn_return_value(proc);
 	assert(proc->rp_data != NULL);
@@ -143,6 +144,7 @@ static void function_exit(struct process *proc, const char *name)
 		struct shmid_ds ds;
 		if (shmctl(shmid, IPC_STAT | IPC_64, &ds) != -1 || (errno != EIDRM && errno != EINVAL) ) return;
 		sp_rtrace_print_call(rd->fp, rd->rp_number, context_mask, RP_TIMESTAMP, "shmctl", 0, (void*)shmid, RES_TYPE_SEG);
+		is_free = 1;
 	}
 	else if (strcmp(name, "shmat") == 0) {
 		if (retval == -1) return;
@@ -179,7 +181,8 @@ static void function_exit(struct process *proc, const char *name)
 	}
 	else if (strcmp(name, "shmdt") == 0) {
 		if (retval == -1) return;
-	
+
+		is_free = 1;
 		struct shmid_ds ds;
 		addrmap_t node = {.addr = (void*)fn_argument(proc, 0)};
 
@@ -193,7 +196,9 @@ static void function_exit(struct process *proc, const char *name)
 			/* Register segment deallocation event if the associated segment was removed after detach call */
 			if (shmctl(TNODE(pnode)->shmid, IPC_STAT | IPC_64, &ds) == -1 && (errno == EIDRM || errno == EINVAL)) {
 				/* write backtrace for address detachment event and increment event index */
-				rp_write_backtraces(proc);
+				if (arguments.enable_free_bkt) rp_write_backtraces(proc);
+				else sp_rtrace_print_comment(rd->fp, "\n"); 
+
 				rd->rp_number++;
 				/* write segment destroying event */
 				sp_rtrace_print_call(rd->fp, rd->rp_number, context_mask, RP_TIMESTAMP, "shmdt", 0, (void*)TNODE(pnode)->shmid, RES_TYPE_SEG);
@@ -203,8 +208,14 @@ static void function_exit(struct process *proc, const char *name)
 			free(TNODE(pnode));
 		}
 	}
-	rp_write_backtraces(proc);
 	rd->rp_number++;
+
+	if (!is_free || arguments.enable_free_bkt) {
+		rp_write_backtraces(proc);
+	}
+	else {
+		sp_rtrace_print_comment(rd->fp, "\n"); 
+	}
 }
 
 /**

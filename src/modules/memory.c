@@ -77,6 +77,10 @@ static void mem_function_exit(struct process *proc, const char *name)
 			/* realloc acting normally (returning same or different
 			 * address) OR acting as free so showing the freeing */
 			sp_rtrace_print_call(rd->fp, rd->rp_number++, context_mask, RP_TIMESTAMP, "realloc", 0, (void*)arg0, NULL);
+			
+			if (arguments.enable_free_bkt) rp_write_backtraces(proc);
+			else sp_rtrace_print_comment(rd->fp, "\n"); 
+			
 		}
 		if (arg1 == 0 && retval == 0) {
 			/* realloc acting as free so return */
@@ -119,8 +123,13 @@ static void mem_function_exit(struct process *proc, const char *name)
 		return;
 	}
 	(rd->rp_number)++;
-	if (!is_free || arguments.enable_free_bkt)
+	if (!is_free || arguments.enable_free_bkt) {
 		rp_write_backtraces(proc);
+	}
+	else {
+		sp_rtrace_print_comment(rd->fp, "\n"); 
+	}
+	
 }
 
 static int mem_library_match(const char *symname)
