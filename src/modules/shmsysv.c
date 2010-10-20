@@ -1,11 +1,4 @@
 /*
- * thread-resource is functracer module used to keep track on memory
- * allocation/release caused by creating/joining/detaching threads.
- *
- * Warning, the code used to determine thread attributes passed to
- * pthread_create relies on the pthread_attr_t structure internal
- * implementation.
- *
  * This file is part of Functracer.
  *
  * Copyright (C) 2010 by Nokia Corporation
