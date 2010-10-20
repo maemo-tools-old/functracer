@@ -92,17 +92,6 @@ AS_IF([test "x${PKG_CONFIG}" != "x"],
   [AC_MSG_WARN(pkg-config not found, gthreads test will not be compiled)]
 )
 
-if test "x$enable_check" = "xyes"; then
-
-AS_IF([test "x${PKG_CONFIG}" != "x"],
-  [PKG_CHECK_MODULES(CHECK, check,
-    [AC_SUBST(CHECK_CFLAGS) AC_SUBST(CHECK_LIBS) AC_SUBST(csourcedir, ../$srcdir/src)],
-    [AC_MSG_WARN(check not found, utests will not be compiled)])],
-  [AC_MSG_WARN(pkg-config not found, utests will not be compiled)],
-)
-
-fi
-
 AM_CONDITIONAL(GLIB_FOUND, [test "x${GLIB_CFLAGS}" != "x"])
 
 # Detect architecture
