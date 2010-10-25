@@ -1,3 +1,12 @@
+functracer (0.21) unstable; urgency=low
+
+  * Added shared memory module "shmsysv" for tracking shmget(), shmctl(),
+    shmdt() and shmat() calls.
+  * sp-rtrace function call context support.
+  * Add pkg-config to build-dependencies. Fixes: NB#194288
+
+ -- Tommi Rantala <ext-tommi.1.rantala@nokia.com>  Mon, 25 Oct 2010 10:09:33 +0300
+
 functracer (0.20) unstable; urgency=low
 
   * Use sp-rtrace compatible output format. Fixes: NB#182049
