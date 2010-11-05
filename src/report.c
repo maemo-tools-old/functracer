@@ -82,7 +82,7 @@ static int rp_write_header(struct process *proc)
 		rd->fp = stdout;
 
 	buf = cmd_from_pid(proc->pid, 1);
-	sp_rtrace_print_header(rd->fp, PACKAGE_STRING ,BUILD_ARCH, NULL, proc->pid, buf);
+	sp_rtrace_print_header(rd->fp, PACKAGE_STRING ,BUILD_ARCH, NULL, proc->pid, buf, arguments.depth);
 	free(buf);
 
 	return 0;
