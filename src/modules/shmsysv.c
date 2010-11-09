@@ -51,8 +51,8 @@
 #include <sys/shm.h>
 #include <errno.h>
 #include <search.h>
-
 #include <sp_rtrace_formatter.h>
+#include <sp_rtrace_defs.h>
 
 
 #include "debug.h"
@@ -232,8 +232,8 @@ static int library_match(const char *symname)
 static void report_init(struct process *proc)
 {
 	assert(proc->rp_data != NULL);
-	sp_rtrace_print_resource(proc->rp_data->fp, 1 << 0, "shmseg", "shared memory segment");
-	sp_rtrace_print_resource(proc->rp_data->fp, 1 << 1, "shmaddr", "shared memory attachments");
+	sp_rtrace_print_resource(proc->rp_data->fp, 1 << 0, "shmseg", "shared memory segment", SP_RTRACE_RESOURCE_REFCOUNT);
+	sp_rtrace_print_resource(proc->rp_data->fp, 1 << 1, "shmaddr", "shared memory attachments", SP_RTRACE_RESOURCE_DEFAULT);
 }
 
 /**
