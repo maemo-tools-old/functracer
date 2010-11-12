@@ -1,3 +1,10 @@
+functracer (0.22) unstable; urgency=low
+
+  * Fix crash when target process calls sp-rtrace context function while
+    functracer is not in tracing mode. Fixes: NB#151409
+
+ -- Tommi Rantala <ext-tommi.1.rantala@nokia.com>  Fri, 12 Nov 2010 13:09:13 +0200
+
 functracer (0.21) unstable; urgency=low
 
   * Added shared memory module "shmsysv" for tracking shmget(), shmctl(),
