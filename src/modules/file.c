@@ -29,6 +29,7 @@
 #include <string.h>
 #include <linux/fcntl.h>
 #include <sp_rtrace_formatter.h>
+#include <sp_rtrace_defs.h>
 
 #include "debug.h"
 #include "function.h"
@@ -350,8 +351,8 @@ static int file_library_match(const char *symname)
 static void file_report_init(struct process *proc)
 {
 	assert(proc->rp_data != NULL);
-	sp_rtrace_print_resource(proc->rp_data->fp, 1, RES_FD, "file descriptor");
-	sp_rtrace_print_resource(proc->rp_data->fp, 2, RES_FP, "file pointer");
+	sp_rtrace_print_resource(proc->rp_data->fp, 1, RES_FD, "file descriptor", SP_RTRACE_RESOURCE_DEFAULT);
+	sp_rtrace_print_resource(proc->rp_data->fp, 2, RES_FP, "file pointer", SP_RTRACE_RESOURCE_DEFAULT);
 }
 
 struct plg_api *init()

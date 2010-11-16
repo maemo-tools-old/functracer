@@ -40,6 +40,7 @@
 #include <sched.h>
 #include <pthread.h>
 #include <sp_rtrace_formatter.h>
+#include <sp_rtrace_defs.h>
 
 
 #include "debug.h"
@@ -183,7 +184,7 @@ static int thread_library_match(const char *symname)
 static void thread_report_init(struct process *proc)
 {
 	assert(proc->rp_data != NULL);
-	sp_rtrace_print_resource(proc->rp_data->fp, 1, "pthread_t", "threads");
+	sp_rtrace_print_resource(proc->rp_data->fp, 1, "pthread_t", "threads", SP_RTRACE_RESOURCE_DEFAULT);
 }
 
 struct plg_api *init()

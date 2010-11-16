@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sp_rtrace_formatter.h>
+#include <sp_rtrace_defs.h>
 
 #include "debug.h"
 #include "function.h"
@@ -146,7 +147,7 @@ static int mem_library_match(const char *symname)
 static void mem_report_init(struct process *proc)
 {
 	assert(proc->rp_data != NULL);
-	sp_rtrace_print_resource(proc->rp_data->fp, 1, "memory", "memory allocations");
+	sp_rtrace_print_resource(proc->rp_data->fp, 1, "memory", "memory allocations", SP_RTRACE_RESOURCE_DEFAULT);
 }
 
 struct plg_api *init()
