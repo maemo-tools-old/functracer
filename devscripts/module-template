@@ -1,0 +1,188 @@
+/*
+ * <$module.name> is a functracer module
+ * <$module.description>
+ *
+ * This file is part of Functracer.
+ *
+ * Copyright (C) 2010 by Nokia Corporation
+ *
+ * Contact: Eero Tamminen <eero.tamminen@nokia.com>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA
+ *
+ */
+
+#include <assert.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+#include <limits.h>
+#include <sp_rtrace_formatter.h>
+#include <sp_rtrace_defs.h>
+
+#include "debug.h"
+#include "function.h"
+#include "options.h"
+#include "plugins.h"
+#include "process.h"
+#include "report.h"
+#include "target_mem.h"
+#include "context.h"
+
+#define MODULE_API_VERSION "2.0"
+
+static char module_api_version[] = MODULE_API_VERSION;
+
+<set res_index = 0>
+<for resource in sections("resource")>
+unsigned int res_<$resource.name> = 1 <$lt><$lt> <$res_index>;
+<set res_index = res_index + 1>
+</for>
+
+
+/**
+ * strcat_arg_name function appends argument name to the specified buffer.
+ *
+ * @param buffer[out]   the output buffer.
+ * @param size[in]      the output buffer size.
+ * @param name[in]      the argument name to append to the buffer.
+ * @param length[in]    the argument name length (not including the terminating null character).
+ * @return              the number of appended characters (not including the terminating null character).
+ */
+static int strcat_arg_name(char* buffer, int size, const char* name, int length) {
+	if (name) {
+		strncat(buffer, name, size);
+	}
+	return length < size ? length : size - 1;
+}
+
+/**
+ * strcat_arg_str function appends zero terminated string argument name and value to the output buffer.
+ *
+ * @param buffer[out]     the output buffer.
+ * @param size[in]        the output buffer size.
+ * @param name[in]        the argument name.
+ * @param length[in]      the argument name length.
+ * @param proc[in]        the process data.
+ * @param n[in]           the argument index.
+ * @return                the number of appended characters (not including the terminating null character).
+ */
+static int strcat_arg_str(char* buffer, int size, const char* name, int length, struct process* proc, int n) {
+	int offset = strcat_arg_name(buffer, size, name, length);
+	return trace_mem_readstr(proc, fn_argument(proc, n), buffer + offset, size - offset) + offset;
+}
+
+/**
+ * strcat_arg_str function appends integer argument name and value to the output buffer.
+ *
+ * @param buffer[out]     the output buffer.
+ * @param size[in]        the output buffer size.
+ * @param name[in]        the argument name.
+ * @param length[in]      the argument name length.
+ * @param proc[in]        the process data.
+ * @param n[in]           the argument index.
+ * @return                the number of appended characters (not including the terminating null character).
+ */
+static int strcat_arg_int(char* buffer, int size, const char* name, int length, struct process* proc, int n) {
+	int offset = strcat_arg_name(buffer, size, name, length);
+	return snprintf(buffer + offset, size - offset, "%ld", fn_argument(proc, n)) + offset;
+}
+
+
+#define STRCAT_ARG_STR(buffer, size, name, proc, n)   strcat_arg_str(buffer, size, name, sizeof(name) - 1, proc, n)
+#define STRCAT_ARG_INT(buffer, size, name, proc, n)   strcat_arg_int(buffer, size, name, sizeof(name) - 1, proc, n)
+
+static void module_function_exit(struct process *proc, const char *name)
+{
+	struct rp_data *rd = proc->rp_data;
+	int is_free = 0;
+	assert(proc->rp_data != NULL);
+	addr_t rc = fn_return_value(proc);
+	
+	if (false);
+	<for function in sections("function")>
+	else if (strcmp(name, "<$function.symbol_name>") == 0) {
+		unsigned int res_size = (unsigned int)<$function.res_size>;
+		void* res_id = (void*)<$function.res_id>;
+		<if function.res_size == "0">
+		is_free = 1;
+		</if>
+		<if hasattr(function, "fail")>
+		if (<$function.fail>) return;
+		</if>
+		sp_rtrace_print_call(rd->fp, rd->rp_number, context_mask, RP_TIMESTAMP, "<$function.report_name>", res_size, res_id, "<$function.resource>");
+		<if hasattr(function, "args")>
+		  <set nargs = len(function.args) + 1>
+		  <set rxp = re.compile("([^(]+)\(([^,]+), *([^)]+)\)")>
+		char details[PATH_MAX] = {0}, *args[<$nargs>], *ptr = details, **pargs = args;
+		  <for arg in function.args>
+		     <set match = rxp.match(arg)>
+		     <if match>
+		*pargs++ = ptr;
+		ptr += STRCAT_<$match.group(1)>(ptr, PATH_MAX - (ptr - details) - 1, <$match.group(2)>, proc, <$match.group(3)>) + 1;
+		     <else>
+		     // not matching
+		     </if>
+		  </for>
+		*pargs = NULL;
+		sp_rtrace_print_args(rd->fp, args);
+		</if>
+	}
+	</for>
+	else {
+		msg_warn("unexpected function exit (%s)\n", name);
+		return;
+	}
+	(rd->rp_number)++;
+	if (!is_free || arguments.enable_free_bkt) {
+		rp_write_backtraces(proc);
+	}
+	else {
+		sp_rtrace_print_comment(rd->fp, "\n"); 
+	}
+}
+
+static int module_library_match(const char *symname)
+{
+	return(
+		<for function in sections("function")>
+		strcmp(symname, "<$function.symbol_name>") == 0 ||
+		</for>
+		false);
+}
+
+static void module_report_init(struct process *proc)
+{
+	assert(proc->rp_data != NULL);
+	<for resource in sections("resource")>
+		<set flags = "SP_RTRACE_RESOURCE_DEFAULT">
+		<if resource.flags.find("refcount") != -1>
+		<set flags = "%s | SP_RTRACE_RESOURCE_REFCOUNT" % flags>
+		</if>
+	sp_rtrace_print_resource(proc->rp_data->fp, res_<$resource.name>, "<$resource.name>", "<$resource.description>", <$flags>);
+	</for>
+}
+
+struct plg_api *init()
+{
+	static struct plg_api ma = {
+		.api_version = module_api_version,
+		.function_exit = module_function_exit,
+		.library_match = module_library_match,
+		.report_init = module_report_init,
+	};
+	return &ma;
+}
