@@ -494,6 +494,41 @@ static void file_function_exit(struct process *proc, const char *name)
 			sp_rtrace_print_call(rd->fp, &call2);
 		}
 
+	} else if (strcmp(name, "pipe2") == 0) {
+		if (retval == -1) return;
+		else {
+			size_t arg0 = fn_argument(proc, 0);
+			int fd1 = trace_mem_readw(proc, arg0);
+			int fd2 = trace_mem_readw(proc, arg0 + 4);
+
+			sp_rtrace_fcall_t call1 = {
+					.type = SP_RTRACE_FTYPE_ALLOC,
+					.index = rd->rp_number++,
+					.context = context_mask,
+					.timestamp = RP_TIMESTAMP,
+					.name = "pipe2",
+					.res_size = RES_SIZE,
+					.res_id = (pointer_t)fd1,
+					.res_type = (void*)res_fd.type,
+					.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
+			};
+			sp_rtrace_print_call(rd->fp, &call1);
+			rp_write_backtraces(proc);
+
+			sp_rtrace_fcall_t call2 = {
+					.type = SP_RTRACE_FTYPE_ALLOC,
+					.index = rd->rp_number,
+					.context = context_mask,
+					.timestamp = RP_TIMESTAMP,
+					.name = "pipe2",
+					.res_size = RES_SIZE,
+					.res_id = (pointer_t)fd2,
+					.res_type = (void*)res_fd.type,
+					.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
+			};
+			sp_rtrace_print_call(rd->fp, &call2);
+		}
+
 	} else if (strcmp(name, "fcntl") == 0) {
 		size_t arg1 = fn_argument(proc, 1);
 		if ( (arg1 == F_DUPFD || arg1 == F_DUPFD_CLOEXEC) && retval != -1){
@@ -561,7 +596,9 @@ static int file_library_match(const char *symname)
 				strcmp(symname, "fcntl") == 0 ||
 				strcmp(symname, "socketpair") == 0 ||
 				strcmp(symname, "inotify_init") == 0 ||
-				strcmp(symname, "pipe") == 0 );
+				strcmp(symname, "pipe") == 0 ||
+				strcmp(symname, "pipe2") == 0
+				);
 }
 
 static void file_report_init(struct process *proc)
