@@ -26,6 +26,7 @@
 #include <errno.h>
 
 #include <sp_rtrace_formatter.h>
+#include <sp_rtrace_defs.h>
 
 #include "report.h"
 #include "process.h"
@@ -41,9 +42,12 @@ int context_function_exit(struct process *proc, const char *name)
 		addr_t retval = fn_return_value(proc);
 
 		char context_name[32] = "uninitialized";
-		unsigned int context_id = fn_return_value(proc);
 		trace_mem_readstr(proc, fn_argument(proc, 0), context_name, sizeof(context_name));
-		sp_rtrace_print_context(proc->rp_data->fp, context_id, context_name);
+		sp_rtrace_context_t context = {
+				.id = fn_return_value(proc),
+				.name = context_name,
+		};
+		sp_rtrace_print_context(proc->rp_data->fp, &context);
 		return 0;
 	}
 	else if (!strcmp(name, "sp_context_enter")) {

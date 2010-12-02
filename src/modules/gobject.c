@@ -42,6 +42,13 @@
 #define GOBJECT_API_VERSION "2.0"
 #define RES_SIZE 4
 
+static sp_rtrace_resource_t res_gobject = {
+		.id = 1,
+		.type = "gobject",
+		.desc = "GObject instance",
+		.flags = SP_RTRACE_RESOURCE_REFCOUNT,
+};
+
 static char gobject_api_version[] = GOBJECT_API_VERSION;
 
 static void gobject_function_exit(struct process *proc, const char *name)
@@ -53,16 +60,44 @@ static void gobject_function_exit(struct process *proc, const char *name)
 	if (strcmp(name, "g_object_newv") == 0) {
 		/* suppress allocation failure reports */
 		if (retval == 0) return;
-		sp_rtrace_print_call(rd->fp, rd->rp_number, context_mask, RP_TIMESTAMP, "g_object_newv", RES_SIZE, (void*)retval, NULL);
+
+		sp_rtrace_fcall_t call = {
+				.type = SP_RTRACE_FTYPE_ALLOC,
+				.index = rd->rp_number,
+				.context = context_mask,
+				.timestamp = RP_TIMESTAMP,
+				.name = "g_object_newv",
+				.res_size = RES_SIZE,
+				.res_id = (pointer_t)retval,
+		};
+		sp_rtrace_print_call(rd->fp, &call);
 
 	} else if (strcmp(name, "g_object_ref") == 0) {
 		/* suppress allocation failure reports */
 		if (retval == 0) return;
-		sp_rtrace_print_call(rd->fp, rd->rp_number, context_mask, RP_TIMESTAMP, "g_object_ref", RES_SIZE, (void*)retval, NULL);
+
+		sp_rtrace_fcall_t call = {
+				.type = SP_RTRACE_FTYPE_ALLOC,
+				.index = rd->rp_number,
+				.context = context_mask,
+				.timestamp = RP_TIMESTAMP,
+				.name = "g_object_ref",
+				.res_size = RES_SIZE,
+				.res_id = (pointer_t)fn_argument(proc, 0),
+		};
+		sp_rtrace_print_call(rd->fp, &call);
 
 	} else if (strcmp(name, "g_object_unref") == 0) {
-				size_t arg0 = fn_argument(proc, 0);
-		sp_rtrace_print_call(rd->fp, rd->rp_number, context_mask, RP_TIMESTAMP, "g_object_unref", 0, (void*)retval, NULL);
+		sp_rtrace_fcall_t call = {
+				.type = SP_RTRACE_FTYPE_FREE,
+				.index = rd->rp_number,
+				.context = context_mask,
+				.timestamp = RP_TIMESTAMP,
+				.name = "g_object_unref",
+				.res_size = 0,
+				.res_id = (pointer_t)fn_argument(proc, 0),
+		};
+		sp_rtrace_print_call(rd->fp, &call);
 	} else {
 		msg_warn("unexpected function exit (%s)\n", name);
 		return;
@@ -81,7 +116,7 @@ static int gobject_library_match(const char *symname)
 static void gobject_report_init(struct process *proc)
 {
 	assert(proc->rp_data != NULL);
-	sp_rtrace_print_resource(proc->rp_data->fp, 1, "gobject", "gobjects", SP_RTRACE_RESOURCE_REFCOUNT);
+	sp_rtrace_print_resource(proc->rp_data->fp, &res_gobject);
 }
 
 struct plg_api *init()

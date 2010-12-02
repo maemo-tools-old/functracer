@@ -27,6 +27,7 @@
 #include <errno.h>
 #include <time.h>
 #include <sp_rtrace_formatter.h>
+#include <sp_rtrace_defs.h>
 
 #include "arch-defs.h"
 #include "backtrace.h"
@@ -49,14 +50,20 @@ void rp_write_backtraces(struct process *proc)
 
 	debug(3, "rp_write_backtraces(pid=%d)", rd->pid);
 
-	sp_rtrace_print_trace(rd->fp, frames, arguments.resolve_name ? names : NULL, bt_depth);
+	sp_rtrace_ftrace_t trace = {
+			.nframes = bt_depth,
+			.frames = (pointer_t*)frames,
+			.resolved_names = arguments.resolve_name ? names : NULL,
+	};
+
+	sp_rtrace_print_trace(rd->fp, &trace);
 }
 
 
 static int rp_write_header(struct process *proc)
 {
 	struct rp_data *rd = proc->rp_data;
-	char path[256], *buf;
+	char path[256], *buf, pid_s[8], btdepth_s[8];
 
 	if (arguments.save_to_file) {
 		struct stat buf;
@@ -82,7 +89,22 @@ static int rp_write_header(struct process *proc)
 		rd->fp = stdout;
 
 	buf = cmd_from_pid(proc->pid, 1);
-	sp_rtrace_print_header(rd->fp, PACKAGE_STRING ,BUILD_ARCH, NULL, proc->pid, buf, arguments.depth);
+	sprintf(pid_s, "%d", proc->pid);
+	sprintf(btdepth_s, "%d", arguments.depth);
+
+	sp_rtrace_header_t header =  {
+			.fields = {
+					PACKAGE_STRING,  // HEADER_VERSION
+					BUILD_ARCH,      // HEADER_ARCH
+					NULL,            // HEADER_TIMESTAMP
+					buf,             // HEADER_PROCESS
+					pid_s,           // HEADER_PID
+					NULL,            // HEADER_FILTER
+					btdepth_s,       // HEADER_BACKTRACE_DEPTH
+			},
+	};
+
+	sp_rtrace_print_header(rd->fp, &header);
 	free(buf);
 
 	return 0;

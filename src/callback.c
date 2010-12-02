@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sp_rtrace_formatter.h>
+#include <sp_rtrace_defs.h>
 
 #include "context.h"
 #include "callback.h"
@@ -188,8 +189,14 @@ static void library_load(struct process *proc, addr_t start_addr,
 	debug(3, "library load (pid=%d, start=0x%08x, end=0x%08x, path=%s)",
 	      proc->pid, start_addr, end_addr, path);
 
-	if (trace_enabled(proc))
-		sp_rtrace_print_mmap(proc->rp_data->fp, path, (void*)start_addr, (void*)end_addr);
+	if (trace_enabled(proc)) {
+		sp_rtrace_mmap_t mmap = {
+				.module = path,
+				.from = start_addr,
+				.to = end_addr,
+		};
+		sp_rtrace_print_mmap(proc->rp_data->fp, &mmap);
+	}
 }
 
 static void cb_register(struct callback *cb)

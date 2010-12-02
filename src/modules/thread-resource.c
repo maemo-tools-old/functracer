@@ -56,6 +56,14 @@
 
 static char thread_api_version[] = THREAD_API_VERSION;
 
+static sp_rtrace_resource_t res_thread = {
+		.id = 1,
+		.type = "pthread_t",
+		.desc = "posix thread",
+		.flags = SP_RTRACE_RESOURCE_DEFAULT,
+};
+
+
 static void thread_function_exit(struct process *proc, const char *name)
 {
 	struct rp_data *rd = proc->rp_data;
@@ -115,7 +123,17 @@ static void thread_function_exit(struct process *proc, const char *name)
 			return;
 		}
 		is_free = 1;
-		sp_rtrace_print_call(rd->fp, rd->rp_number, context_mask, RP_TIMESTAMP, "pthread_join", 0, (void*)fn_argument(proc, 0), NULL);
+
+		sp_rtrace_fcall_t call = {
+				.type = SP_RTRACE_FTYPE_FREE,
+				.index = rd->rp_number,
+				.context = context_mask,
+				.timestamp = RP_TIMESTAMP,
+				.name = "pthread_join",
+				.res_size = 0,
+				.res_id = (pointer_t)fn_argument(proc, 0),
+		};
+		sp_rtrace_print_call(rd->fp, &call);
 
 	} else if (strcmp(name, "pthread_create") == 0) {
 		if (retval != 0) {
@@ -133,8 +151,17 @@ static void thread_function_exit(struct process *proc, const char *name)
 		if (state == PTHREAD_CREATE_DETACHED) {
 			return;
 		}
-		sp_rtrace_print_call(rd->fp, rd->rp_number, context_mask, RP_TIMESTAMP, "pthread_craete",
-				RES_SIZE, (void*)trace_mem_readw(proc, fn_argument(proc, 0)), NULL);
+
+		sp_rtrace_fcall_t call = {
+				.type = SP_RTRACE_FTYPE_ALLOC,
+				.index = rd->rp_number,
+				.context = context_mask,
+				.timestamp = RP_TIMESTAMP,
+				.name = "pthread_craete",
+				.res_size = RES_SIZE,
+				.res_id = (pointer_t)trace_mem_readw(proc, fn_argument(proc, 0)),
+		};
+		sp_rtrace_print_call(rd->fp, &call);
 
 	} else if (strcmp(name, "pthread_detach") == 0) {
 		if (retval != 0) {
@@ -142,7 +169,16 @@ static void thread_function_exit(struct process *proc, const char *name)
 			return;
 		}
 		is_free = 1;
-		sp_rtrace_print_call(rd->fp, rd->rp_number, context_mask, RP_TIMESTAMP, "pthread_detach", 0, (void*)fn_argument(proc, 0), NULL);
+		sp_rtrace_fcall_t call = {
+				.type = SP_RTRACE_FTYPE_FREE,
+				.index = rd->rp_number,
+				.context = context_mask,
+				.timestamp = RP_TIMESTAMP,
+				.name = "pthread_detach",
+				.res_size = 0,
+				.res_id = (pointer_t)fn_argument(proc, 0),
+		};
+		sp_rtrace_print_call(rd->fp, &call);
 
 	} else {
 		msg_warn("unexpected function exit (%s)\n", name);
@@ -184,7 +220,7 @@ static int thread_library_match(const char *symname)
 static void thread_report_init(struct process *proc)
 {
 	assert(proc->rp_data != NULL);
-	sp_rtrace_print_resource(proc->rp_data->fp, 1, "pthread_t", "threads", SP_RTRACE_RESOURCE_DEFAULT);
+	sp_rtrace_print_resource(proc->rp_data->fp, &res_thread);
 }
 
 struct plg_api *init()
