@@ -66,6 +66,7 @@ static const struct argp_option options[] = {
 	{"help", 'h', NULL, 0, "Give this help list", -1},
 	{"usage", OPT_USAGE, NULL, 0, "Give a short usage message", -1},
 	{"version", 'V', NULL, 0, "Print program version", -1},
+	{"audit", 'a', "SYMBOLS", 0, "custom tracked symbol list for audit module in format <symbol>[;<symbol>...]", 0},
 	{NULL, 0, NULL, 0, NULL, 0},
 };
 
@@ -106,6 +107,9 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 		break;
 	case 'e':
 		arg_data->plugin = arg;
+		break;
+	case 'a':
+		arg_data->audit = arg;
 		break;
 	case 'r':
 		arg_data->resolve_name++;

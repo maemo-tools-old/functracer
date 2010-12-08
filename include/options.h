@@ -44,6 +44,7 @@ struct arguments {
 	int verbose;
 	char *plugin;
 	char *path;
+	char *audit;
 };
 
 extern struct arguments arguments;

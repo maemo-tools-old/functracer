@@ -19,3 +19,7 @@ thread_resource_la_LDFLAGS = -no-undefined -module -avoid-version -lpthread
 pkglib_LTLIBRARIES += shmsysv.la
 shmsysv_la_SOURCES = shmsysv.c
 shmsysv_la_LDFLAGS = -no-undefined -module -avoid-version
+
+pkglib_LTLIBRARIES += audit.la
+audit_la_SOURCES = audit.c
+audit_la_LDFLAGS = -no-undefined -module -avoid-version
