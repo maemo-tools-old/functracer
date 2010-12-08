@@ -1,10 +1,6 @@
 /*
- * thread-resource is functracer module used to keep track on memory
- * allocation/release caused by creating/joining/detaching threads.
- *
- * Warning, the code used to determine thread attributes passed to
- * paudit_create relies on the paudit_attr_t structure internal
- * implementation.
+ * This is a functracer module used to track custom symbol list, specified
+ * with functracer -a command line option.
  *
  * This file is part of Functracer.
  *
@@ -38,7 +34,6 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <sched.h>
-#include <pthread.h>
 #include <sp_rtrace_formatter.h>
 #include <sp_rtrace_tracker.h>
 #include <sp_rtrace_defs.h>
@@ -59,7 +54,7 @@
 
 static char audit_api_version[] = AUDIT_API_VERSION;
 
-static sp_rtrace_resource_t res_thread = {
+static sp_rtrace_resource_t res_audit = {
 		.id = 1,
 		.type = "virtual",
 		.desc = "Virtual resource for custom symbol tracking",
@@ -104,7 +99,7 @@ static int audit_library_match(const char *symname)
 static void audit_report_init(struct process *proc)
 {
 	assert(proc->rp_data != NULL);
-	sp_rtrace_print_resource(proc->rp_data->fp, &res_thread);
+	sp_rtrace_print_resource(proc->rp_data->fp, &res_audit);
 }
 
 struct plg_api *init()
