@@ -63,8 +63,6 @@ static void memtransfer_function_exit(struct process *proc, const char *name)
 	addr_t retval = fn_return_value(proc);
 	assert(proc->rp_data != NULL);
 
-	fprintf(stderr, "FUNC: %s\n", name);
-
 	if (strcmp(name, "memcpy") == 0) {
 		arg2 = fn_argument(proc, 2);
 		sp_rtrace_fcall_t call = {
