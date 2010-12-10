@@ -1,3 +1,55 @@
+<script>
+def ARG(name):
+	return "fn_argument(proc, %d)" % func.name2index(name)
+	
+def REF(name):
+	return "trace_mem_readw(proc, %s)" % name
+	
+	
+class ArgStr:
+	def __init__(self, name):
+		self.name = name
+
+	def getName(self):
+		return "\"%s\"" % self.name
+
+	def calcValue(self):
+		return "char arg_%s[PATH_MAX]; trace_mem_readstr(proc, fn_argument(proc, %s), arg_%s, sizeof(arg_%s));" % \
+		    (self.name, func.name2index(self.name), self.name, self.name)
+
+	def getValue(self):
+		return "arg_%s" % self.name
+
+class ArgHex:
+	def __init__(self, name):
+		self.name = name
+	
+	def getName(self):
+		return "\"%s\"" % self.name
+		
+	def calcValue(self):
+		return "char arg_%s[16]; snprintf(arg_%s, sizeof(arg_%s), \"0x%%lx\", fn_argument(proc, %s));" % \
+			(self.name, self.name, self.name, func.name2index(self.name))
+		
+	def getValue(self):
+		return "arg_%s" % self.name
+
+class ArgInt:
+	def __init__(self, name):
+		self.name = name
+	
+	def getName(self):
+		return "\"%s\"" % self.name
+		
+	def calcValue(self):
+		return "char arg_%s[16]; snprintf(arg_%s, sizeof(arg_%s), \"%%ld\", fn_argument(proc, %s));" % \
+			(self.name, self.name, self.name, func.name2index(self.name))
+		
+	def getValue(self):
+		return "arg_%s" % self.name
+
+</script>
+
 /*
  * <$module.name> is a functracer module
  * <$module.description>
@@ -46,64 +98,22 @@
 
 static char module_api_version[] = MODULE_API_VERSION;
 
+/* resource identifiers */
 <set res_index = 0>
 <for resource in sections("resource")>
-unsigned int res_<$resource.name> = 1 <$lt><$lt> <$res_index>;
+<set flags = "SP_RTRACE_RESOURCE_DEFAULT">
+<if resource.flags.find("refcount") != -1>
+  <set flags = "%s | SP_RTRACE_RESOURCE_REFCOUNT" % flags>
+</if>
+static sp_rtrace_resource_t res_<$resource.name> = {
+	.type = "<$resource.name>",
+	.desc = "<$resource.description>",
+	.flags = <$flags>,
+	.id = 1 <$lt><$lt> <$res_index>,
+};
 <set res_index = res_index + 1>
+
 </for>
-
-
-/**
- * strcat_arg_name function appends argument name to the specified buffer.
- *
- * @param buffer[out]   the output buffer.
- * @param size[in]      the output buffer size.
- * @param name[in]      the argument name to append to the buffer.
- * @param length[in]    the argument name length (not including the terminating null character).
- * @return              the number of appended characters (not including the terminating null character).
- */
-static int strcat_arg_name(char* buffer, int size, const char* name, int length) {
-	if (name) {
-		strncat(buffer, name, size);
-	}
-	return length < size ? length : size - 1;
-}
-
-/**
- * strcat_arg_str function appends zero terminated string argument name and value to the output buffer.
- *
- * @param buffer[out]     the output buffer.
- * @param size[in]        the output buffer size.
- * @param name[in]        the argument name.
- * @param length[in]      the argument name length.
- * @param proc[in]        the process data.
- * @param n[in]           the argument index.
- * @return                the number of appended characters (not including the terminating null character).
- */
-static int strcat_arg_str(char* buffer, int size, const char* name, int length, struct process* proc, int n) {
-	int offset = strcat_arg_name(buffer, size, name, length);
-	return trace_mem_readstr(proc, fn_argument(proc, n), buffer + offset, size - offset) + offset;
-}
-
-/**
- * strcat_arg_str function appends integer argument name and value to the output buffer.
- *
- * @param buffer[out]     the output buffer.
- * @param size[in]        the output buffer size.
- * @param name[in]        the argument name.
- * @param length[in]      the argument name length.
- * @param proc[in]        the process data.
- * @param n[in]           the argument index.
- * @return                the number of appended characters (not including the terminating null character).
- */
-static int strcat_arg_int(char* buffer, int size, const char* name, int length, struct process* proc, int n) {
-	int offset = strcat_arg_name(buffer, size, name, length);
-	return snprintf(buffer + offset, size - offset, "%ld", fn_argument(proc, n)) + offset;
-}
-
-
-#define STRCAT_ARG_STR(buffer, size, name, proc, n)   strcat_arg_str(buffer, size, name, sizeof(name) - 1, proc, n)
-#define STRCAT_ARG_INT(buffer, size, name, proc, n)   strcat_arg_int(buffer, size, name, sizeof(name) - 1, proc, n)
 
 static void module_function_exit(struct process *proc, const char *name)
 {
@@ -114,30 +124,62 @@ static void module_function_exit(struct process *proc, const char *name)
 	
 	if (false);
 	<for function in sections("function")>
-	else if (strcmp(name, "<$function.symbol_name>") == 0) {
-		unsigned int res_size = (unsigned int)<$function.res_size>;
-		void* res_id = (void*)<$function.res_id>;
-		<if function.res_size == "0">
-		is_free = 1;
-		</if>
+	  <set func = Function(function.proto)>
+	  <if hasattr(function, "ft_symname")>
+	    <set symname = function.ft_name>
+	  <else>
+	    <if hasattr(function, "symbol_name")>
+	      <set symname = function.symbol_name>
+	    <else>
+	      <set symname = func.name>
+	    </if>
+	  </if>
+	  <if hasattr(function, "report_name")>
+	    <set repname = function.report_name>
+	  <else>
+	    <set repname = func.name>
+	  </if>
+	else if (strcmp(name, "<$symname>") == 0) {
+<!-- add call failure check -->
 		<if hasattr(function, "fail")>
-		if (<$function.fail>) return;
+		if (<$eval(function.fail)>) return;
 		</if>
-		sp_rtrace_print_call(rd->fp, rd->rp_number, context_mask, RP_TIMESTAMP, "<$function.report_name>", res_size, res_id, "<$function.resource>");
+<!-- determine call type (allocation/free) -->
+		<if eval(function.res_size) == '0'>
+		  <set type = "SP_RTRACE_FTYPE_FREE">
+		is_free = 1;
+		<else>
+		  <set type = "SP_RTRACE_FTYPE_ALLOC">
+		</if>
+<!-- define the call structure data -->
+		sp_rtrace_fcall_t call = {
+			.type = <$type>,
+			.context = context_mask,
+			.timestamp = RP_TIMESTAMP,
+			.res_type = (void*)res_<$function.resource>.type,
+			.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
+			.name = "<$repname>",
+			.res_id = (pointer_t)<$eval(function.res_id)>,
+			.res_size = (size_t)<$eval(function.res_size)>,
+			.index = rd->rp_number,
+		};
+		sp_rtrace_print_call(rd->fp, &call);
+		
+<!-- process arguments -->
 		<if hasattr(function, "args")>
-		  <set nargs = len(function.args) + 1>
-		  <set rxp = re.compile("([^(]+)\(([^,]+), *([^)]+)\)")>
-		char details[PATH_MAX] = {0}, *args[<$nargs>], *ptr = details, **pargs = args;
+<!-- first format argument values -->
 		  <for arg in function.args>
-		     <set match = rxp.match(arg)>
-		     <if match>
-		*pargs++ = ptr;
-		ptr += STRCAT_<$match.group(1)>(ptr, PATH_MAX - (ptr - details) - 1, <$match.group(2)>, proc, <$match.group(3)>) + 1;
-		     <else>
-		     // not matching
-		     </if>
+		    <set argobj = eval(arg)>
+		<$argobj.calcValue()>
 		  </for>
-		*pargs = NULL;
+<!-- then prepare argument data structure -->
+		sp_rtrace_farg_t args[] = {
+		  <for arg in function.args>
+		    <set argobj = eval(arg)>
+			{.name=<$argobj.getName()>, .value=<$argobj.getValue()>},
+		  </for>
+			{0}
+		};
 		sp_rtrace_print_args(rd->fp, args);
 		</if>
 	}
@@ -159,7 +201,17 @@ static int module_library_match(const char *symname)
 {
 	return(
 		<for function in sections("function")>
-		strcmp(symname, "<$function.symbol_name>") == 0 ||
+		  <set func = Function(function.proto)>
+		  <if hasattr(function, "ft_name")>
+		    <set symname = function.ft_name>
+		  <else>
+		    <if hasattr(function, "symbol_name")>
+		      <set symname = function.symbol_name>
+		    <else>
+		      <set symname = func.name>
+		    </if>
+		  </if>
+		strcmp(symname, "<$symname>") == 0 ||
 		</for>
 		false);
 }
@@ -168,11 +220,7 @@ static void module_report_init(struct process *proc)
 {
 	assert(proc->rp_data != NULL);
 	<for resource in sections("resource")>
-		<set flags = "SP_RTRACE_RESOURCE_DEFAULT">
-		<if resource.flags.find("refcount") != -1>
-		<set flags = "%s | SP_RTRACE_RESOURCE_REFCOUNT" % flags>
-		</if>
-	sp_rtrace_print_resource(proc->rp_data->fp, res_<$resource.name>, "<$resource.name>", "<$resource.description>", <$flags>);
+	sp_rtrace_print_resource(proc->rp_data->fp, &res_<$resource.name>);
 	</for>
 }
 
