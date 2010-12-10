@@ -1,3 +1,11 @@
+functracer (0.23) unstable; urgency=low
+
+  * Added pipe2 function tracking to file module. Fixes: NB#210525
+  * Added audit module supporting custom tracking symbol list. (NB#164143)
+  * Updated to match sp-rtrace API changes.
+
+ -- Tommi Rantala <ext-tommi.1.rantala@nokia.com>  Fri, 10 Dec 2010 15:36:37 +0200
+
 functracer (0.22) unstable; urgency=low
 
   * Fix crash when target process calls sp-rtrace context function while
