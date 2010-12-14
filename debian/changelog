@@ -1,3 +1,9 @@
+functracer (0.23.1) unstable; urgency=low
+
+  * debian/rules: do not copy config.sub and config.guess manually.
+
+ -- Kiryl Shutsemau <kiryl.shutsemau@nokia.com>  Fri, 12 Feb 2010 11:53:48 +0200
+
 functracer (0.23) unstable; urgency=low
 
   * Added pipe2 function tracking to file module. Fixes: NB#210525
