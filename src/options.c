@@ -36,6 +36,8 @@
 #include "report.h"
 #include "backtrace.h"
 
+#define DEFAULT_BT_DEPTH		10
+
 const char *argp_program_version = PACKAGE_STRING;
 
 struct arguments arguments;
@@ -173,7 +175,7 @@ int process_options(int argc, char *argv[], int *remaining)
 
 	/* Initial values */
 	memset(&arguments, 0, sizeof(struct arguments));
-	arguments.depth = MAX_BT_DEPTH;
+	arguments.depth = MAX_BT_DEPTH > DEFAULT_BT_DEPTH ? DEFAULT_BT_DEPTH : MAX_BT_DEPTH;
 	arguments.plugin = "memory";
 
 	/* parse and process arguments */

@@ -25,7 +25,7 @@
 #ifndef FT_ARCH_DEFS_ARM_H
 #define FT_ARCH_DEFS_ARM_H
 
-#define MAX_BT_DEPTH		12	/* maximum backtrace depth */
+#define MAX_BT_DEPTH		64	/* maximum backtrace depth */
 #define DECR_PC_AFTER_BREAK	0	/* decrement after breakpoint */
 #define MAX_INSN_SIZE		4	/* maximum instruction size */
 
