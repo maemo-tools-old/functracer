@@ -23,3 +23,7 @@ shmsysv_la_LDFLAGS = -no-undefined -module -avoid-version
 pkglib_LTLIBRARIES += audit.la
 audit_la_SOURCES = audit.c
 audit_la_LDFLAGS = -no-undefined -module -avoid-version
+
+pkglib_LTLIBRARIES += shmposix.la
+shmposix_la_SOURCES = shmposix.c
+shmposix_la_LDFLAGS = -no-undefined -module -avoid-version

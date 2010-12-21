@@ -99,7 +99,7 @@ class ArgInt:
 static char module_api_version[] = MODULE_API_VERSION;
 
 /* resource identifiers */
-<set res_index = 0>
+<set res_index = 1>
 <for resource in sections("resource")>
 <set flags = "SP_RTRACE_RESOURCE_DEFAULT">
 <if resource.flags.find("refcount") != -1>
@@ -109,7 +109,7 @@ static sp_rtrace_resource_t res_<$resource.name> = {
 	.type = "<$resource.name>",
 	.desc = "<$resource.description>",
 	.flags = <$flags>,
-	.id = 1 <$lt><$lt> <$res_index>,
+	.id = <$res_index>,
 };
 <set res_index = res_index + 1>
 
