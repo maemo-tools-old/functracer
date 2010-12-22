@@ -52,35 +52,35 @@ static char module_api_version[] = MODULE_API_VERSION;
 /* resource identifiers */
 static sp_rtrace_resource_t res_pshmmap = {
 	.type = "pshmmap",
-	.desc = "Posix shared memory mapping.",
+	.desc = "posix shared memory object mapping",
 	.flags = SP_RTRACE_RESOURCE_DEFAULT,
 	.id = 1,
 };
 
 static sp_rtrace_resource_t res_fshmmap = {
 	.type = "fshmmap",
-	.desc = "File shared memory mapping.",
+	.desc = "file shared memory mapping",
 	.flags = SP_RTRACE_RESOURCE_DEFAULT,
 	.id = 2,
 };
 
 static sp_rtrace_resource_t res_shmmap = {
 	.type = "shmmap",
-	.desc = "Generic shared memory mapping.",
+	.desc = "generic shared memory mapping",
 	.flags = SP_RTRACE_RESOURCE_DEFAULT,
 	.id = 3,
 };
 
 static sp_rtrace_resource_t res_shmobj = {
-	.type = "shmobj",
-	.desc = "Posix shared memory objects.",
+	.type = "pshmobj",
+	.desc = "posix shared memory objects",
 	.flags = SP_RTRACE_RESOURCE_DEFAULT,
 	.id = 4,
 };
 
 static sp_rtrace_resource_t res_shmfd = {
-	.type = "shmfd",
-	.desc = "Opened posix shared memory objects",
+	.type = "pshmfd",
+	.desc = "descriptors of opened posix shared memory objects",
 	.flags = SP_RTRACE_RESOURCE_DEFAULT,
 	.id = 5,
 };
