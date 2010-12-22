@@ -570,6 +570,7 @@ static void module_function_exit(struct process *proc, const char *name)
 	else if (strcmp(name, "creat") == 0) {
 		char arg_name[PATH_MAX]; trace_mem_readstr(proc, fn_argument(proc, 0), arg_name, sizeof(arg_name));
 		fdreg_store_fd(rc, arg_name, FD_FILE, O_CREAT|O_WRONLY|O_TRUNC);
+		return;
 	}
 	/* handle mmap2 together with mmap as the offset is ignored by tracker */
 	else if (strcmp(name, "mmap") == 0 || strcmp(name, "mmap2") == 0 || strcmp(name, "mmap64") == 0) {
@@ -667,6 +668,7 @@ static void module_function_exit(struct process *proc, const char *name)
 			}
 			fdreg_remove(fd);
 		}
+		return;
 	}
 	else {
 		msg_warn("unexpected function exit (%s)\n", name);
