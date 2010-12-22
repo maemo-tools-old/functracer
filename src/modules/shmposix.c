@@ -650,9 +650,9 @@ static void module_function_exit(struct process *proc, const char *name)
 	else if (strcmp(name, "close") == 0) {
 		addr_t fd = fn_argument(proc, 0);
 		fdreg_node_t* pfd = fdreg_get_fd(fd);
-
 		if (pfd) {
 			if (pfd->type == FD_POSIX) {
+				is_free = 1;
 				sp_rtrace_fcall_t call = {
 					.type = SP_RTRACE_FTYPE_FREE,
 					.context = context_mask,
@@ -668,7 +668,7 @@ static void module_function_exit(struct process *proc, const char *name)
 			}
 			fdreg_remove(fd);
 		}
-		return;
+		if (!is_free) return;
 	}
 	else {
 		msg_warn("unexpected function exit (%s)\n", name);
