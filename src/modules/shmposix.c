@@ -668,7 +668,7 @@ static void module_function_exit(struct process *proc, const char *name)
 				};
 				sp_rtrace_print_call(rd->fp, &call);
 			}
-			fdreg_remove(fd);
+			//fdreg_remove(fd);
 		}
 		if (!is_free) return;
 	}
