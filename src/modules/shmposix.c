@@ -188,6 +188,8 @@ static void nreg_validate_hash(const void* item, const VISIT which, int depth)
 				if (pnode->hash == nreg_validate_hash_value) nreg_validate_hash_result = false;
 				break;
 			}
+			case endorder:
+				break;
 		}
 	}
 }
@@ -463,7 +465,7 @@ static addr_node_t* addr_get(addr_t addr)
  *
  * @return
  */
-static addr_cleanup()
+static void addr_cleanup()
 {
 	tdestroy(addr_root, free);
 }
@@ -605,7 +607,7 @@ static void module_function_exit(struct process *proc, const char *name)
 			{.name="flags", .value=arg_flags},
 			{.name="fd", .value=arg_fd},
 			{.name="offset", .value=arg_offset},
-			{0}, // reseverd for fd name
+			{0}, // reserved for fd name
 			{0}, // reserved for fd mode
 			{0}
 		};
