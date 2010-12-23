@@ -39,7 +39,6 @@ int context_mask = 0;
 int context_function_exit(struct process *proc, const char *name)
 {
 	if (!strcmp(name, "sp_context_create")) {
-		addr_t retval = fn_return_value(proc);
 
 		char context_name[32] = "uninitialized";
 		trace_mem_readstr(proc, fn_argument(proc, 0), context_name, sizeof(context_name));

@@ -38,6 +38,8 @@
 
 #define DEFAULT_BT_DEPTH		10
 
+#define AUDIT_PLUGIN 	"audit"
+
 const char *argp_program_version = PACKAGE_STRING;
 
 struct arguments arguments;
@@ -112,6 +114,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 		break;
 	case 'a':
 		arg_data->audit = arg;
+		arg_data->plugin = AUDIT_PLUGIN;
 		break;
 	case 'r':
 		arg_data->resolve_name++;

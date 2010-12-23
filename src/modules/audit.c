@@ -67,7 +67,6 @@ static void audit_function_exit(struct process *proc, const char *name)
 {
 	struct rp_data *rd = proc->rp_data;
 
-	addr_t retval = fn_return_value(proc);
 	assert(proc->rp_data != NULL);
 	
 	const char* symname = sp_rtrace_tracker_query_symbol(&tracker, name);
@@ -78,7 +77,7 @@ static void audit_function_exit(struct process *proc, const char *name)
 			.index = rd->rp_number++,
 			.context = context_mask,
 			.timestamp = RP_TIMESTAMP,
-			.name = symname,
+			.name = (char*)symname,
 			.res_size = RES_SIZE,
 			.res_id = (pointer_t)RES_ID,
 		};
@@ -93,7 +92,7 @@ static void audit_function_exit(struct process *proc, const char *name)
 
 static int audit_library_match(const char *symname)
 {
-	return sp_rtrace_tracker_query_symbol(&tracker, symname);
+	return sp_rtrace_tracker_query_symbol(&tracker, symname) != 0;
 }
 
 static void audit_report_init(struct process *proc)

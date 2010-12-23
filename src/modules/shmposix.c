@@ -1,4 +1,3 @@
-
 /*
  * shmposix is a functracer module
  * Posix shared memory tracking module.
@@ -33,6 +32,7 @@
 #include <limits.h>
 #include <search.h>
 #include <fcntl.h>
+#include <sys/mman.h>
 #include <sp_rtrace_formatter.h>
 #include <sp_rtrace_defs.h>
 
@@ -250,7 +250,10 @@ static unsigned int nreg_get_hash(const char* name)
 /**
  * Releases resources allocated by name registry.
  */
-static void hash_cleanup() {
+static void hash_cleanup() __attribute__((unused));
+
+static void hash_cleanup()
+{
 	tdestroy(nreg_root, nreg_free_node);
 }
 
@@ -369,6 +372,8 @@ static fdreg_node_t* fdreg_get_fd(int fd)
  *
  * @param[in] fd  the file descriptor.
  */
+static void fdreg_remove(int fd) __attribute__((unused));
+
 static void fdreg_remove(int fd)
 {
 	fdreg_node_t node = {.fd = fd};
@@ -382,6 +387,8 @@ static void fdreg_remove(int fd)
 /**
  * Releases resources allocated by file descriptor registry.
  */
+static void fdreg_cleanup() __attribute__((unused));
+
 static void fdreg_cleanup()
 {
 	tdestroy(fdreg_root, fdreg_free_node);
@@ -465,6 +472,8 @@ static addr_node_t* addr_get(addr_t addr)
  *
  * @return
  */
+static void addr_cleanup() __attribute__((unused));
+
 static void addr_cleanup()
 {
 	tdestroy(addr_root, free);
@@ -560,16 +569,19 @@ static void module_function_exit(struct process *proc, const char *name)
 		sp_rtrace_print_args(rd->fp, args);
 	}
 	else if (strcmp(name, "open") == 0) {
+		if (rc == -1) return;
 		char arg_name[PATH_MAX]; trace_mem_readstr(proc, fn_argument(proc, 0), arg_name, sizeof(arg_name));
 		fdreg_store_fd(rc, arg_name, FD_FILE, fn_argument(proc, 1));
 		return;
 	}
 	else if (strcmp(name, "open64") == 0) {
+		if (rc == -1) return;
 		char arg_name[PATH_MAX]; trace_mem_readstr(proc, fn_argument(proc, 0), arg_name, sizeof(arg_name));
 		fdreg_store_fd(rc, arg_name, FD_FILE, fn_argument(proc, 1));
 		return;
 	}
 	else if (strcmp(name, "creat") == 0) {
+		if (rc == -1) return;
 		char arg_name[PATH_MAX]; trace_mem_readstr(proc, fn_argument(proc, 0), arg_name, sizeof(arg_name));
 		fdreg_store_fd(rc, arg_name, FD_FILE, O_CREAT|O_WRONLY|O_TRUNC);
 		return;
@@ -579,6 +591,7 @@ static void module_function_exit(struct process *proc, const char *name)
 		if ((int)rc == -1) return;
 		addr_t fd = fn_argument(proc, 4);
 		addr_store(rc, fd);
+		addr_t flags = fn_argument(proc, 3);
 
 		fdreg_node_t* pfd = fdreg_get_fd(fd);
 
@@ -597,7 +610,7 @@ static void module_function_exit(struct process *proc, const char *name)
 		
 		char arg_length[16]; snprintf(arg_length, sizeof(arg_length), "0x%lx", fn_argument(proc, 1));
 		char arg_prot[16]; snprintf(arg_prot, sizeof(arg_prot), "0x%lx", fn_argument(proc, 2));
-		char arg_flags[16]; snprintf(arg_flags, sizeof(arg_flags), "0x%lx", fn_argument(proc, 3));
+		char arg_flags[16]; snprintf(arg_flags, sizeof(arg_flags), "0x%x", flags);
 		char arg_fd[16]; snprintf(arg_fd, sizeof(arg_fd), "0x%lx", (unsigned long)fd);
 		char arg_offset[16]; snprintf(arg_offset, sizeof(arg_offset), "0x%lx", fn_argument(proc, 5));
 		char arg_mode[16];
@@ -605,13 +618,18 @@ static void module_function_exit(struct process *proc, const char *name)
 			{.name="length", .value=arg_length},
 			{.name="prot", .value=arg_prot},
 			{.name="flags", .value=arg_flags},
-			{.name="fd", .value=arg_fd},
 			{.name="offset", .value=arg_offset},
+			{.name="fd", .value=arg_fd},
 			{0}, // reserved for fd name
 			{0}, // reserved for fd mode
 			{0}
 		};
-		if (pfd) {
+		if (flags & (MAP_ANONYMOUS | MAP_ANON)) {
+			/* hide the fd argument for anonymous mappings */
+			args[4].name = NULL;
+			args[4].value = NULL;
+		}
+		else if (pfd) {
 			args[5].name = "name";
 			args[5].value = pfd->name;
 			args[6].name = "mode";
