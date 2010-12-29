@@ -248,7 +248,7 @@ shmposix
   object creation/destruction and memory mapping/unmapping. It reports the
   following resource usage:
   'pshmobj' - posix shared memory object creation/destruction, tracked by
-              shm_open, shm_unlink funcitons.
+              shm_open, shm_unlink functions.
   'pshmfd'  - posix shared memory object opening/closing, tracked by 
               shm_open, close() functions.
   'pshmmap' - posix shared memory object mapping/unmapping, tracked by 

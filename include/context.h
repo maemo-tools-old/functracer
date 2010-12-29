@@ -49,7 +49,7 @@ int context_match(const char *symname);
 /**
  * Processes context handling functions.
  *
- * @return  0       if the context handling funciton was processed.
+ * @return  0       if the context handling function was processed.
  *          EINVAL  the name doesn't match context handling function.
  */
 int context_function_exit(struct process *proc, const char *name);
