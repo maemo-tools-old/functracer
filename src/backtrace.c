@@ -27,6 +27,7 @@
 #include <string.h> /* XXX DEBUG */
 #include <sys/types.h>
 #include <libunwind-ptrace.h>
+#include <limits.h>
 
 #include "backtrace.h"
 #include "debug.h"
@@ -82,7 +83,7 @@ int bt_backtrace(struct bt_data *btd, void** frames, char **buffer, int size)
 
 		if (arguments.resolve_name) {
 			char* ptr = buf;
-			ret = unw_get_proc_name(&c, buf + 3, sizeof(buf), &off);
+			ret = unw_get_proc_name(&c, buf + 3, sizeof(buf) - 3, &off);
 			if (ret < 0) {
 				ptr = buf + 3;
 				strcpy(ptr, "<undefined>");
