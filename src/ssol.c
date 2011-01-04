@@ -44,14 +44,15 @@
 #include "trace.h"
 #include "util.h"
 
-static long syscall_remote(struct process *proc, long sysnum, int argnum,
+static long syscall_remote(struct process *proc, long sysnum, unsigned int argnum,
 			   long *args)
 {
 	elf_gregset_t orig_regs, mmap_regs;
 	elf_greg_t *orig_regs_p = (elf_greg_t *)&orig_regs;
 	elf_greg_t *mmap_regs_p = (elf_greg_t *)&mmap_regs;
 	long ret, retval;
-	int status, i;
+	int status;
+	unsigned int i;
 	const unsigned int ip_reg = syscall_data.ip_reg;
 	const unsigned int sysnum_reg = syscall_data.sysnum_reg;
 	const unsigned int retval_reg = syscall_data.retval_reg;

@@ -46,7 +46,7 @@ static void *plg_get_symbol(char *name)
     return dlsym(handle, name);
 }
 
-static int plg_check_version()
+static int plg_check_version(void)
 {
 	char *version = plg_api->api_version;
 
@@ -57,7 +57,7 @@ static int plg_check_version()
 
 static int plg_load_module(const char *modname)
 {
-	struct plg_api *(*function)();
+	struct plg_api *(*function)(void);
 
 	if (modname == NULL)
 		return 0;
@@ -72,7 +72,7 @@ static int plg_load_module(const char *modname)
 	}
 
 	dlerror();    /* Clear any existing error */
-	function = (struct plg_api *(*)()) plg_get_symbol("init");
+	function = (struct plg_api *(*)(void)) plg_get_symbol("init");
         if (function == NULL) {
 		msg_warn("Could not initialize plugin API");
 		goto err;
@@ -118,7 +118,7 @@ int plg_match(const char *symname)
 	return plg_api->library_match(symname);
 }
 
-void plg_init()
+void plg_init(void)
 {
 	char plg_name[PATH_MAX];
 	struct stat buf;

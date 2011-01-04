@@ -43,8 +43,8 @@ struct plg_api {
 	void (*report_init)(struct process *proc);
 };
 
-void plg_init();
-void plg_finish();
+void plg_init(void);
+void plg_finish(void);
 void plg_function_exit(struct process *proc, const char *name);
 int plg_match(const char *symname);
 

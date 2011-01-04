@@ -129,7 +129,7 @@ static void function_exit(struct process *proc, const char *name)
 	assert(proc->rp_data != NULL);
 	if (strcmp(name, "shmget") == 0) {
 		int shmflg = fn_argument(proc, 2);
-		if (retval == -1 || !(shmflg & IPC_CREAT)) {
+		if (retval == (addr_t)-1 || !(shmflg & IPC_CREAT)) {
 			/* skip failure or calls without IPC_CREAT flag */
 			return;
 		}
@@ -155,7 +155,7 @@ static void function_exit(struct process *proc, const char *name)
 		 * 3) if the following stat command for the segment fails with EIDRM (removed identifier) or EINVAL (invalid argument) error.
 		 */
 		int cmd = fn_argument(proc, 1);
-		if (cmd != IPC_RMID || retval == -1) return;
+		if (cmd != IPC_RMID || retval == (addr_t)-1) return;
 		int shmid = fn_argument(proc, 0);
 		struct shmid_ds ds;
 		if (shmctl(shmid, IPC_STAT | IPC_64, &ds) != -1 || (errno != EIDRM && errno != EINVAL) ) return;
@@ -175,7 +175,7 @@ static void function_exit(struct process *proc, const char *name)
 		is_free = 1;
 	}
 	else if (strcmp(name, "shmat") == 0) {
-		if (retval == -1) return;
+		if (retval == (addr_t)-1) return;
 
 		int shmid = fn_argument(proc, 0);
 		struct shmid_ds ds;
@@ -218,12 +218,12 @@ static void function_exit(struct process *proc, const char *name)
 		sp_rtrace_farg_t args[] = {
 				{.name = "shmid", .value = shmid_s},
 				{.name = "cpid", .value = cpid_s},
-				{0}
+				{.name = NULL}
 		};
 		sp_rtrace_print_args(rd->fp, args);
 	}
 	else if (strcmp(name, "shmdt") == 0) {
-		if (retval == -1) return;
+		if (retval == (addr_t)-1) return;
 
 		is_free = 1;
 		struct shmid_ds ds;
@@ -312,7 +312,7 @@ static void report_init(struct process *proc)
  * Initializes module
  * @return
  */
-struct plg_api *init()
+struct plg_api *init(void)
 {
 	static struct plg_api ma = {
 		.api_version = api_version,

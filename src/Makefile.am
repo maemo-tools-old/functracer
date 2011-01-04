@@ -1,3 +1,4 @@
+AM_CFLAGS = -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wno-unused-parameter 
 SUBDIRS = modules
 bin_PROGRAMS = functracer
 

@@ -97,7 +97,7 @@ static void file_function_exit(struct process *proc, const char *name)
 			sp_rtrace_farg_t args[] = {
 					{.name = "path", .value = path},
 					{.name = "mode", .value = mode},
-					{0}
+					{.name = NULL}
 			};
 			sp_rtrace_print_args(rd->fp, args);
 		}
@@ -119,7 +119,7 @@ static void file_function_exit(struct process *proc, const char *name)
 		sp_rtrace_print_call(rd->fp, &call);
 
 	} else if (strcmp(name, "__open") == 0) {
-		if (retval == -1) return;
+		if (retval == (addr_t)-1) return;
 		else {
 			sp_rtrace_fcall_t call = {
 					.type = SP_RTRACE_FTYPE_ALLOC,
@@ -140,13 +140,13 @@ static void file_function_exit(struct process *proc, const char *name)
 			sp_rtrace_farg_t args[] = {
 					{.name = "pathname", .value = pathname},
 					{.name = "flags", .value = flags},
-					{0}
+					{.name = NULL}
 			};
 			sp_rtrace_print_args(rd->fp, args);
 		}
 
 	} else if (strcmp(name, "__open64") == 0) {
-		if (retval == -1) return;
+		if (retval == (addr_t)-1) return;
 		else {
 			sp_rtrace_fcall_t call = {
 					.type = SP_RTRACE_FTYPE_ALLOC,
@@ -167,13 +167,13 @@ static void file_function_exit(struct process *proc, const char *name)
 			sp_rtrace_farg_t args[] = {
 					{.name = "pathname", .value = pathname},
 					{.name = "flags", .value = flags},
-					{0}
+					{.name = NULL}
 			};
 			sp_rtrace_print_args(rd->fp, args);
 		}
 
 	} else if (strcmp(name, "creat") == 0) {
-		if (retval == -1) return;
+		if (retval == (addr_t)-1) return;
 		else {
 			sp_rtrace_fcall_t call = {
 					.type = SP_RTRACE_FTYPE_ALLOC,
@@ -194,7 +194,7 @@ static void file_function_exit(struct process *proc, const char *name)
 			sp_rtrace_farg_t args[] = {
 					{.name = "pathname", .value = pathname},
 					{.name = "mode", .value = mode},
-					{0}
+					{.name = NULL}
 			};
 			sp_rtrace_print_args(rd->fp, args);
 		}
@@ -269,7 +269,7 @@ static void file_function_exit(struct process *proc, const char *name)
 		sp_rtrace_farg_t args[] = {
 				{.name = "path", .value = path},
 				{.name = "mode", .value = mode},
-				{0}
+				{.name = NULL}
 		};
 		sp_rtrace_print_args(rd->fp, args);
 
@@ -312,12 +312,12 @@ static void file_function_exit(struct process *proc, const char *name)
 		sp_rtrace_farg_t args[] = {
 				{.name = "fd", .value = fd},
 				{.name = "flags", .value = mode},
-				{0}
+				{.name = NULL}
 		};
 		sp_rtrace_print_args(rd->fp, args);
 
 	} else if (strcmp(name, "socket") == 0) {
-		if (retval == -1) return;
+		if (retval == (addr_t)-1) return;
 		else {
 			sp_rtrace_fcall_t call = {
 					.type = SP_RTRACE_FTYPE_ALLOC,
@@ -340,13 +340,13 @@ static void file_function_exit(struct process *proc, const char *name)
 					{.name = "domain", .value = domain_s},
 					{.name = "type", .value = type_s},
 					{.name = "protocol", .value = protocol_s},
-					{0}
+					{.name = NULL}
 			};
 			sp_rtrace_print_args(rd->fp, args);
 		}
 
 	} else if (strcmp(name, "accept") == 0) {
-		if (retval == -1) return;
+		if (retval == (addr_t)-1) return;
 		else {
 			sp_rtrace_fcall_t call = {
 					.type = SP_RTRACE_FTYPE_ALLOC,
@@ -363,7 +363,7 @@ static void file_function_exit(struct process *proc, const char *name)
 		}
 
 	} else if (strcmp(name, "__dup2") == 0) {
-		if (retval == -1) return;
+		if (retval == (addr_t)-1) return;
 		else {
 			sp_rtrace_fcall_t call1 = {
 					.type = SP_RTRACE_FTYPE_FREE,
@@ -396,7 +396,7 @@ static void file_function_exit(struct process *proc, const char *name)
 		}
 
 	} else if (strcmp(name, "dup") == 0) {
-		if (retval == -1) return;
+		if (retval == (addr_t)-1) return;
 		sp_rtrace_fcall_t call = {
 				.type = SP_RTRACE_FTYPE_ALLOC,
 				.index = rd->rp_number,
@@ -411,7 +411,7 @@ static void file_function_exit(struct process *proc, const char *name)
 		sp_rtrace_print_call(rd->fp, &call);
 
 	} else if (strcmp(name, "socketpair") == 0){
-		if (retval == -1) return;
+		if (retval == (addr_t)-1) return;
 		else {
 			char domain_s[64], type_s[64], protocol_s[64];
 			snprintf(domain_s, sizeof(domain_s), "0x%lx", fn_argument(proc, 0));
@@ -421,7 +421,7 @@ static void file_function_exit(struct process *proc, const char *name)
 					{.name = "domain", .value = domain_s},
 					{.name = "type", .value = type_s},
 					{.name = "protocol", .value = protocol_s},
-					{0}
+					{.name = NULL}
 			};
 
 			size_t filedes[2];
@@ -460,7 +460,7 @@ static void file_function_exit(struct process *proc, const char *name)
 		}
 
 	} else if (strcmp(name, "pipe") == 0) {
-		if (retval == -1) return;
+		if (retval == (addr_t)-1) return;
 		else {
 			size_t arg0 = fn_argument(proc, 0);
 			int fd1 = trace_mem_readw(proc, arg0);
@@ -495,7 +495,7 @@ static void file_function_exit(struct process *proc, const char *name)
 		}
 
 	} else if (strcmp(name, "pipe2") == 0) {
-		if (retval == -1) return;
+		if (retval == (addr_t)-1) return;
 		else {
 			size_t arg0 = fn_argument(proc, 0);
 			int fd1 = trace_mem_readw(proc, arg0);
@@ -531,7 +531,7 @@ static void file_function_exit(struct process *proc, const char *name)
 
 	} else if (strcmp(name, "fcntl") == 0) {
 		size_t arg1 = fn_argument(proc, 1);
-		if ( (arg1 == F_DUPFD || arg1 == F_DUPFD_CLOEXEC) && retval != -1){
+		if ( (arg1 == F_DUPFD || arg1 == F_DUPFD_CLOEXEC) && retval != (addr_t)-1){
 			sp_rtrace_fcall_t call = {
 					.type = SP_RTRACE_FTYPE_ALLOC,
 					.index = rd->rp_number,
@@ -551,7 +551,7 @@ static void file_function_exit(struct process *proc, const char *name)
 		}
 
 	} else if (strcmp(name, "inotify_init") == 0) {
-		if (retval == -1) return;
+		if (retval == (addr_t)-1) return;
 		sp_rtrace_fcall_t call = {
 				.type = SP_RTRACE_FTYPE_ALLOC,
 				.index = rd->rp_number,
@@ -608,7 +608,7 @@ static void file_report_init(struct process *proc)
 	sp_rtrace_print_resource(proc->rp_data->fp, &res_fp);
 }
 
-struct plg_api *init()
+struct plg_api *init(void)
 {
 	static struct plg_api ma = {
 		.api_version = file_api_version,

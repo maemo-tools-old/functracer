@@ -474,7 +474,7 @@ static void memtransfer_report_init(struct process *proc)
 	sp_rtrace_print_resource(proc->rp_data->fp, &res_memory);
 }
 
-struct plg_api *init()
+struct plg_api *init(void)
 {
 	static struct plg_api ma = {
 		.api_version = memtransfer_api_version,

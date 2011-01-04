@@ -137,13 +137,14 @@ static int nreg_compare_name(const void* item1, const void* item2)
  *
  * @param[in] item   the name registry node to free.
  */
+/*
 static void nreg_free_node(void* item)
 {
 	nreg_node_t* pnode = (nreg_node_t*)item;
 	if (pnode->name) free(pnode->name);
 	free(pnode);
 }
-
+*/
 /**
  * Calculates hash from the specified string.
  *
@@ -175,7 +176,7 @@ static unsigned int nreg_calc_raw_hash(const char* name)
  * @param[in] which
  * @param[in] depth
  */
-static void nreg_validate_hash(const void* item, const VISIT which, int depth)
+static void nreg_validate_hash(const void* item, const VISIT which, int depth __attribute__((unused)))
 {
 	if (nreg_validate_hash_result) {
 		switch (which) {
@@ -250,13 +251,11 @@ static unsigned int nreg_get_hash(const char* name)
 /**
  * Releases resources allocated by name registry.
  */
-static void hash_cleanup() __attribute__((unused));
-
-static void hash_cleanup()
-{
+/*
+static void hash_cleanup(void) {
 	tdestroy(nreg_root, nreg_free_node);
 }
-
+*/
 
 /*
  * File descriptor registry implementation.
@@ -298,13 +297,14 @@ static void* fdreg_root;
  *
  * @param[in] item   the file descriptor registry node.
  */
+/*
 static void fdreg_free_node(void* item)
 {
 	fdreg_node_t* pnode = item;
 	if (pnode->name) free(pnode->name);
 	free(pnode);
 }
-
+*/
 /**
  * Compares two file descriptor registry nodes by their file descriptors.
  *
@@ -372,8 +372,7 @@ static fdreg_node_t* fdreg_get_fd(int fd)
  *
  * @param[in] fd  the file descriptor.
  */
-static void fdreg_remove(int fd) __attribute__((unused));
-
+/*
 static void fdreg_remove(int fd)
 {
 	fdreg_node_t node = {.fd = fd};
@@ -383,16 +382,16 @@ static void fdreg_remove(int fd)
 		tdelete(&node, &fdreg_root, fdreg_compare_fd);
 	}
 }
-
+*/
 /**
  * Releases resources allocated by file descriptor registry.
  */
-static void fdreg_cleanup() __attribute__((unused));
-
-static void fdreg_cleanup()
+/*
+static void fdreg_cleanup(void)
 {
 	tdestroy(fdreg_root, fdreg_free_node);
 }
+*/
 /**/
 
 /*
@@ -472,12 +471,12 @@ static addr_node_t* addr_get(addr_t addr)
  *
  * @return
  */
-static void addr_cleanup() __attribute__((unused));
-
-static void addr_cleanup()
+/*
+static void addr_cleanup(void)
 {
 	tdestroy(addr_root, free);
 }
+*/
 /**/
 
 static void module_function_exit(struct process *proc, const char *name)
@@ -489,7 +488,7 @@ static void module_function_exit(struct process *proc, const char *name)
 	
 	if (false);
 	else if (strcmp(name, "shm_open") == 0) {
-		if (rc == -1) return;
+		if (rc == (addr_t)-1) return;
 		char arg_name[PATH_MAX]; trace_mem_readstr(proc, fn_argument(proc, 0), arg_name, sizeof(arg_name));
 		addr_t oflag = fn_argument(proc, 1);
 		char arg_oflag[16]; snprintf(arg_oflag, sizeof(arg_oflag), "0x%lx", (unsigned long)oflag);
@@ -515,7 +514,7 @@ static void module_function_exit(struct process *proc, const char *name)
 				{.name="name", .value=arg_name},
 				{.name="oflag", .value=arg_oflag},
 				{.name="mode", .value=arg_mode},
-				{0}
+				{.name = NULL}
 			};
 			sp_rtrace_print_args(rd->fp, args);
 
@@ -540,12 +539,12 @@ static void module_function_exit(struct process *proc, const char *name)
 			{.name="name", .value=arg_name},
 			{.name="oflag", .value=arg_oflag},
 			{.name="mode", .value=arg_mode},
-			{0}
+			{.name = NULL}
 		};
 		sp_rtrace_print_args(rd->fp, args);
 	}
 	else if (strcmp(name, "shm_unlink") == 0) {
-		if (rc == -1) return;
+		if (rc == (addr_t)-1) return;
 		is_free = 1;
 		char arg_name[PATH_MAX]; trace_mem_readstr(proc, fn_argument(proc, 0), arg_name, sizeof(arg_name));
 
@@ -564,31 +563,31 @@ static void module_function_exit(struct process *proc, const char *name)
 		
 		sp_rtrace_farg_t args[] = {
 			{.name="name", .value=arg_name},
-			{0}
+			{.name = NULL}
 		};
 		sp_rtrace_print_args(rd->fp, args);
 	}
 	else if (strcmp(name, "open") == 0) {
-		if (rc == -1) return;
+		if (rc == (addr_t)-1) return;
 		char arg_name[PATH_MAX]; trace_mem_readstr(proc, fn_argument(proc, 0), arg_name, sizeof(arg_name));
 		fdreg_store_fd(rc, arg_name, FD_FILE, fn_argument(proc, 1));
 		return;
 	}
 	else if (strcmp(name, "open64") == 0) {
-		if (rc == -1) return;
+		if (rc == (addr_t)-1) return;
 		char arg_name[PATH_MAX]; trace_mem_readstr(proc, fn_argument(proc, 0), arg_name, sizeof(arg_name));
 		fdreg_store_fd(rc, arg_name, FD_FILE, fn_argument(proc, 1));
 		return;
 	}
 	else if (strcmp(name, "creat") == 0) {
-		if (rc == -1) return;
+		if (rc == (addr_t)-1) return;
 		char arg_name[PATH_MAX]; trace_mem_readstr(proc, fn_argument(proc, 0), arg_name, sizeof(arg_name));
 		fdreg_store_fd(rc, arg_name, FD_FILE, O_CREAT|O_WRONLY|O_TRUNC);
 		return;
 	}
 	/* handle mmap2 together with mmap as the offset is ignored by tracker */
 	else if (strcmp(name, "mmap") == 0 || strcmp(name, "mmap2") == 0 || strcmp(name, "mmap64") == 0) {
-		if ((int)rc == -1) return;
+		if (rc == (addr_t)-1) return;
 		addr_t fd = fn_argument(proc, 4);
 		addr_store(rc, fd);
 		addr_t flags = fn_argument(proc, 3);
@@ -619,10 +618,9 @@ static void module_function_exit(struct process *proc, const char *name)
 			{.name="prot", .value=arg_prot},
 			{.name="flags", .value=arg_flags},
 			{.name="offset", .value=arg_offset},
-			{.name="fd", .value=arg_fd},
-			{0}, // reserved for fd name
-			{0}, // reserved for fd mode
-			{0}
+			{.name = NULL}, // reserved for fd name
+			{.name = NULL}, // reserved for fd mode
+			{.name = NULL}
 		};
 		if (flags & (MAP_ANONYMOUS | MAP_ANON)) {
 			/* hide the fd argument for anonymous mappings */
@@ -663,7 +661,7 @@ static void module_function_exit(struct process *proc, const char *name)
 		char arg_length[16]; snprintf(arg_length, sizeof(arg_length), "%ld", fn_argument(proc, 1));
 		sp_rtrace_farg_t args[] = {
 			{.name="length", .value=arg_length},
-			{0}
+			{.name = NULL}
 		};
 		sp_rtrace_print_args(rd->fp, args);
 	}
@@ -729,7 +727,7 @@ static void module_report_init(struct process *proc)
 	sp_rtrace_print_resource(proc->rp_data->fp, &res_shmfd);
 }
 
-struct plg_api *init()
+struct plg_api *init(void)
 {
 	static struct plg_api ma = {
 		.api_version = module_api_version,

@@ -1,3 +1,5 @@
+AM_CFLAGS = -Wall -Wextra -Wstrict-prototypes -Wno-unused-parameter -fPIC
+
 pkglib_LTLIBRARIES = memory.la file.la
 memory_la_SOURCES = memory.c
 memory_la_LDFLAGS = -no-undefined -module -avoid-version

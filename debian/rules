@@ -15,7 +15,11 @@
 DEB_HOST_GNU_TYPE   ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
 DEB_BUILD_GNU_TYPE  ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
 
-CFLAGS=-Wall -O2 -g
+CFLAGS=-O2 -g
+
+ifneq (,$(findstring werror,$(DEB_BUILD_OPTIONS)))
+	CFLAGS += -Werror
+endif
 
 ifneq (,$(findstring debug,$(DEB_BUILD_OPTIONS)))
 	debugopts += --enable-debug
@@ -48,7 +52,7 @@ clean:
 
 	# Add here commands to clean up after the build process.
 	[ ! -f Makefile ] || $(MAKE) distclean
-	rm -f config.sub config.guess
+	#rm -f config.sub config.guess
 	rm -f man/functracer.1
 	find -name core | xargs -r rm
 
