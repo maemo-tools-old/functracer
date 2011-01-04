@@ -67,6 +67,6 @@ addr_t fixup_address(addr_t addr)
 int ssol_prepare_bkpt(struct breakpoint *bkpt, void *safe_insn)
 {
 	/* no special instruction handling for SSOL in x86 yet */
-	memcpy(safe_insn, bkpt->orig_insn, MAX_INSN_SIZE);
+	memcpy(safe_insn, bkpt->orig_insn.data, MAX_INSN_SIZE);
 	return 0;
 }

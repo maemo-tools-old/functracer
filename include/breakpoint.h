@@ -39,7 +39,7 @@ struct bkpt_insn {
 
 union insn_data {
 	unsigned char data[MAX_INSN_SIZE];
-	long* insn;
+	long insn;
 };
 
 struct breakpoint;
