@@ -110,5 +110,6 @@ int bt_backtrace(struct bt_data *btd, void** frames, char **buffer, int size)
 void bt_finish(struct bt_data *btd)
 {
 	_UPT_destroy(btd->ui);
+	unw_destroy_addr_space(btd->as);
 	free(btd);
 }

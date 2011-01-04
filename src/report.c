@@ -41,7 +41,7 @@
 
 void rp_write_backtraces(struct process *proc)
 {
-	int bt_depth;
+	int bt_depth, i;
 	char *names[MAX_BT_DEPTH];
 	void *frames[MAX_BT_DEPTH];
 	struct rp_data *rd = proc->rp_data;
@@ -57,6 +57,12 @@ void rp_write_backtraces(struct process *proc)
 	};
 
 	sp_rtrace_print_trace(rd->fp, &trace);
+
+	if (arguments.resolve_name) {
+		for (i = 0; i < bt_depth; i++) {
+			free(names[i]);
+		}
+	}
 }
 
 
@@ -153,6 +159,7 @@ void rp_finish(struct process *proc)
 		rd->step++;
 		if (arguments.save_to_file)
 			fclose(rd->fp);
+		free(rd);
 	}
 	if (arguments.verbose) {
 		char fname[256];
