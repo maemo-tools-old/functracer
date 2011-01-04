@@ -112,7 +112,7 @@ static void post_rn_pc(struct process *proc, struct breakpoint *bkpt)
 static void post_branch(struct process *proc, struct breakpoint *bkpt)
 {
 	addr_t pc = bkpt->addr;
-	long insn = *(long *)bkpt->orig_insn;
+	long insn = *bkpt->orig_insn.insn;
 	int disp = branch_displacement(insn);
 	set_instruction_pointer(proc, pc + 8 + disp);
 }
@@ -120,7 +120,7 @@ static void post_branch(struct process *proc, struct breakpoint *bkpt)
 /* TODO: add support for more instructions */
 int ssol_prepare_bkpt(struct breakpoint *bkpt, void *safe_insn)
 {
-	long orig_insn = *(long *)bkpt->orig_insn;
+	long orig_insn = *bkpt->orig_insn.insn;
 	long *insn = (long *)safe_insn;
 
 	/* by default, the instruction is unmodified */

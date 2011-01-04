@@ -48,7 +48,7 @@ int get_syscall_nr(struct process *proc, int *nr)
 	/* get the user's pc (plus 8) */
 	int pc = trace_user_readw(proc, off_pc);
 	/* fetch the SWI instruction */
-	int insn = trace_mem_readw(proc, (addr_t)pc - 4);
+	unsigned int insn = trace_mem_readw(proc, (addr_t)pc - 4);
 	int ip = trace_user_readw(proc, off_ip);
 
 	if (insn == 0xef000000 || insn == 0x0f000000) {

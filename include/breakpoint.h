@@ -37,6 +37,11 @@ struct bkpt_insn {
 	size_t size;
 };
 
+union insn_data {
+	unsigned char data[MAX_INSN_SIZE];
+	long* insn;
+};
+
 struct breakpoint;
 struct breakpoint {
 	addr_t addr, ssol_addr;
@@ -46,7 +51,7 @@ struct breakpoint {
 	int refcnt;
 	int enabled;
 
-	unsigned char orig_insn[MAX_INSN_SIZE];
+	union insn_data orig_insn;
 	void (*ssol_pre_handler)(struct process *proc, struct breakpoint *bkpt);
 	void (*ssol_post_handler)(struct process *proc, struct breakpoint *bkpt);
 	void *ssol_data;

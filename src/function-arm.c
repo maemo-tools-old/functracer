@@ -101,7 +101,7 @@ int fn_callstack_push(struct process *proc, char *fn_name)
 
 	regs = xmalloc(sizeof(struct pt_regs));
 	trace_getregs(proc, regs);
-	if (regs->ARM_lr == proc->ssol->first) {
+	if ((addr_t)regs->ARM_lr == proc->ssol->first) {
 		debug(2, "direct branch detected, callee=%s, caller=%s", fn_name,
 			proc->callstack ? (char *)proc->callstack->data[2] : "<unknown>");
 		free(regs);

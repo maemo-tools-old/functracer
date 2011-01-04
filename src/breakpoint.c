@@ -45,7 +45,7 @@ static void enable_breakpoint(struct process *proc, struct breakpoint *bkpt)
 	unsigned char safe_insn[MAX_INSN_SIZE];
 
 	debug(1, "pid=%d, addr=0x%x", proc->pid, bkpt->addr);
-	trace_mem_read(proc, bkpt->addr, bkpt->orig_insn, MAX_INSN_SIZE);
+	trace_mem_read(proc, bkpt->addr, bkpt->orig_insn.data, MAX_INSN_SIZE);
 	if (ssol_prepare_bkpt(bkpt, &safe_insn) < 0) {
 		msg_warn("Could not enable breakpoint at address %#x "
 			 "(SSOL unsafe; see README for details)",
@@ -61,7 +61,7 @@ static void disable_breakpoint(struct process *proc, struct breakpoint *bkpt)
 {
 	if (!bkpt->enabled)
 		return;
-	trace_mem_write(proc, bkpt->addr, bkpt->orig_insn, MAX_INSN_SIZE);
+	trace_mem_write(proc, bkpt->addr, bkpt->orig_insn.data, MAX_INSN_SIZE);
 }
 
 static struct breakpoint *breakpoint_from_address(struct process *proc, addr_t addr)
