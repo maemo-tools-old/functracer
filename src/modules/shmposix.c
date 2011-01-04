@@ -85,6 +85,13 @@ static sp_rtrace_resource_t res_shmfd = {
 	.id = 5,
 };
 
+/*
+ * The functracer does not support module uninitialization. Because of this
+ * the internal API uninitialization routines aren't currently needed and
+ * disabled with UNUSED_INTERNAL_API_FUNCTION define.
+ * Enable them on an as-needed basis.
+ */
+
 
 /*
  * Name registry implementation
@@ -132,19 +139,21 @@ static int nreg_compare_name(const void* item1, const void* item2)
 	return strcmp(node1->name, node2->name);
 }
 
+
+#ifdef UNUSED_INTERNAL_API_FUNCTION
 /**
  * Releases resource allocated for name registry node.
  *
  * @param[in] item   the name registry node to free.
  */
-/*
 static void nreg_free_node(void* item)
 {
 	nreg_node_t* pnode = (nreg_node_t*)item;
 	if (pnode->name) free(pnode->name);
 	free(pnode);
 }
-*/
+#endif
+
 /**
  * Calculates hash from the specified string.
  *
@@ -248,14 +257,15 @@ static unsigned int nreg_get_hash(const char* name)
 	return (*ppnode)->hash;
 }
 
+#ifdef UNUSED_INTERNAL_API_FUNCTION
 /**
  * Releases resources allocated by name registry.
  */
-/*
+
 static void hash_cleanup(void) {
 	tdestroy(nreg_root, nreg_free_node);
 }
-*/
+#endif
 
 /*
  * File descriptor registry implementation.
@@ -292,19 +302,20 @@ typedef struct fdreg_node_t {
 /* the file descriptor registry root node */
 static void* fdreg_root;
 
+#ifdef UNUSED_INTERNAL_API_FUNCTION
 /**
  * Releases resources allocated for file descriptor registry node.
  *
  * @param[in] item   the file descriptor registry node.
  */
-/*
 static void fdreg_free_node(void* item)
 {
 	fdreg_node_t* pnode = item;
 	if (pnode->name) free(pnode->name);
 	free(pnode);
 }
-*/
+#endif
+
 /**
  * Compares two file descriptor registry nodes by their file descriptors.
  *
@@ -366,13 +377,12 @@ static fdreg_node_t* fdreg_get_fd(int fd)
 	return NULL;
 }
 
-
+#ifdef UNUSED_INTERNAL_API_FUNCTION
 /**
  * Removes file descriptor data from the registry.
  *
  * @param[in] fd  the file descriptor.
  */
-/*
 static void fdreg_remove(int fd)
 {
 	fdreg_node_t node = {.fd = fd};
@@ -382,16 +392,18 @@ static void fdreg_remove(int fd)
 		tdelete(&node, &fdreg_root, fdreg_compare_fd);
 	}
 }
-*/
+#endif
+
+#ifdef UNUSED_INTERNAL_API_FUNCTION
 /**
  * Releases resources allocated by file descriptor registry.
  */
-/*
 static void fdreg_cleanup(void)
 {
 	tdestroy(fdreg_root, fdreg_free_node);
 }
-*/
+#endif
+
 /**/
 
 /*
@@ -466,17 +478,18 @@ static addr_node_t* addr_get(addr_t addr)
 	return NULL;
 }
 
+#ifdef UNUSED_INTERNAL_API_FUNCTION
 /**
  * Releases resources allocated by adress mapping registry.
  *
  * @return
  */
-/*
 static void addr_cleanup(void)
 {
 	tdestroy(addr_root, free);
 }
-*/
+#endif
+
 /**/
 
 static void module_function_exit(struct process *proc, const char *name)
