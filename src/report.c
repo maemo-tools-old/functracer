@@ -159,7 +159,6 @@ void rp_finish(struct process *proc)
 		rd->step++;
 		if (arguments.save_to_file)
 			fclose(rd->fp);
-		free(rd);
 	}
 	if (arguments.verbose) {
 		char fname[256];
@@ -171,5 +170,8 @@ void rp_finish(struct process *proc)
 			snprintf(fname, sizeof(fname), "stdout");
 		fprintf(stderr, "Stopped tracing %d, trace saved to "
 			"%s\n", proc->pid, fname);
+	}
+	if (rd->refcnt == 0) {
+		free(rd);
 	}
 }
