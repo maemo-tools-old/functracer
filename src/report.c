@@ -107,6 +107,7 @@ static int rp_write_header(struct process *proc)
 					pid_s,           // HEADER_PID
 					NULL,            // HEADER_FILTER
 					btdepth_s,       // HEADER_BACKTRACE_DEPTH
+					PACKAGE_STRING,  // HEADER_ORIGIN
 			},
 	};
 
