@@ -80,6 +80,12 @@ static sp_rtrace_resource_t res_address = {
 		.flags = SP_RTRACE_RESOURCE_DEFAULT,
 };
 
+static sp_rtrace_resource_t res_control = {
+		.id = 3,
+		.type = "control",
+		.desc = "shared memory segment control operation",
+		.flags = SP_RTRACE_RESOURCE_DEFAULT,
+};
 
 #ifdef __amd64__
  #define IPC_64  0x00
@@ -154,13 +160,38 @@ static void function_exit(struct process *proc, const char *name)
 		 * 2) if the command was successfull
 		 * 3) if the following stat command for the segment fails with EIDRM (removed identifier) or EINVAL (invalid argument) error.
 		 */
+		int shmid = fn_argument(proc, 0);
 		int cmd = fn_argument(proc, 1);
 		if (cmd != IPC_RMID || retval == (addr_t)-1) return;
-		int shmid = fn_argument(proc, 0);
+
+		/* report shmctl call with IPC_RMID command */
+		sp_rtrace_fcall_t call1 = {
+				.type = SP_RTRACE_FTYPE_FREE,
+				.index = rd->rp_number++,
+				.context = context_mask,
+				.timestamp = RP_TIMESTAMP,
+				.res_type = (void*)res_control.type,
+				.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
+				.name = "shmctl",
+				.res_size = 0,
+				.res_id = (pointer_t)shmid,
+		};
+		sp_rtrace_farg_t args[] = {
+				{.name = "cmd", .value = "IPC_RMID"},
+				{.name = NULL}
+		};
+		sp_rtrace_print_call(rd->fp, &call1);
+		sp_rtrace_print_args(rd->fp, args);
+
+		if (arguments.enable_free_bkt) rp_write_backtraces(proc);
+		else sp_rtrace_print_comment(rd->fp, "\n");
+
+		/* */
+
 		struct shmid_ds ds;
 		if (shmctl(shmid, IPC_STAT | IPC_64, &ds) != -1 || (errno != EIDRM && errno != EINVAL) ) return;
 
-		sp_rtrace_fcall_t call = {
+		sp_rtrace_fcall_t call2 = {
 				.type = SP_RTRACE_FTYPE_FREE,
 				.index = rd->rp_number,
 				.context = context_mask,
@@ -171,7 +202,7 @@ static void function_exit(struct process *proc, const char *name)
 				.res_type = (void*)res_segment.type,
 				.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
 		};
-		sp_rtrace_print_call(rd->fp, &call);
+		sp_rtrace_print_call(rd->fp, &call2);
 		is_free = 1;
 	}
 	else if (strcmp(name, "shmat") == 0) {
@@ -306,6 +337,7 @@ static void report_init(struct process *proc)
 	assert(proc->rp_data != NULL);
 	sp_rtrace_print_resource(proc->rp_data->fp, &res_segment);
 	sp_rtrace_print_resource(proc->rp_data->fp, &res_address);
+	sp_rtrace_print_resource(proc->rp_data->fp, &res_control);
 }
 
 /**
