@@ -1,3 +1,18 @@
+functracer (1.0) unstable; urgency=low
+
+  * increase backtrace max depth from 12 to 64.
+    Fixes: NB#212977
+  * compiler option, x86 reliability and minor memory leak fixes.
+    Fixes: NB#216300
+  * use proper trace headings.
+    Fixes: NB#215920
+  * add module for tracking POSIX shared memory mappings.
+  * misc improvements to already existing modules.
+  * -a option enables audit module automatically.
+  * module documentation improvements and more module generator examples.
+
+ -- Tommi Rantala <ext-tommi.1.rantala@nokia.com>  Fri, 07 Jan 2011 16:36:37 +0200
+
 functracer (0.23.1) unstable; urgency=low
 
   * debian/rules: do not copy config.sub and config.guess manually.
