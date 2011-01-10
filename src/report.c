@@ -100,7 +100,7 @@ static int rp_write_header(struct process *proc)
 
 	sp_rtrace_header_t header =  {
 			.fields = {
-					PACKAGE_STRING,  // HEADER_VERSION
+					NULL,            // HEADER_VERSION
 					BUILD_ARCH,      // HEADER_ARCH
 					NULL,            // HEADER_TIMESTAMP
 					buf,             // HEADER_PROCESS
