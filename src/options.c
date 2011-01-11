@@ -56,7 +56,7 @@ static const struct argp_option options[] = {
 	{"track", 'e', "PLUGIN", 0,
 	 "which set of functions to track", 0},
 	{"debug", 'd', NULL, 0, "maximum debug level", 0},
-	{"time", 'i', NULL, 0, "print absolute timestamps for every event", 0},
+	{"no-time", 'I', NULL, 0, "disable timestamps for every event", 0},
 	{"start", 's', NULL, 0, "enable tracking memory from beginning", 0},
 	{"free-backtraces", 'b', NULL, 0, 
 	 "enable backtraces for free() function", 0},
@@ -132,8 +132,8 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 		argp_state_help(state, stdout,  ARGP_HELP_STD_HELP);
 		/* Does not return. */
 		break;
-	case 'i':
-		arg_data->time++;
+	case 'I':
+		arg_data->time = 0;
 		break;
 	case 'l':
 		arg_data->path = arg;
@@ -180,6 +180,7 @@ int process_options(int argc, char *argv[], int *remaining)
 	memset(&arguments, 0, sizeof(struct arguments));
 	arguments.depth = MAX_BT_DEPTH > DEFAULT_BT_DEPTH ? DEFAULT_BT_DEPTH : MAX_BT_DEPTH;
 	arguments.plugin = "memory";
+	arguments.time = -1;
 
 	/* parse and process arguments */
 	ret = argp_parse(&argp, argc, argv,

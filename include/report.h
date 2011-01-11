@@ -27,7 +27,7 @@
 #include "process.h"
 #include "target_mem.h"
 
-#define RP_TIMESTAMP (arguments.time ? -1 : 0)
+#define RP_TIMESTAMP (arguments.time)
 
 struct rp_data {
 	pid_t pid;
