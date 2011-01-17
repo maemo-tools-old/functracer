@@ -82,6 +82,7 @@ static void audit_function_exit(struct process *proc, const char *name)
 			.res_id = (pointer_t)RES_ID,
 		};
 		sp_rtrace_print_call(rd->fp, &call);
+		free(symname);
 
 	} else {
 		msg_warn("unexpected function exit (%s)\n", name);
