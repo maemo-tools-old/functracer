@@ -73,7 +73,7 @@ static void audit_function_exit(struct process *proc, const char *name)
 
 	if (symname) {
 		sp_rtrace_fcall_t call = {
-			.type = SP_RTRACE_FTYPE_FREE,
+			.type = SP_RTRACE_FTYPE_ALLOC,
 			.index = rd->rp_number++,
 			.context = context_mask,
 			.timestamp = RP_TIMESTAMP,
