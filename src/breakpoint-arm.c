@@ -41,6 +41,7 @@
 #define ARM_reglist(insn, Reg)	(insn & (1 << Reg))
 #define ARM_PC			15
 #define STM(insn)		((insn & 0x0e500000) == 0x08000000 && ARM_cc(insn) != 0xf)
+#define STR_imm(insn)		((insn & 0x0f100000) == 0x05000000)
 #define LDR_imm(insn)		((insn & 0x0f300000) == 0x05100000)
 #define MOV_imm(insn)		((insn & 0x0fe00000) == 0x03a00000)
 #define MOV_reg(insn)		((insn & 0x0fef0ff0) == 0x01a00000)
@@ -133,6 +134,11 @@ int ssol_prepare_bkpt(struct breakpoint *bkpt, void *safe_insn)
 	/* Store multiple (Rn != PC and PC not in register list) */
 	if (STM(orig_insn) && ARM_Rn(orig_insn) != ARM_PC &&
 	    !ARM_reglist(orig_insn, ARM_PC)) {
+		return 0;
+	}
+	/* Store immediate offset (Rd != PC and Rn != PC) */
+	if (STR_imm(orig_insn) && ARM_Rd(orig_insn) != ARM_PC &&
+		ARM_Rn(orig_insn) != ARM_PC) {
 		return 0;
 	}
 	/* Load immediate offset (Rd != PC and Rn == PC) */
