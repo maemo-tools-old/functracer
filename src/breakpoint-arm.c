@@ -57,6 +57,7 @@
 #define SUB_reg(insn)		((insn & 0x0fe00010) == 0x00400000)
 #define TST_reg(insn)		((insn & 0x0ff0f010) == 0x01100000)
 #define TST_imm(insn)		((insn & 0x0ff0f000) == 0x03100000)
+#define RSB_reg(insn)		((insn & 0x0fe00010) == 0x00600000)
 
 addr_t bkpt_get_address(struct process *proc)
 {
@@ -192,6 +193,11 @@ int ssol_prepare_bkpt(struct breakpoint *bkpt, void *safe_insn)
 	}
 	/* Compare immediate offset (Rn != PC) */
 	if (TST_imm(orig_insn) && ARM_Rn(orig_insn) != ARM_PC) {
+		return 0;
+	}
+	/* Reverse Subtract register from register (Rd != PC, Rm != PC and Rn != PC) */
+	if (RSB_reg(orig_insn) && ARM_Rd(orig_insn) != ARM_PC &&
+		 ARM_Rm(orig_insn) != ARM_PC && ARM_Rn(orig_insn) != ARM_PC) {
 		return 0;
 	}
 	return -1;
