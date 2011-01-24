@@ -54,6 +54,7 @@
 #define branch_displacement(insn) sign_extend(((insn) & 0xffffff) << 2, 25)
 #define PLD_imm(insn)		((insn & 0xff30f000) == 0xf510f000)
 #define CMP_imm(insn)		((insn & 0x0ff0f000) == 0x03500000)
+#define SUB_reg(insn)		((insn & 0x0fe00010) == 0x00400000)
 
 addr_t bkpt_get_address(struct process *proc)
 {
@@ -180,6 +181,11 @@ int ssol_prepare_bkpt(struct breakpoint *bkpt, void *safe_insn)
 	}
 	/* Compare immediate offset (Rn != PC) */
 	if (CMP_imm(orig_insn) && ARM_Rn(orig_insn) != ARM_PC) {
+		return 0;
+	}
+	/* Subtract register from register (Rd != PC, Rm != PC and Rn != PC) */
+	if (SUB_reg(orig_insn) && ARM_Rd(orig_insn) != ARM_PC &&
+		 ARM_Rm(orig_insn) != ARM_PC && ARM_Rn(orig_insn) != ARM_PC) {
 		return 0;
 	}
 	return -1;
