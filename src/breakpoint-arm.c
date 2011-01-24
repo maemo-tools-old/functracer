@@ -141,6 +141,11 @@ int ssol_prepare_bkpt(struct breakpoint *bkpt, void *safe_insn)
 		ARM_Rn(orig_insn) != ARM_PC) {
 		return 0;
 	}
+	/* Load immediate offset (Rd != PC and Rn != PC) */
+	if (LDR_imm(orig_insn) && ARM_Rd(orig_insn) != ARM_PC &&
+		ARM_Rn(orig_insn) != ARM_PC) {
+		return 0;
+	}
 	/* Load immediate offset (Rd != PC and Rn == PC) */
 	if (LDR_imm(orig_insn) && ARM_Rd(orig_insn) != ARM_PC &&
 	    ARM_Rn(orig_insn) == ARM_PC) {
