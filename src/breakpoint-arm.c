@@ -53,6 +53,7 @@
 #define sign_extend(x, signbit) ((x) | (0 - ((x) & (1 << (signbit)))))
 #define branch_displacement(insn) sign_extend(((insn) & 0xffffff) << 2, 25)
 #define PLD_imm(insn)		((insn & 0xff30f000) == 0xf510f000)
+#define CMP_imm(insn)		((insn & 0x0ff0f000) == 0x03500000)
 
 addr_t bkpt_get_address(struct process *proc)
 {
@@ -175,6 +176,10 @@ int ssol_prepare_bkpt(struct breakpoint *bkpt, void *safe_insn)
 	}
 	/* Preload Data immediate offset (Rn != PC) */
 	if (PLD_imm(orig_insn) && ARM_Rn(orig_insn) != ARM_PC) {
+		return 0;
+	}
+	/* Compare immediate offset (Rn != PC) */
+	if (CMP_imm(orig_insn) && ARM_Rn(orig_insn) != ARM_PC) {
 		return 0;
 	}
 	return -1;
