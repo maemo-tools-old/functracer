@@ -69,7 +69,7 @@ static void audit_function_exit(struct process *proc, const char *name)
 
 	assert(proc->rp_data != NULL);
 	
-	const char* symname = sp_rtrace_tracker_query_symbol(&tracker, name);
+	char* symname = sp_rtrace_tracker_query_symbol(&tracker, name);
 
 	if (symname) {
 		sp_rtrace_fcall_t call = {
