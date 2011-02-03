@@ -14,7 +14,9 @@ Contents
 -----------------
 This testsuite is based on the dejagnu framework, which is again dependent on
 Expect and Tcl. So all these three package (tcl, expect and dejagnu) should be
-installed on your system before running these tests.
+installed on your system before running these tests. 
+
+Some of scripts use perl, so it also must be installed on your system.
 
 After unpacking file functracer-XX.tar.gz:
 # tar -zxvfm functracer-XX.tar.gz

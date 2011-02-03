@@ -26,8 +26,8 @@ set testfile "malloc_recursive"
 set srcfile ${testfile}.c
 set binfile ${testfile}
 
-verbose "remove any allocs-*.trace....."
-catch "exec sh -c {rm -rf ${srcdir}/${subdir}/allocs-*.trace}"
+verbose "remove any *.rtrace.txt ....."
+catch "exec sh -c {rm -rf ${srcdir}/${subdir}/*.rtrace.txt}"
 
 verbose "compiling source file now....."
 if { [ ft_compile "${srcdir}/${subdir}/${testfile}.c" "${srcdir}/${subdir}/${binfile}" executable {debug} ] != "" } {
@@ -45,6 +45,6 @@ verbose "ft runtest output: $exec_output\n"
 
 # Verify the output by checking numbers of malloc/free on .trace files.
 set pattern " malloc("
-ft_verify_output ${srcdir}/${subdir}/*.trace $pattern 100
+ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt $pattern 100
 set pattern " free("
-ft_verify_output ${srcdir}/${subdir}/*.trace $pattern 100
+ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt $pattern 100

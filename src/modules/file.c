@@ -301,7 +301,7 @@ static void file_function_exit(struct process *proc, const char *name)
 				.name = "fdopen",
 				.res_size = RES_SIZE,
 				.res_id = (pointer_t)retval,
-				.res_type = (void*)res_fd.type,
+				.res_type = (void*)res_fp.type,
 				.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
 		};
 		sp_rtrace_print_call(rd->fp, &call2);

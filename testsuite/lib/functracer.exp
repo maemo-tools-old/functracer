@@ -234,10 +234,15 @@ proc ft_verify_output_match { file_to_search name pattern1 pattern2 id } {
 		return
 	}
 	catch "exec sh -c {perl -ne 'm/$id$pattern1/ && print \$1' $file_to_search}" id1
+	if {$id1 == ""} then {
+	    fail "$name: first pattern not found!"
+	    return
+	}
+	
 	catch "exec sh -c {perl -ne 'm/$id$output/ && $id1 < \$1 && print \"\$1\\n\"' $file_to_search | head -n1}" id2
 	verbose "output: match = $output, id1 = $id1, id2 = $id2"
-	if { $output == "" || $id1 == "" || $id2 == "" } then {
-		fail "Pattern not found!"
+	if { $output == "" || $id2 == "" } then {
+		fail "$name: pattern not found!"
 	} else {
 		if { $id2 > $id1 } then {
 			pass "$name"

@@ -26,8 +26,8 @@ set testfile "realloc"
 set srcfile ${testfile}.c
 set binfile ${testfile}
 
-verbose "remove any allocs-*.trace....."
-catch "exec sh -c {rm -rf ${srcdir}/${subdir}/allocs-*.trace}"
+verbose "remove any *.rtrace.txt ....."
+catch "exec sh -c {rm -rf ${srcdir}/${subdir}/*.rtrace.txt}"
 
 verbose "compiling source file now....."
 if { [ ft_compile "${srcdir}/${subdir}/${testfile}.c" "${srcdir}/${subdir}/${binfile}" executable {debug} ] != "" } {
@@ -44,8 +44,13 @@ set exec_output [ft_runtest $srcdir/$subdir $srcdir/$subdir/$binfile]
 verbose "ft runtest output: $exec_output\n"
 
 # Verify the output by matching the malloc/free on .trace files.
-set id_pattern {^([0-9]+)\.}
-set pattern2 { free\\($1\\)}
+set id_pattern {^([0-9]+)\. \[[0-9]+:[0-9]+:[0-9]+\.[0-9]+\]}
 
+set pattern2 { realloc\\($1\\)}
+set pattern1 { malloc\(123\) = (0x[0-9a-f]+)}
+ft_verify_output_match ${srcdir}/${subdir}/*.rtrace.txt "realloc(1)" $pattern1 $pattern2 $id_pattern
+
+
+set pattern2 { free\\($1\\)}
 set pattern1 { realloc\(456\) = (0x[0-9a-f]+)}
-ft_verify_output_match ${srcdir}/${subdir}/*.trace "realloc(456)" $pattern1 $pattern2 $id_pattern
+ft_verify_output_match ${srcdir}/${subdir}/*.rtrace.txt "realloc(2)" $pattern1 $pattern2 $id_pattern
