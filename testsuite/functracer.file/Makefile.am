@@ -1,6 +1,7 @@
 SUFFIXES:      
 clean-local:
-	-rm -f creat fdopen fopen freopen open
+	-rm -f creat fdopen fopen freopen open dup dup2 fcntl \
+		inotify_init open64 pipe pie2 socket
 	-rm -f *.o *.so 
 	-rm -f *.trace
 	-rm -f $(CLEANFILES)

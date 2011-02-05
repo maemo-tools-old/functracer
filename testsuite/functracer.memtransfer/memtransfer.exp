@@ -1,0 +1,65 @@
+# This file is part of Functracer.
+#
+# Copyright (C) 2011 by Nokia Corporation
+#
+# Contact: Eero Tamminen <eero.tamminen@nokia.com>
+#
+# This file is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+# 02110-1301 USA
+#
+# Based on testsuite code from ltrace.
+
+set testfile "memtransfer"
+set srcfile ${testfile}.c
+set binfile ${testfile}
+
+verbose "remove any *.rtrace.txt ....."
+catch "exec sh -c {rm -rf ${srcdir}/${subdir}/*.rtrace.txt}"
+
+verbose "compiling source file now....."
+if { [ ft_compile "${srcdir}/${subdir}/${testfile}.c" "${srcdir}/${subdir}/${binfile}" executable {debug} ] != "" } {
+     send_user "Testcase compile failed, so all tests in this file will automatically fail.\n"
+}
+
+# set options for functracer
+ft_options "-s" "-r" "-f" "-l" "${srcdir}/${subdir}/" "-e" "${srcdir}/../src/modules/.libs/memtransfer.so" 
+
+# Run PUT for functracer.
+set exec_output [ft_runtest $srcdir/$subdir $srcdir/$subdir/$binfile]
+
+# Check the output of this program.
+verbose "ft runtest output: $exec_output\n"
+
+ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " strcpy\(13\) " 1
+ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " strncpy\(5\) " 1
+ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " strcat\(26\) " 1
+ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " strncat\(5\) " 1
+ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " strdup\(13\) " 1
+ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " strndup\(5\) " 1
+
+ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " wmemcpy\(52\) " 1
+ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " wmempcpy\(52\) " 1
+ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " wmemmove\(208\) " 1
+ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " wmemset\(400\) " 1
+ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " wcscpy\(52\) " 1
+ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " wcsncpy\(20\) " 1
+ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " wcpcpy\(52\) " 1
+ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " wcpncpy\(20\) " 1
+ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " wcscat\(104\) " 1
+ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " wcsncat\(20\) " 1
+ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " wcsdup\(52\) " 1
+
+
+

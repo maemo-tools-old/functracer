@@ -1,6 +1,6 @@
-# This file is part of Functracer.
+# This file is part of Func2008tracer.
 #
-# Copyright (C) 2008 by Nokia Corporation
+# Copyright (C) 2008,2011 by Nokia Corporation
 # Copyright (C) 1997-2007 Juan Cespedes <cespedes@debian.org>
 #
 # Contact: Eero Tamminen <eero.tamminen@nokia.com>
@@ -33,7 +33,7 @@ global FT_OPTIONS
 set FT_OPTIONS "";
 
 global COMPILE_OPTIONS
-set COMPILE_OPTIONS "-Wall -Werror -O2"
+set COMPILE_OPTIONS "-Wall -Werror -O0"
 
 # ft_compile SOURCE DEST TYPE OPTIONS 
 #
