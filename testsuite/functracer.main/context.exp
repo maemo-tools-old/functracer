@@ -29,13 +29,13 @@ set binfile ${testfile}
 verbose "remove any *.rtrace.txt ....."
 catch "exec sh -c {rm -rf ${srcdir}/${subdir}/*.rtrace.txt}"
 
-set old_compile_options $::COMPILE_OPTIONS
-set ::COMPILE_OPTIONS "$::COMPILE_OPTIONS -lsp-rtrace1"
+set options "debug"
+lappend options "additional_flags=-lsp-rtrace1"
+
 verbose "compiling source file now....."
-if { [ ft_compile "${srcdir}/${subdir}/${testfile}.c" "${srcdir}/${subdir}/${binfile}" executable {debug} ] != "" } {
+if { [ ft_compile "${srcdir}/${subdir}/${testfile}.c" "${srcdir}/${subdir}/${binfile}" executable $options ] != "" } {
      send_user "Testcase compile failed, so all tests in this file will automatically fail.\n"
 }
-set ::COMPILE_OPTIONS $old_compile_options
 
 # set options for functracer
 ft_options "-s" "-r" "-f" "-l" "${srcdir}/${subdir}/" "-e" "${srcdir}/../src/modules/.libs/memory.so" 

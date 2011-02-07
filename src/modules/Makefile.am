@@ -8,7 +8,7 @@ file_la_LDFLAGS = -no-undefined -module -avoid-version
 
 pkglib_LTLIBRARIES += gobject.la
 gobject_la_SOURCES = gobject.c
-gobject_la_LDFLAGS = -no-undefined -module -avoid-version
+gobject_la_LDFLAGS = -no-undefined -module -avoid-version 
 
 pkglib_LTLIBRARIES += memtransfer.la
 memtransfer_la_SOURCES = memtransfer.c

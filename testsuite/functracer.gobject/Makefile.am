@@ -1,6 +1,6 @@
 SUFFIXES:      
 clean-local:
-	-rm -f shmsysv
+	-rm -f gobject
 	-rm -f *.o *.so 
 	-rm -f *.rtrace.txt
 	-rm -f $(CLEANFILES)

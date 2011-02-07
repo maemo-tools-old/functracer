@@ -1,0 +1,50 @@
+# This file is part of Functracer.
+#
+# Copyright (C) 2011 by Nokia Corporation
+#
+# Contact: Eero Tamminen <eero.tamminen@nokia.com>
+#
+# This file is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+# 02110-1301 USA
+#
+# Based on testsuite code from ltrace.
+
+set testfile "gobject"
+set srcfile ${testfile}.c
+set binfile ${testfile}
+
+verbose "remove any *.rtrace.txt ....."
+catch "exec sh -c {rm -rf ${srcdir}/${subdir}/*.rtrace.txt}"
+
+verbose "compiling source file now....."
+catch "exec pkg-config --cflags --libs gtk+-2.0" opts
+
+lappend options "additional_flags=$opts"
+lappend options "debug"
+
+if { [ ft_compile "${srcdir}/${subdir}/${testfile}.c" "${srcdir}/${subdir}/${binfile}" executable $options] != "" } {
+     send_user "Testcase compile failed, so all tests in this file will automatically fail.\n"
+}
+
+# set options for functracer
+ft_options "-s" "-r" "-f" "-l" "${srcdir}/${subdir}/" "-e" "${srcdir}/../src/modules/.libs/gobject.so" 
+
+# Run PUT for functracer.
+set exec_output [ft_runtest $srcdir/$subdir $srcdir/$subdir/$binfile]
+
+ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " g_object_newv" 1
+ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " g_object_ref" 1
+ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " g_object_unref" 1
+
