@@ -1,6 +1,6 @@
 SUFFIXES:      
 clean-local:
-	-rm -f callchain callchain_cpp clone fork gthreads
+	-rm -f audit
 	-rm -f *.o *.so 
 	-rm -f *.rtrace.txt
 	-rm -f $(CLEANFILES)

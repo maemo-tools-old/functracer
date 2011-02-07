@@ -131,6 +131,7 @@ proc ft_compile_shlib_cpp {sources dest options} {
 # 
 proc ft_options { args } {
 	
+	verbose "ARGS $args"
 	global FT_OPTIONS
 	set FT_OPTIONS $args
 }

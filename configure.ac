@@ -116,6 +116,7 @@ AC_CONFIG_FILES([
   testsuite/functracer.memory/Makefile
   testsuite/functracer.memtransfer/Makefile
   testsuite/functracer.shmsysv/Makefile
+  testsuite/functracer.audit/Makefile
 ])
 
 AC_OUTPUT

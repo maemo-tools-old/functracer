@@ -2,7 +2,7 @@ SUFFIXES:
 clean-local:
 	-rm -f calloc malloc_recursive malloc_simple memalign posix_memalign realloc
 	-rm -f *.o *.so 
-	-rm -f *.trace
+	-rm -f *.rtrace.txt
 	-rm -f $(CLEANFILES)
 
 distclean-local: clean

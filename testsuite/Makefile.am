@@ -1,7 +1,7 @@
 AUTOMAKE_OPTIONS = dejagnu
 
 SUBDIRS = functracer.file functracer.main functracer.memory functracer.memtransfer \
-	functracer.shmsysv
+	functracer.shmsysv functracer.audit
 
 # Reset compiler/linker variables so that tests do not link with Functracer
 # dependencies
