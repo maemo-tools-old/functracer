@@ -157,7 +157,7 @@ static void thread_function_exit(struct process *proc, const char *name)
 				.index = rd->rp_number,
 				.context = context_mask,
 				.timestamp = RP_TIMESTAMP,
-				.name = "pthread_craete",
+				.name = "pthread_create",
 				.res_size = RES_SIZE,
 				.res_id = (pointer_t)trace_mem_readw(proc, fn_argument(proc, 0)),
 		};
