@@ -119,6 +119,7 @@ AC_CONFIG_FILES([
   testsuite/functracer.audit/Makefile
   testsuite/functracer.gobject/Makefile
   testsuite/functracer.thread/Makefile
+  testsuite/functracer.shmposix/Makefile
 ])
 
 AC_OUTPUT

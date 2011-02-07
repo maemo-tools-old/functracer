@@ -1,6 +1,6 @@
 SUFFIXES:      
 clean-local:
-	-rm -f thread thread_detached
+	-rm -f shm_open mmap mmap64
 	-rm -f *.o *.so 
 	-rm -f *.rtrace.txt
 	-rm -f $(CLEANFILES)

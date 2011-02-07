@@ -22,7 +22,7 @@
 #
 # Based on testsuite code from ltrace.
 
-set testfile "thread"
+set testfile "mmap64"
 set srcfile ${testfile}.c
 set binfile ${testfile}
 
@@ -31,14 +31,14 @@ catch "exec sh -c {rm -rf ${srcdir}/${subdir}/*.rtrace.txt}"
 
 
 set options "debug"
-lappend options "additional_flags=-lpthread"
+lappend options "additional_flags=-lrt"
 verbose "compiling source file now....."
 if { [ ft_compile "${srcdir}/${subdir}/${testfile}.c" "${srcdir}/${subdir}/${binfile}" executable $options ] != "" } {
      send_user "Testcase compile failed, so all tests in this file will automatically fail.\n"
 }
 
 # set options for functracer
-ft_options "-s" "-r" "-f" "-l" "${srcdir}/${subdir}/" "-e" "${srcdir}/../src/modules/.libs/thread-resource.so" 
+ft_options "-s" "-r" "-f" "-l" "${srcdir}/${subdir}/" "-e" "${srcdir}/../src/modules/.libs/shmposix.so" 
 
 # Run PUT for functracer.
 set exec_output [ft_runtest $srcdir/$subdir $srcdir/$subdir/$binfile]
@@ -48,8 +48,8 @@ verbose "ft runtest output: $exec_output\n"
 
 # Verify the output by matching the malloc/free on .trace files.
 set id_pattern {^([0-9]+)\. \[[0-9]+:[0-9]+:[0-9]+\.[0-9]+\]}
-set pattern2 { pthread_join\\($1\\)}
+set pattern2 { munmap<fshmmap>\\($1\\)}
 
-set pattern1 { pthread_create\(1\) = (0x[0-9a-f]+)}
-ft_verify_output_match ${srcdir}/${subdir}/*.rtrace.txt "thread(1)" $pattern1 $pattern2 $id_pattern
+set pattern1 { mmap64<fshmmap>\([0-9]+\) = (0x[0-9a-f]+)}
+ft_verify_output_match ${srcdir}/${subdir}/*.rtrace.txt "mmap64(1)" $pattern1 $pattern2 $id_pattern
 
