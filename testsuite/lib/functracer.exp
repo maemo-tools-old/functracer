@@ -219,6 +219,42 @@ proc ft_verify_output { file_to_search pattern {instance_no 0}} {
 	}
 }
 
+
+
+#
+# ft_verify_outputex FILE_TO_SEARCH PATTERN MAX_LINE
+# Verify the ft output by comparing the number of PATTERN in 
+# FILE_TO_SEARCH with INSTANCE_NO.  Do not specify INSTANCE_NO if
+# instance number is ignored in this test.
+# This function is similar to ft_verify_output, but uses extended
+# regexp to look for the pattern.
+# Return:
+#      0 = number of PATTERN in FILE_TO_SEARCH inqual to INSTANCE_NO.
+#      1 = number of PATTERN in FILE_TO_SEARCH qual to INSTANCE_NO.
+#
+proc ft_verify_outputex { file_to_search pattern {instance_no 0}} {
+
+	# compute the number of PATTERN in FILE_TO_SEARCH by grep and wc.
+	catch "exec sh -c {grep -E \"$pattern\" $file_to_search | wc -l ;exit}" output
+	verbose "output = $output"
+
+	if [ regexp "syntax error" $output ] then {
+		fail "Invalid regular expression $pattern"
+        } elseif { $instance_no == 0 } then {
+		if { $output == 0 } then {
+			fail "Fail to find $pattern in $file_to_search"
+		} else {
+			pass "$pattern in $file_to_search"
+		}
+	} elseif { $output >= $instance_no } then {
+		pass "$pattern in $file_to_search for $output times"
+		verbose "$pattern in $file_to_search for $output times"
+	} else {
+		fail "$pattern in $file_to_search for $output times, should be $instance_no"
+	}
+}
+
+
 #
 # ft_verify_output_match FILE_TO_SEARCH NAME PATTERN1 PATTERN2 ID
 # Verify the ft output by matching the allocation functions (PATTERN1) with
