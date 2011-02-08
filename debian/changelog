@@ -15,7 +15,8 @@ functracer (1.0) unstable; urgency=low
   * test-suite updated to latest state + tests added for all modules.
   * module documentation improvements and more module generator examples.
   * enabled timestamps by default. Disable with -I (--no-time) switch.
-  
+    Fixes: NB#217942
+
  -- Tommi Rantala <ext-tommi.1.rantala@nokia.com>  Tue, 08 Feb 2011 18:16:37 +0200
 
 functracer (0.23.1) unstable; urgency=low
