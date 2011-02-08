@@ -6,13 +6,17 @@ functracer (1.0) unstable; urgency=low
     Fixes: NB#216300
   * use proper trace headings.
     Fixes: NB#215920
+  * emulate ARM instructions required by function entry points
+    traced by different modules.
+    Fixes: NB#219861
   * add module for tracking POSIX shared memory mappings.
   * misc improvements to already existing modules.
-  * -a option enables audit module automatically.
+  * -a option enables audit module automatically and supports partial  matches.
+  * test-suite updated to latest state + tests added for all modules.
   * module documentation improvements and more module generator examples.
   * enabled timestamps by default. Disable with -I (--no-time) switch.
   
- -- Tommi Rantala <ext-tommi.1.rantala@nokia.com>  Fri, 07 Jan 2011 16:36:37 +0200
+ -- Tommi Rantala <ext-tommi.1.rantala@nokia.com>  Tue, 08 Feb 2011 18:16:37 +0200
 
 functracer (0.23.1) unstable; urgency=low
 
