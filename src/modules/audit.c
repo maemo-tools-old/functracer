@@ -93,7 +93,13 @@ static void audit_function_exit(struct process *proc, const char *name)
 
 static int audit_library_match(const char *symname)
 {
-	return sp_rtrace_tracker_query_symbol(&tracker, symname) != NULL;
+	char* name =  sp_rtrace_tracker_query_symbol(&tracker, symname);
+	int rc = 0;
+	if (name) {
+		free(name);
+		rc = 1;
+	}
+	return rc;
 }
 
 static void audit_report_init(struct process *proc)

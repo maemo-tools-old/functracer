@@ -51,7 +51,6 @@ ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " strndup\(5\) " 1
 
 ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " wmemcpy\(52\) " 1
 ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " wmempcpy\(52\) " 1
-ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " wmemmove\(208\) " 1
 ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " wmemset\(400\) " 1
 ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " wcscpy\(52\) " 1
 ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " wcsncpy\(20\) " 1

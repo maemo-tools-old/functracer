@@ -24,18 +24,65 @@
 
 #define _GNU_SOURCE
 
-#include <gtk/gtk.h>
+#include <glib-object.h>
+
+typedef struct {
+  GObject parent ;
+} CustomObject ;
+
+typedef struct {
+  GObjectClass parent ;
+} CustomObjectClass ;
+
+
+GType custom_object_get_type (void);
+
+#define CUSTOM_TYPE_OBJECT ( custom_object_get_type())
+
+
+#define CUSTOM_OBJECT ( object ) \
+         ( G_TYPE_CHECK_INSTANCE_CAST (( object ), \
+           CUSTOM_TYPE_OBJECT , CustomObject ))
+
+/*
+#define CUSTOM_OBJECT_CLASS (klass ) \
+         ( G_TYPE_CHECK_CLASS_CAST (( klass ), \
+           CUSTOM_TYPE_OBJECT , CustomObjectClass ))
+#define CUSTOM_IS_OBJECT ( object ) \
+         ( G_TYPE_CHECK_INSTANCE_TYPE (( object ), \
+           CUSTOM_TYPE_OBJECT ))
+#define CUSTOM_IS_OBJECT_CLASS ( klass ) \
+         ( G_TYPE_CHECK_CLASS_TYPE (( klass ), \
+           CUSTOM_TYPE_OBJECT ))
+#define CUSTOM_OBJECT_GET_CLASS (obj) \
+         ( G_TYPE_INSTANCE_GET_CLASS (( obj), \
+           CUSTOM_TYPE_OBJECT , CustomObjectClass ))
+*/
+G_DEFINE_TYPE ( CustomObject , custom_object , G_TYPE_OBJECT )
+
+static void custom_object_init (CustomObject * obj)
+{
+}
+
+static void custom_object_class_init(CustomObjectClass * klass)
+{
+    GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
+}
+
+
+
 
 int
 main (int argc, char *argv[])
 {
-  GtkWidget *window;
+	g_type_init();
 
-  gtk_init (&argc, &argv);
+	CustomObject *obj = g_object_newv(CUSTOM_TYPE_OBJECT ,0, NULL);
 
-  window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
-  gtk_widget_destroy(window);
+	g_object_ref(obj);
+	g_object_unref(obj);
+	g_object_unref(obj);
 
-  return 0;
+	return 0;
 }
 
