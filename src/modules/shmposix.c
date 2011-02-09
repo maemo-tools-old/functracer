@@ -613,7 +613,7 @@ static void module_function_exit(struct process *proc, const char *name)
 			.timestamp = RP_TIMESTAMP,
 			.res_type = (void*)(pfd ? (pfd->type == FD_POSIX ? res_pshmmap.type : res_fshmmap.type) : res_shmmap.type),
 			.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
-			.name = name,
+			.name = (char*)name,
 			.res_id = (pointer_t)rc,
 			.res_size = (size_t)fn_argument(proc, 1),
 			.index = rd->rp_number,

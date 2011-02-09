@@ -66,7 +66,6 @@ static void custom_object_init (CustomObject * obj)
 
 static void custom_object_class_init(CustomObjectClass * klass)
 {
-    GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
 }
 
 

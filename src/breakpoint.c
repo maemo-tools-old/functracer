@@ -47,10 +47,11 @@ static void enable_breakpoint(struct process *proc, struct breakpoint *bkpt)
 	debug(1, "pid=%d, addr=0x%x", proc->pid, bkpt->addr);
 	trace_mem_read(proc, bkpt->addr, bkpt->orig_insn.data, MAX_INSN_SIZE);
 	if (ssol_prepare_bkpt(bkpt, &safe_insn) < 0) {
-		msg_warn("Could not enable breakpoint at address %#x "
-			 "(SSOL unsafe; see README for details)",
+		msg_warn("Could not enable breakpoint for function \"%s\" at address %#x "
+			 "(SSOL unsafe; see README for details)", bkpt->symbol ? bkpt->symbol : "<unknown>",
 			 bkpt->addr);
 		bkpt->enabled = 0;
+		return;
 	}
 	trace_mem_write(proc, bkpt->ssol_addr, safe_insn, MAX_INSN_SIZE);
 	trace_mem_write(proc, bkpt->addr, bkpt->insn->value, bkpt->insn->size);
@@ -86,7 +87,7 @@ static void breakpoint_put(struct breakpoint *bkpt)
 }
 
 static struct breakpoint *register_breakpoint(struct process *proc, addr_t addr,
-					      int type)
+					      int type, const char* symname)
 {
 	struct breakpoint *bkpt;
 	addr_t fixed_addr, ssol_addr;
@@ -100,6 +101,9 @@ static struct breakpoint *register_breakpoint(struct process *proc, addr_t addr,
 		if (bkpt == NULL) {
 			perror("calloc");
 			exit(EXIT_FAILURE);
+		}
+		if (symname) {
+			bkpt->symbol = strdup(symname);
 		}
 		register_breakpoint_(proc, fixed_addr, bkpt);
 		if (type == BKPT_RETURN || type == BKPT_SENTINEL) {
@@ -128,9 +132,8 @@ static void register_entry_breakpoint(struct process *proc, const char *libname,
 	struct breakpoint *bkpt, *bkpt2;
 
 	if (context_match(symname) || plg_match(symname)) {
-		bkpt = register_breakpoint(proc, symaddr, BKPT_ENTRY);
-		bkpt->symbol = strdup(symname);
-		bkpt2 = register_breakpoint(proc, ssol_new_slot(proc), BKPT_SENTINEL);
+		bkpt = register_breakpoint(proc, symaddr, BKPT_ENTRY, symname);
+		bkpt2 = register_breakpoint(proc, ssol_new_slot(proc), BKPT_SENTINEL, NULL);
 		if (arguments.verbose)
 			fprintf(stderr, "Registered breakpoint for function "
 				"\"%s\" (%#x) from %s (PID %d)\n",
@@ -149,12 +152,12 @@ static void register_dl_debug_breakpoint(struct process *proc)
 	if (addr == 0)
 		return;
 	debug(3, "solib_dl_debug_address=0x%x", addr);
-	register_breakpoint(proc, addr, BKPT_SOLIB);
+	register_breakpoint(proc, addr, BKPT_SOLIB, NULL);
 }
 
 static void register_ssol_return_breakpoint(struct process *proc)
 {
-	register_breakpoint(proc, proc->ssol->first, BKPT_RETURN);
+	register_breakpoint(proc, proc->ssol->first, BKPT_RETURN, NULL);
 }
 
 static int ssol_insn_size(struct process *proc, addr_t addr)
