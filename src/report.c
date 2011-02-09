@@ -174,5 +174,6 @@ void rp_finish(struct process *proc)
 	}
 	if (rd->refcnt == 0) {
 		free(rd);
+		proc->rp_data = NULL;
 	}
 }

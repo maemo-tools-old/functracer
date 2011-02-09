@@ -112,7 +112,7 @@ static void process_kill(struct process *proc, int signo)
 	debug(3, "process/thread killed by signal (pid=%d, signo=%d)",
 	      proc->pid, signo);
 
-	if (trace_enabled(proc)) {
+	if (trace_enabled(proc) && proc->rp_data) {
 		sp_rtrace_print_comment(proc->rp_data->fp, "Process/Thread %d was killed by signal %d\n",
 			 proc->pid, signo);
 	}
