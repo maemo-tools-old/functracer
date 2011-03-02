@@ -125,7 +125,7 @@ static int munmap_remote(struct process *proc, void *start, size_t length)
 
 addr_t ssol_new_slot(struct process *proc)
 {
-	struct ssol *ssol = proc->ssol;
+	struct ssol *ssol = proc->shared->ssol;
 
 	assert(ssol->last - ssol->first + 1 < SSOL_LENGTH);
 	ssol->last += MAX_INSN_SIZE;
@@ -135,24 +135,25 @@ addr_t ssol_new_slot(struct process *proc)
 void ssol_init(struct process *proc)
 {
 	debug(1, "pid=%d", proc->pid);
-	if (proc->ssol == NULL)
-		proc->ssol = xcalloc(1, sizeof(struct ssol));
-	proc->ssol->first = (addr_t)mmap_remote(proc, NULL, SSOL_LENGTH,
+	if (proc->shared->ssol == NULL)
+		proc->shared->ssol = xcalloc(1, sizeof(struct ssol));
+	proc->shared->ssol->first = (addr_t)mmap_remote(proc, NULL, SSOL_LENGTH,
 		PROT_READ | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-	assert(proc->ssol->first > 0);
-	proc->ssol->last = proc->ssol->first;
-	debug(1, "mmap_remote() returned %#x", proc->ssol->first);
+	assert(proc->shared->ssol->first > 0);
+	proc->shared->ssol->last = proc->shared->ssol->first;
+	debug(1, "mmap_remote() returned %#x", proc->shared->ssol->first);
 }
 
 void ssol_finish(struct process *proc)
 {
 	int ret;
 
-	if (proc->ssol == NULL)
+	if (proc->shared->ssol == NULL)
 		return;
 	debug(1, "pid=%d", proc->pid);
-	ret = munmap_remote(proc, (void *)proc->ssol->first, SSOL_LENGTH);
+	ret = munmap_remote(proc, (void *)proc->shared->ssol->first, SSOL_LENGTH);
 	debug(1, "munmap_remote() returned %d", ret);
-	free(proc->ssol);
-	proc->ssol = NULL;
+	free(proc->shared->ssol);
+	proc->shared->ssol = NULL;
 }
+

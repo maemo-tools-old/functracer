@@ -243,14 +243,14 @@ static void free_solib(struct solib_list *solib)
 
 void free_all_solibs(struct process *proc)
 {
-	struct solib_list *tmp = proc->solib_list, *tmp2;
+	struct solib_list *tmp = proc->shared->solib_list, *tmp2;
 
 	while (tmp) {
 		tmp2 = tmp;
 		tmp = tmp->next;
 		free_solib(tmp2);
 	}
-	proc->solib_list = NULL;
+	proc->shared->solib_list = NULL;
 }
 
 static void solib_read_library(struct process *proc, char *filename,
@@ -312,8 +312,8 @@ err:
 void solib_update_list(struct process *proc, new_sym_t callback)
 {
 	struct solib_list *cur_sos;
-	struct solib_list *k = proc->solib_list;
-	struct solib_list **k_link = &proc->solib_list;
+	struct solib_list *k = proc->shared->solib_list;
+	struct solib_list **k_link = &proc->shared->solib_list;
 	struct callback *cb = cb_get();
 
 	current_solibs(proc, &cur_sos);

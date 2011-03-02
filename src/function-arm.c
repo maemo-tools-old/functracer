@@ -101,7 +101,7 @@ int fn_callstack_push(struct process *proc, char *fn_name)
 
 	regs = xmalloc(sizeof(struct pt_regs));
 	trace_getregs(proc, regs);
-	if ((addr_t)regs->ARM_lr == proc->ssol->first) {
+	if ((addr_t)regs->ARM_lr == proc->shared->ssol->first) {
 		debug(2, "direct branch detected, callee=%s, caller=%s", fn_name,
 			proc->callstack ? (char *)proc->callstack->data[2] : "<unknown>");
 		free(regs);
@@ -135,13 +135,13 @@ void fn_callstack_restore(struct process *proc, int original)
 	struct callstack *cs = proc->callstack;
 
 	assert(cs != NULL);
-	fn_set_return_address(proc, original ? (addr_t)cs->data[1] : proc->ssol->first);
+	fn_set_return_address(proc, original ? (addr_t)cs->data[1] : proc->shared->ssol->first);
 	/* FIXME: Should we skip callstack top? In theory it was just popped
 	 * before the function return. */
 	while (cs) {
 		struct pt_regs *regs = (struct pt_regs *)cs->data[0];
 		trace_mem_writew(proc, regs->ARM_sp - 4,
-				 original ? (addr_t)cs->data[1] : proc->ssol->first);
+				 original ? (addr_t)cs->data[1] : proc->shared->ssol->first);
 		cs = cs->next;
 	}
 }

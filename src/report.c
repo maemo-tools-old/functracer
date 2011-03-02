@@ -166,7 +166,7 @@ void rp_finish(struct process *proc)
 		if (arguments.save_to_file)
 			snprintf(fname, sizeof(fname), FNAME_FMT,
 				 arguments.path ? : getenv("HOME"), rd->pid,
-				 rd->step - 1);
+				 rd->step);
 		else
 			snprintf(fname, sizeof(fname), "stdout");
 		fprintf(stderr, "Stopped tracing %d, trace saved to "

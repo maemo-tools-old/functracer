@@ -198,11 +198,11 @@ static int new_process(struct process *parent_proc, pid_t child_pid)
 	 * were enabled and were copied to the new process' address space.
 	 * Therefore, we disable these breakpoints for the new process. */
 	if (parent_proc && (child_proc->parent == NULL)) {
-		child_proc->breakpoints = parent_proc->breakpoints;
+		child_proc->shared = parent_proc->shared;
 		/* FIXME: should we call fn_callstack_restore() as done in
 		 * handle_interrupt() ? */
 		disable_all_breakpoints(child_proc);
-		child_proc->breakpoints = NULL;
+		child_proc->shared = NULL;
 		if (cb && cb->process.fork) {
 			/* Callback should be called only when child is not a
 			 * thread. */

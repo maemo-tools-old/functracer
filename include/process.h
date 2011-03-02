@@ -37,11 +37,26 @@ struct callstack {
 	struct callstack *next;
 };
 
+struct process;
+
+/**
+ * Shared data between process and its threads.
+ *
+ * The shared data is allocated when parent process is created and
+ * freed when no more processes refers to it.
+ */
+struct process_shared {
+	struct dict *breakpoints;
+	struct solib_list *solib_list;
+	struct ssol *ssol;
+	int ref_count;
+	struct process* main;
+};
+
 struct process {
 	pid_t pid;
 	char *filename;
-	struct dict *breakpoints;
-	struct solib_list *solib_list;
+	struct process_shared* shared;
 	struct bt_data *bt_data;
 	struct rp_data *rp_data;
 	struct callstack *callstack;
@@ -52,7 +67,6 @@ struct process {
 	int singlestep;
         int exiting;
 	int in_syscall;
-	struct ssol *ssol;
 	struct process *parent;
 	struct process *next;
 };

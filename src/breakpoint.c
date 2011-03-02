@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <libiberty.h>
 
 #include "breakpoint.h"
 #include "callback.h"
@@ -67,14 +68,14 @@ static void disable_breakpoint(struct process *proc, struct breakpoint *bkpt)
 
 static struct breakpoint *breakpoint_from_address(struct process *proc, addr_t addr)
 {
-	struct breakpoint *bkpt = dict_find_entry(proc->breakpoints, (void *)addr);
+	struct breakpoint *bkpt = dict_find_entry(proc->shared->breakpoints, (void *)addr);
 	return bkpt != NULL && !bkpt->enabled ? NULL : bkpt;
 }
 
 static void register_breakpoint_(struct process *proc, addr_t addr,
 				 struct breakpoint *bkpt)
 {
-	dict_enter(proc->breakpoints, (void *)addr, bkpt);
+	dict_enter(proc->shared->breakpoints, (void *)addr, bkpt);
 	bkpt->refcnt++;
 }
 
@@ -157,7 +158,7 @@ static void register_dl_debug_breakpoint(struct process *proc)
 
 static void register_ssol_return_breakpoint(struct process *proc)
 {
-	register_breakpoint(proc, proc->ssol->first, BKPT_RETURN, NULL);
+	register_breakpoint(proc, proc->shared->ssol->first, BKPT_RETURN, NULL);
 }
 
 static int ssol_insn_size(struct process *proc, addr_t addr)
@@ -165,8 +166,8 @@ static int ssol_insn_size(struct process *proc, addr_t addr)
 	int size;
 
 	/* Skip first SSOL entry (reserved for return breakpoint). */
-	if (addr <= proc->ssol->first ||
-	    addr > proc->ssol->last + MAX_INSN_SIZE)
+	if (addr <= proc->shared->ssol->first ||
+	    addr > proc->shared->ssol->last + MAX_INSN_SIZE)
 		return -1;
 
 	size = addr - (addr / MAX_INSN_SIZE) * MAX_INSN_SIZE;
@@ -234,7 +235,7 @@ void bkpt_handle(struct process *proc, addr_t addr)
 		 * instruction from it. */
 		set_instruction_pointer(proc, bkpt->ssol_addr);
 		if (fn_callstack_push(proc, symbol_name) == 0) {
-			fn_set_return_address(proc, proc->ssol->first);
+			fn_set_return_address(proc, proc->shared->ssol->first);
 			if (cb && cb->function.enter)
 				cb->function.enter(proc, symbol_name);
 		}
@@ -276,15 +277,17 @@ void bkpt_handle(struct process *proc, addr_t addr)
 void bkpt_init(struct process *proc)
 {
 	if (proc->parent == NULL) {
-		proc->breakpoints = dict_init(dict_key2hash_int, dict_key_cmp_int);
+		proc->shared = xcalloc(1, sizeof(struct process_shared));
+		proc->shared->ref_count++;
+		proc->shared->breakpoints = dict_init(dict_key2hash_int, dict_key_cmp_int);
+		proc->shared->main = proc;
 		ssol_init(proc);
 		register_ssol_return_breakpoint(proc);
 		register_dl_debug_breakpoint(proc);
 		solib_update_list(proc, register_entry_breakpoint);
 	} else {
-		proc->breakpoints = proc->parent->breakpoints;
-		proc->solib_list = proc->parent->solib_list;
-		proc->ssol = proc->parent->ssol;
+		proc->shared = proc->parent->shared;
+		proc->shared->ref_count++;
 	}
 }
 
@@ -295,10 +298,10 @@ static void disable_bkpt_cb(void *addr __unused, void *bkpt, void *proc)
 
 void disable_all_breakpoints(struct process *proc)
 {
-	if (proc->breakpoints == NULL)
+	if (proc->shared->breakpoints == NULL)
 		return;
 	debug(1, "Disabling breakpoints for pid %d...", proc->pid);
-	dict_apply_to_all(proc->breakpoints, disable_bkpt_cb, proc);
+	dict_apply_to_all(proc->shared->breakpoints, disable_bkpt_cb, proc);
 }
 
 static void free_bkpt_cb(void *addr __unused, void *bkpt, void *proc __unused)
@@ -308,19 +311,23 @@ static void free_bkpt_cb(void *addr __unused, void *bkpt, void *proc __unused)
 
 static void free_all_breakpoints(struct process *proc)
 {
-	if (proc->breakpoints == NULL)
+	if (proc->shared->breakpoints == NULL)
 		return;
 	debug(1, "Freeing breakpoints for pid %d...", proc->pid);
-	dict_apply_to_all(proc->breakpoints, free_bkpt_cb, proc);
-	dict_clear(proc->breakpoints);
-	proc->breakpoints = NULL;
+	dict_apply_to_all(proc->shared->breakpoints, free_bkpt_cb, proc);
+	dict_clear(proc->shared->breakpoints);
+	proc->shared->breakpoints = NULL;
 }
 
 void bkpt_finish(struct process *proc)
 {
-	if (proc->parent != NULL)
+	if (--proc->shared->ref_count)
 		return;
-	free_all_solibs(proc);
-	ssol_finish(proc);
-	free_all_breakpoints(proc);
+	assert(proc->shared->ref_count == 0);
+
+	free_all_solibs(proc->shared->main);
+	ssol_finish(proc->shared->main);
+	free_all_breakpoints(proc->shared->main);
+	free(proc->shared);
+	proc->shared = NULL;
 }
