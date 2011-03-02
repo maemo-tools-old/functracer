@@ -321,7 +321,7 @@ static void free_all_breakpoints(struct process *proc)
 
 void bkpt_finish(struct process *proc)
 {
-	if (proc->shared->ref_count > 0)
+	if (--proc->shared->ref_count > 0)
 		return;
 	assert(proc->shared->ref_count == 0);
 
