@@ -275,8 +275,10 @@ static void solib_read_library(struct process *proc, char *filename,
 		return;
 
 	abfd = bfd_fopen(filename, "default", "rb", -1);
-	if (abfd == NULL)
-		error_bfd(filename, "could not open shared library file");
+	if (abfd == NULL) {
+		warning_bfd(filename, "could not open shared library file");
+		return;
+	}
 	if (!bfd_check_format(abfd, bfd_fmt)) {
 		warning_bfd(filename, "not in shared library format");
 		goto err;
