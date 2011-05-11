@@ -1,7 +1,7 @@
 /*
  * This file is part of Functracer.
  *
- * Copyright (C) 2008 by Nokia Corporation
+ * Copyright (C) 2008-2011 by Nokia Corporation
  *
  * Contact: Eero Tamminen <eero.tamminen@nokia.com>
  *
@@ -106,13 +106,13 @@ pid_t get_ppid(pid_t pid)
 	return get_pid_from_status(pid, "PPid:");
 }
 
-void for_each_process(for_each_process_t callback, void *data)
+void for_each_process(for_each_process_t callback, int value)
 {
 	struct process *tmp;
 
 	tmp = list_of_processes;
 	while (tmp) {
-		callback(tmp, data);
+		callback(tmp, value);
 		tmp = tmp->next;
 	}
 }

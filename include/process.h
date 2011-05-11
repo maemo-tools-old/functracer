@@ -1,7 +1,7 @@
 /*
  * This file is part of Functracer.
  *
- * Copyright (C) 2008 by Nokia Corporation
+ * Copyright (C) 2008-2011 by Nokia Corporation
  *
  * Contact: Eero Tamminen <eero.tamminen@nokia.com>
  *
@@ -71,9 +71,9 @@ struct process {
 	struct process *next;
 };
 
-typedef void (*for_each_process_t)(struct process *, void *);
+typedef void (*for_each_process_t)(struct process *, int value);
 
-extern void for_each_process(for_each_process_t callback, void *data);
+extern void for_each_process(for_each_process_t callback, int value);
 extern struct process *process_from_pid(pid_t pid);
 extern char *name_from_pid(pid_t pid);
 extern char *cmd_from_pid(pid_t pid, int nargs);

@@ -1,7 +1,7 @@
 /*
  * This file is part of Functracer.
  *
- * Copyright (C) 2008 by Nokia Corporation
+ * Copyright (C) 2008-2011 by Nokia Corporation
  *
  * Contact: Eero Tamminen <eero.tamminen@nokia.com>
  *
@@ -55,10 +55,9 @@ static int my_kill(int pid, int signo)
 	return kill(pid, signo);
 }
 
-static void kill_process(struct process *proc, void *data)
+static void kill_process(struct process *proc, int signo)
 {
 	int ret;
-	int signo = (int) data;
 
 	if (arguments.npids)
 		signo = SIGSTOP;
@@ -76,7 +75,7 @@ static void kill_process(struct process *proc, void *data)
 static void signal_exit(int sig)
 {
 	debug(1, "Received interrupt signal; exiting...");
-	for_each_process(kill_process, (void *)sig);
+	for_each_process(kill_process, sig);
 }
 
 static void signal_attach(void)

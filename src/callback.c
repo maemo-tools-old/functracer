@@ -1,7 +1,7 @@
 /*
  * This file is part of Functracer.
  *
- * Copyright (C) 2008,2010 by Nokia Corporation
+ * Copyright (C) 2008-2011 by Nokia Corporation
  *
  * Contact: Eero Tamminen <eero.tamminen@nokia.com>
  *
@@ -118,7 +118,7 @@ static void process_kill(struct process *proc, int signo)
 	}
 }
 
-static void toggle_tracing(struct process *proc)
+static void toggle_tracing(struct process *proc, int dummy __unused)
 {
 	if (trace_enabled(proc)) {
 		rp_finish(proc);
@@ -134,7 +134,7 @@ static void process_signal(struct process *proc, int signo)
 	      proc->pid, signo);
 
 	if (signo == SIGUSR1) {
-		for_each_process((for_each_process_t)toggle_tracing, NULL);
+		for_each_process(toggle_tracing, 0);
 	} else if (trace_enabled(proc)) {
 		sp_rtrace_print_comment(proc->rp_data->fp, "Process/Thread %d received signal %d\n",
 			 proc->pid, signo);
