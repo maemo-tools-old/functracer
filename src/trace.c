@@ -341,24 +341,34 @@ static void trace_detach(pid_t pid)
 	xptrace(PTRACE_DETACH, pid, NULL, NULL);
 }
 
+
+static void trace_finish(struct process *proc)
+{
+	debug(2, "TRACE FINISH");
+	struct callback *cb = cb_get();
+	if (cb && cb->process.interrupt)
+		cb->process.interrupt(proc);
+	if (proc->callstack != NULL) {
+		debug(2, "restore callstack");
+		fn_callstack_restore(proc, 1);
+	}
+	disable_all_breakpoints(proc);
+	bkpt_finish(proc);
+	trace_detach(proc->pid);
+}
+
 static int handle_interrupt(struct process *proc, int signo)
 {
-	struct callback *cb = cb_get();
-
 	if (proc->exiting && signo == SIGSTOP) {
-		if (cb && cb->process.interrupt)
-			cb->process.interrupt(proc);
-		if (proc->callstack != NULL)
-			fn_callstack_restore(proc, 1);
-		disable_all_breakpoints(proc);
-		bkpt_finish(proc);
-		trace_detach(proc->pid);
-
-		return 1;
+		if (!proc->callstack_depth) {
+			trace_finish(proc);
+			return 1;
+		}
+		proc->stopping = 1;
 	}
-
 	return 0;
 }
+
 
 static int dispatch_event(struct event *event)
 {
@@ -414,7 +424,13 @@ static int dispatch_event(struct event *event)
 		break;
 	case EV_BREAKPOINT:
 		bkpt_handle(event->proc, event->data.addr);
-		continue_process(event->proc);
+		if (event->proc->stopping && !event->proc->callstack_depth) {
+			debug(2, "Stopping trace after function return breakpoint triggered");
+			trace_finish(event->proc);
+		}
+		else {
+			continue_process(event->proc);
+		}
 		break;
 	case EV_SINGLESTEP:
 		singlestep_handle(event->proc, event->data.addr);

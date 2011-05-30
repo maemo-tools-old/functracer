@@ -64,12 +64,12 @@ static void kill_process(struct process *proc, int signo)
 
 	if (proc->exiting)
 		return;
+	proc->exiting = 1;
 	debug(2, "Sending %s to process %d", strsignal(signo), proc->pid);
 	ret = my_kill(proc->pid, signo);
 	if (ret < 0)
 		msg_warn("could not send %s to PID %d: %s", strsignal(signo),
 				proc->pid, strerror(errno));
-	proc->exiting = 1;
 }
 
 static void signal_exit(int sig)

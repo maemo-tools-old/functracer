@@ -107,7 +107,8 @@ int fn_callstack_push(struct process *proc, char *fn_name)
 		free(regs);
 		return -1;
 	}
-	debug(2, "pid=%d, depth=%d", proc->pid, ++proc->callstack_depth);
+	proc->callstack_depth++;
+	debug(2, "pid=%d, depth=%d", proc->pid, proc->callstack_depth);
 	cs = xmalloc(sizeof(struct callstack));
 	cs->data[0] = (void *) regs;
 	cs->data[1] = (void *) regs->ARM_lr;
@@ -123,7 +124,8 @@ void fn_callstack_pop(struct process *proc)
 	struct callstack *cs;
 
 	assert(proc->callstack != NULL);
-	debug(2, "pid=%d, depth=%d", proc->pid, proc->callstack_depth--);
+	proc->callstack_depth--;
+	debug(2, "pid=%d, depth=%d", proc->pid, proc->callstack_depth);
 	cs = proc->callstack->next;
 	free(proc->callstack->data[0]);
 	free(proc->callstack);
