@@ -71,7 +71,6 @@ static void thread_function_exit(struct process *proc, const char *name)
 	addr_t retval = fn_return_value(proc);
 	assert(proc->rp_data != NULL);
 	
-	int is_free = 0;
 	/* TODO: finalize process tracking
 	if (strcmp(name, "system") == 0) {
 		sp_rtrace_print_call(rd->rp, rd->rp_number, 0, -1, "system", RES_SIZE, retval);
@@ -122,7 +121,6 @@ static void thread_function_exit(struct process *proc, const char *name)
 			/* failures doesn't allocate resources - skip */
 			return;
 		}
-		is_free = 1;
 
 		sp_rtrace_fcall_t call = {
 				.type = SP_RTRACE_FTYPE_FREE,
@@ -134,6 +132,7 @@ static void thread_function_exit(struct process *proc, const char *name)
 				.res_id = (pointer_t)fn_argument(proc, 0),
 		};
 		sp_rtrace_print_call(rd->fp, &call);
+		rp_write_backtraces(proc, &call);
 
 	} else if (strcmp(name, "pthread_create") == 0) {
 		if (retval != 0) {
@@ -162,13 +161,13 @@ static void thread_function_exit(struct process *proc, const char *name)
 				.res_id = (pointer_t)trace_mem_readw(proc, fn_argument(proc, 0)),
 		};
 		sp_rtrace_print_call(rd->fp, &call);
+		rp_write_backtraces(proc, &call);
 
 	} else if (strcmp(name, "pthread_detach") == 0) {
 		if (retval != 0) {
 			/* failures doesn't allocate resources - skip */
 			return;
 		}
-		is_free = 1;
 		sp_rtrace_fcall_t call = {
 				.type = SP_RTRACE_FTYPE_FREE,
 				.index = rd->rp_number,
@@ -179,18 +178,13 @@ static void thread_function_exit(struct process *proc, const char *name)
 				.res_id = (pointer_t)fn_argument(proc, 0),
 		};
 		sp_rtrace_print_call(rd->fp, &call);
+		rp_write_backtraces(proc, &call);
 
 	} else {
 		msg_warn("unexpected function exit (%s)\n", name);
 		return;
 	}
 	(rd->rp_number)++;
-	if (!is_free || arguments.enable_free_bkt) {
-		rp_write_backtraces(proc);
-	}
-	else {
-		sp_rtrace_print_comment(rd->fp, "\n"); 
-	}
 }
 
 static int thread_library_match(const char *symname)

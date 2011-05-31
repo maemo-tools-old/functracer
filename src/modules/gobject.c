@@ -71,6 +71,7 @@ static void gobject_function_exit(struct process *proc, const char *name)
 				.res_id = (pointer_t)retval,
 		};
 		sp_rtrace_print_call(rd->fp, &call);
+		rp_write_backtraces(proc, &call);
 
 	} else if (strcmp(name, "g_object_ref") == 0) {
 		/* suppress allocation failure reports */
@@ -86,6 +87,7 @@ static void gobject_function_exit(struct process *proc, const char *name)
 				.res_id = (pointer_t)fn_argument(proc, 0),
 		};
 		sp_rtrace_print_call(rd->fp, &call);
+		rp_write_backtraces(proc, &call);
 
 	} else if (strcmp(name, "g_object_unref") == 0) {
 		sp_rtrace_fcall_t call = {
@@ -98,12 +100,12 @@ static void gobject_function_exit(struct process *proc, const char *name)
 				.res_id = (pointer_t)fn_argument(proc, 0),
 		};
 		sp_rtrace_print_call(rd->fp, &call);
+		rp_write_backtraces(proc, &call);
 	} else {
 		msg_warn("unexpected function exit (%s)\n", name);
 		return;
 	}
 	(rd->rp_number)++;
-	rp_write_backtraces(proc);
 }
 
 static int gobject_library_match(const char *symname)

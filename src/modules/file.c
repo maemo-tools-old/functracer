@@ -71,7 +71,6 @@ static char file_api_version[] = FILE_API_VERSION;
 static void file_function_exit(struct process *proc, const char *name)
 {
 	struct rp_data *rd = proc->rp_data;
-	int is_free = 0;
 
 	addr_t retval = fn_return_value(proc);
 	assert(proc->rp_data != NULL);
@@ -100,10 +99,10 @@ static void file_function_exit(struct process *proc, const char *name)
 					{.name = NULL}
 			};
 			sp_rtrace_print_args(rd->fp, args);
+			rp_write_backtraces(proc, &call);
 		}
 	} else if (strcmp(name, "_IO_fclose") == 0) {
 		size_t arg0 = fn_argument(proc, 0);
-		is_free = 1;
 
 		sp_rtrace_fcall_t call = {
 				.type = SP_RTRACE_FTYPE_FREE,
@@ -117,6 +116,7 @@ static void file_function_exit(struct process *proc, const char *name)
 				.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
 		};
 		sp_rtrace_print_call(rd->fp, &call);
+		rp_write_backtraces(proc, &call);
 
 	} else if (strcmp(name, "__open") == 0) {
 		if (retval == (addr_t)-1) return;
@@ -143,6 +143,7 @@ static void file_function_exit(struct process *proc, const char *name)
 					{.name = NULL}
 			};
 			sp_rtrace_print_args(rd->fp, args);
+			rp_write_backtraces(proc, &call);
 		}
 
 	} else if (strcmp(name, "__open64") == 0) {
@@ -170,6 +171,7 @@ static void file_function_exit(struct process *proc, const char *name)
 					{.name = NULL}
 			};
 			sp_rtrace_print_args(rd->fp, args);
+			rp_write_backtraces(proc, &call);
 		}
 
 	} else if (strcmp(name, "creat") == 0) {
@@ -197,11 +199,11 @@ static void file_function_exit(struct process *proc, const char *name)
 					{.name = NULL}
 			};
 			sp_rtrace_print_args(rd->fp, args);
+			rp_write_backtraces(proc, &call);
 		}
 
 	} else if (strcmp(name, "__close") == 0) {
 		size_t arg0 = fn_argument(proc, 0);
-		is_free = 1;
 		sp_rtrace_fcall_t call = {
 				.type = SP_RTRACE_FTYPE_FREE,
 				.index = rd->rp_number,
@@ -214,9 +216,9 @@ static void file_function_exit(struct process *proc, const char *name)
 				.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
 		};
 		sp_rtrace_print_call(rd->fp, &call);
+		rp_write_backtraces(proc, &call);
 
 	} else if (strcmp(name, "fcloseall") == 0) {
-		is_free = 1;
 		sp_rtrace_fcall_t call = {
 				.type = SP_RTRACE_FTYPE_FREE,
 				.index = rd->rp_number,
@@ -229,6 +231,7 @@ static void file_function_exit(struct process *proc, const char *name)
 				.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
 		};
 		sp_rtrace_print_call(rd->fp, &call);
+		rp_write_backtraces(proc, &call);
 
 	} else if (strcmp(name, "freopen") == 0) {
 		sp_rtrace_fcall_t call1 = {
@@ -243,10 +246,7 @@ static void file_function_exit(struct process *proc, const char *name)
 				.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
 		};
 		sp_rtrace_print_call(rd->fp, &call1);
-
-
-		if (arguments.enable_free_bkt) rp_write_backtraces(proc);
-		else sp_rtrace_print_comment(rd->fp, "\n"); 
+		rp_write_backtraces(proc, &call1);
 
 		if (retval == 0) return;
 
@@ -272,6 +272,7 @@ static void file_function_exit(struct process *proc, const char *name)
 				{.name = NULL}
 		};
 		sp_rtrace_print_args(rd->fp, args);
+		rp_write_backtraces(proc, &call2);
 
 	} else if (strcmp(name, "_IO_fdopen") == 0) {
 		size_t filedes = fn_argument(proc, 0);
@@ -287,10 +288,8 @@ static void file_function_exit(struct process *proc, const char *name)
 				.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
 		};
 		sp_rtrace_print_call(rd->fp, &call1);
+		rp_write_backtraces(proc, &call1);
 
-		if (arguments.enable_free_bkt) rp_write_backtraces(proc);
-		else sp_rtrace_print_comment(rd->fp, "\n"); 
-		
 		if (retval == 0) return;
 
 		sp_rtrace_fcall_t call2 = {
@@ -315,6 +314,7 @@ static void file_function_exit(struct process *proc, const char *name)
 				{.name = NULL}
 		};
 		sp_rtrace_print_args(rd->fp, args);
+		rp_write_backtraces(proc, &call2);
 
 	} else if (strcmp(name, "socket") == 0) {
 		if (retval == (addr_t)-1) return;
@@ -343,6 +343,7 @@ static void file_function_exit(struct process *proc, const char *name)
 					{.name = NULL}
 			};
 			sp_rtrace_print_args(rd->fp, args);
+			rp_write_backtraces(proc, &call);
 		}
 
 	} else if (strcmp(name, "accept") == 0) {
@@ -360,6 +361,7 @@ static void file_function_exit(struct process *proc, const char *name)
 					.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
 			};
 			sp_rtrace_print_call(rd->fp, &call);
+			rp_write_backtraces(proc, &call);
 		}
 
 	} else if (strcmp(name, "__dup2") == 0) {
@@ -377,9 +379,7 @@ static void file_function_exit(struct process *proc, const char *name)
 					.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
 			};
 			sp_rtrace_print_call(rd->fp, &call1);
-
-			if (arguments.enable_free_bkt) rp_write_backtraces(proc);
-			else sp_rtrace_print_comment(rd->fp, "\n"); 
+			rp_write_backtraces(proc, &call1);
 			
 			sp_rtrace_fcall_t call2 = {
 					.type = SP_RTRACE_FTYPE_ALLOC,
@@ -393,6 +393,7 @@ static void file_function_exit(struct process *proc, const char *name)
 					.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
 			};
 			sp_rtrace_print_call(rd->fp, &call2);
+			rp_write_backtraces(proc, &call2);
 		}
 
 	} else if (strcmp(name, "dup") == 0) {
@@ -409,6 +410,7 @@ static void file_function_exit(struct process *proc, const char *name)
 				.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
 		};
 		sp_rtrace_print_call(rd->fp, &call);
+		rp_write_backtraces(proc, &call);
 
 	} else if (strcmp(name, "socketpair") == 0){
 		if (retval == (addr_t)-1) return;
@@ -442,7 +444,7 @@ static void file_function_exit(struct process *proc, const char *name)
 			};
 			sp_rtrace_print_call(rd->fp, &call1);
 			sp_rtrace_print_args(rd->fp, args);
-			rp_write_backtraces(proc);
+			rp_write_backtraces(proc, &call1);
 
 			sp_rtrace_fcall_t call2 = {
 					.type = SP_RTRACE_FTYPE_ALLOC,
@@ -457,6 +459,7 @@ static void file_function_exit(struct process *proc, const char *name)
 			};
 			sp_rtrace_print_call(rd->fp, &call2);
 			sp_rtrace_print_args(rd->fp, args);
+			rp_write_backtraces(proc, &call2);
 		}
 
 	} else if (strcmp(name, "pipe") == 0) {
@@ -478,7 +481,7 @@ static void file_function_exit(struct process *proc, const char *name)
 					.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
 			};
 			sp_rtrace_print_call(rd->fp, &call1);
-			rp_write_backtraces(proc);
+			rp_write_backtraces(proc, &call1);
 
 			sp_rtrace_fcall_t call2 = {
 					.type = SP_RTRACE_FTYPE_ALLOC,
@@ -492,6 +495,7 @@ static void file_function_exit(struct process *proc, const char *name)
 					.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
 			};
 			sp_rtrace_print_call(rd->fp, &call2);
+			rp_write_backtraces(proc, &call2);
 		}
 
 	} else if (strcmp(name, "pipe2") == 0) {
@@ -513,7 +517,7 @@ static void file_function_exit(struct process *proc, const char *name)
 					.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
 			};
 			sp_rtrace_print_call(rd->fp, &call1);
-			rp_write_backtraces(proc);
+			rp_write_backtraces(proc, &call1);
 
 			sp_rtrace_fcall_t call2 = {
 					.type = SP_RTRACE_FTYPE_ALLOC,
@@ -527,6 +531,7 @@ static void file_function_exit(struct process *proc, const char *name)
 					.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
 			};
 			sp_rtrace_print_call(rd->fp, &call2);
+			rp_write_backtraces(proc, &call2);
 		}
 
 	} else if (strcmp(name, "fcntl") == 0) {
@@ -544,6 +549,7 @@ static void file_function_exit(struct process *proc, const char *name)
 					.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
 			};
 			sp_rtrace_print_call(rd->fp, &call);
+			rp_write_backtraces(proc, &call);
 		}
 		else {
 			/* not handling the rest of the fcntl commands */
@@ -564,18 +570,13 @@ static void file_function_exit(struct process *proc, const char *name)
 				.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
 		};
 		sp_rtrace_print_call(rd->fp, &call);
+		rp_write_backtraces(proc, &call);
 
 	 } else {
 		msg_warn("unexpected function exit (%s)\n", name);
 		return;
 	}
 	(rd->rp_number)++;
-	if (!is_free || arguments.enable_free_bkt) {
-		rp_write_backtraces(proc);
-	}
-	else {
-		sp_rtrace_print_comment(rd->fp, "\n"); 
-	}
 }
 
 static int file_library_match(const char *symname)

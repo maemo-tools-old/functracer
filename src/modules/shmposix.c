@@ -495,7 +495,6 @@ static void addr_cleanup(void)
 static void module_function_exit(struct process *proc, const char *name)
 {
 	struct rp_data *rd = proc->rp_data;
-	int is_free = 0;
 	assert(proc->rp_data != NULL);
 	addr_t rc = fn_return_value(proc);
 	
@@ -523,6 +522,7 @@ static void module_function_exit(struct process *proc, const char *name)
 			};
 			sp_rtrace_print_call(rd->fp, &call);
 
+
 			sp_rtrace_farg_t args[] = {
 				{.name="name", .value=arg_name},
 				{.name="oflag", .value=arg_oflag},
@@ -530,9 +530,7 @@ static void module_function_exit(struct process *proc, const char *name)
 				{.name = NULL}
 			};
 			sp_rtrace_print_args(rd->fp, args);
-
-			if (arguments.enable_free_bkt) rp_write_backtraces(proc);
-			else sp_rtrace_print_comment(rd->fp, "\n");
+			rp_write_backtraces(proc, &call);
 
 		}
 		sp_rtrace_fcall_t call = {
@@ -555,10 +553,10 @@ static void module_function_exit(struct process *proc, const char *name)
 			{.name = NULL}
 		};
 		sp_rtrace_print_args(rd->fp, args);
+		rp_write_backtraces(proc, &call);
 	}
 	else if (strcmp(name, "shm_unlink") == 0) {
 		if (rc == (addr_t)-1) return;
-		is_free = 1;
 		char arg_name[PATH_MAX]; trace_mem_readstr(proc, fn_argument(proc, 0), arg_name, sizeof(arg_name));
 
 		sp_rtrace_fcall_t call = {
@@ -579,6 +577,7 @@ static void module_function_exit(struct process *proc, const char *name)
 			{.name = NULL}
 		};
 		sp_rtrace_print_args(rd->fp, args);
+		rp_write_backtraces(proc, &call);
 	}
 	else if (strcmp(name, "open") == 0) {
 		if (rc == (addr_t)-1) return;
@@ -648,7 +647,7 @@ static void module_function_exit(struct process *proc, const char *name)
 			snprintf(arg_mode, sizeof(arg_mode), "0x%x", pfd->mode);
 		}
 		sp_rtrace_print_args(rd->fp, args);
-
+		rp_write_backtraces(proc, &call);
 	}
 	else if (strcmp(name, "munmap") == 0) {
 		addr_t addr = fn_argument(proc, 0);
@@ -677,13 +676,13 @@ static void module_function_exit(struct process *proc, const char *name)
 			{.name = NULL}
 		};
 		sp_rtrace_print_args(rd->fp, args);
+		rp_write_backtraces(proc, &call);
 	}
 	else if (strcmp(name, "close") == 0) {
 		addr_t fd = fn_argument(proc, 0);
 		fdreg_node_t* pfd = fdreg_get_fd(fd);
 		if (pfd) {
 			if (pfd->type == FD_POSIX) {
-				is_free = 1;
 				sp_rtrace_fcall_t call = {
 					.type = SP_RTRACE_FTYPE_FREE,
 					.context = context_mask,
@@ -696,22 +695,16 @@ static void module_function_exit(struct process *proc, const char *name)
 					.index = rd->rp_number,
 				};
 				sp_rtrace_print_call(rd->fp, &call);
+				rp_write_backtraces(proc, &call);
 			}
 			//fdreg_remove(fd);
 		}
-		if (!is_free) return;
 	}
 	else {
 		msg_warn("unexpected function exit (%s)\n", name);
 		return;
 	}
 	(rd->rp_number)++;
-	if (!is_free || arguments.enable_free_bkt) {
-		rp_write_backtraces(proc);
-	}
-	else {
-		sp_rtrace_print_comment(rd->fp, "\n"); 
-	}
 }
 
 static int module_library_match(const char *symname)

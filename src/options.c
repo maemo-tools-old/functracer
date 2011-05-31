@@ -71,6 +71,7 @@ static const struct argp_option options[] = {
 	{"usage", OPT_USAGE, NULL, 0, "Give a short usage message", -1},
 	{"version", 'V', NULL, 0, "Print program version", -1},
 	{"audit", 'a', "SYMBOLS", 0, "custom tracked symbol list for audit module in format <symbol>[;<symbol>...]", 0},
+	{"monitor", 'M', "SIZE", 0, "monitor backtraces for allocations of the specified size", 0},
 	{NULL, 0, NULL, 0, NULL, 0},
 };
 
@@ -166,9 +167,13 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 		}
 		arg_data->remaining_args = state->argv + state->next;
 		break;
+	case 'M':
+		arg_data->filter_size = arg;
+		break;
 	default:
 		return ARGP_ERR_UNKNOWN;
 	}
+
 	return 0;
 }
 
@@ -185,6 +190,11 @@ int process_options(int argc, char *argv[], int *remaining)
 	/* parse and process arguments */
 	ret = argp_parse(&argp, argc, argv,
 			ARGP_IN_ORDER | ARGP_NO_HELP, remaining, &arguments);
+
+	/* create backtrace monitoring filter */
+	arguments.filter = sp_rtrace_filter_create(arguments.enable_free_bkt ?
+			SP_RTRACE_FILTER_TYPE_ALL : SP_RTRACE_FILTER_TYPE_ALLOC);
+	sp_rtrace_filter_parse_size_opt(arguments.filter, arguments.filter_size);
 
 	return ret;
 }

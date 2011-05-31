@@ -27,6 +27,8 @@
 
 #include <sys/types.h>
 
+#include <sp_rtrace_filter.h>
+
 #define MAX_NPIDS 20
 #define OPT_USAGE -3
 
@@ -45,6 +47,8 @@ struct arguments {
 	char *plugin;
 	char *path;
 	char *audit;
+	char *filter_size;
+	sp_rtrace_filter_t *filter;
 };
 
 extern struct arguments arguments;

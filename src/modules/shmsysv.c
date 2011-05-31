@@ -129,7 +129,6 @@ static int compare_nodes(const void* node1, const void* node2)
 static void function_exit(struct process *proc, const char *name)
 {
 	struct rp_data *rd = proc->rp_data;
-	int is_free = 0;
 
 	addr_t retval = fn_return_value(proc);
 	assert(proc->rp_data != NULL);
@@ -151,6 +150,7 @@ static void function_exit(struct process *proc, const char *name)
 				.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
 		};
 		sp_rtrace_print_call(rd->fp, &call);
+		rp_write_backtraces(proc, &call);
 	}
 	else if (strcmp(name, "shmctl") == 0) {
 		/*
@@ -182,9 +182,7 @@ static void function_exit(struct process *proc, const char *name)
 		};
 		sp_rtrace_print_call(rd->fp, &call1);
 		sp_rtrace_print_args(rd->fp, args);
-
-		if (arguments.enable_free_bkt) rp_write_backtraces(proc);
-		else sp_rtrace_print_comment(rd->fp, "\n");
+		rp_write_backtraces(proc, &call1);
 
 		/* */
 
@@ -203,7 +201,7 @@ static void function_exit(struct process *proc, const char *name)
 				.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
 		};
 		sp_rtrace_print_call(rd->fp, &call2);
-		is_free = 1;
+		rp_write_backtraces(proc, &call2);
 	}
 	else if (strcmp(name, "shmat") == 0) {
 		if (retval == (addr_t)-1) return;
@@ -256,7 +254,6 @@ static void function_exit(struct process *proc, const char *name)
 	else if (strcmp(name, "shmdt") == 0) {
 		if (retval == (addr_t)-1) return;
 
-		is_free = 1;
 		struct shmid_ds ds;
 		addrmap_t node = {.addr = (void*)fn_argument(proc, 0)};
 
@@ -272,6 +269,7 @@ static void function_exit(struct process *proc, const char *name)
 				.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
 		};
 		sp_rtrace_print_call(rd->fp, &call);
+		rp_write_backtraces(proc, &call);
 
 		/* if the address was attached by the target process (it's stored in the addr2shmid mapping) check if
 		 * the segment is still valid. It might have been destroyed if it was marked with SHM_DEST and the last
@@ -280,10 +278,6 @@ static void function_exit(struct process *proc, const char *name)
 		if (pnode) {
 			/* Register segment deallocation event if the associated segment was removed after detach call */
 			if (shmctl(TNODE(pnode)->shmid, IPC_STAT | IPC_64, &ds) == -1 && (errno == EIDRM || errno == EINVAL)) {
-				/* write backtrace for address detachment event and increment event index */
-				if (arguments.enable_free_bkt) rp_write_backtraces(proc);
-				else sp_rtrace_print_comment(rd->fp, "\n"); 
-
 				rd->rp_number++;
 				/* write segment destroying event */
 				sp_rtrace_fcall_t call = {
@@ -298,6 +292,7 @@ static void function_exit(struct process *proc, const char *name)
 						.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
 				};
 				sp_rtrace_print_call(rd->fp, &call);
+				rp_write_backtraces(proc, &call);
 			}
 			/* remove the address->segment mapping */
 			tdelete((void*)pnode, &addr2shmid, compare_nodes);
@@ -305,13 +300,6 @@ static void function_exit(struct process *proc, const char *name)
 		}
 	}
 	rd->rp_number++;
-
-	if (!is_free || arguments.enable_free_bkt) {
-		rp_write_backtraces(proc);
-	}
-	else {
-		sp_rtrace_print_comment(rd->fp, "\n"); 
-	}
 }
 
 /**

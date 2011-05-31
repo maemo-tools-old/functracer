@@ -82,13 +82,13 @@ static void audit_function_exit(struct process *proc, const char *name)
 			.res_id = (pointer_t)RES_ID,
 		};
 		sp_rtrace_print_call(rd->fp, &call);
+		rp_write_backtraces(proc, &call);
 		free(symname);
 
 	} else {
 		msg_warn("unexpected function exit (%s)\n", name);
 		return;
 	}
-	rp_write_backtraces(proc);
 }
 
 static int audit_library_match(const char *symname)

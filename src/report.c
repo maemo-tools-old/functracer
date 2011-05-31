@@ -27,7 +27,7 @@
 #include <errno.h>
 #include <time.h>
 #include <sp_rtrace_formatter.h>
-#include <sp_rtrace_defs.h>
+#include <sp_rtrace_filter.h>
 
 #include "arch-defs.h"
 #include "backtrace.h"
@@ -39,8 +39,17 @@
 
 #define FNAME_FMT "%s/%d-%d.rtrace.txt"
 
-void rp_write_backtraces(struct process *proc)
+void rp_write_backtraces(struct process *proc, sp_rtrace_fcall_t *fcall)
 {
+	/* check if the backtrace must be printed */
+	if (!sp_rtrace_filter_validate(arguments.filter, fcall)) {
+		/* The record does not match backtrace filtering options.
+		 * Print empty backtrace. */
+		sp_rtrace_print_comment(proc->rp_data->fp, "\n");
+		return;
+	}
+
+	/* print the backtrace */
 	int bt_depth, i;
 	char *names[MAX_BT_DEPTH];
 	void *frames[MAX_BT_DEPTH];

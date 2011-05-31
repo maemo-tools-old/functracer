@@ -51,10 +51,10 @@ static sp_rtrace_resource_t res_memory = {
 		.flags = SP_RTRACE_RESOURCE_DEFAULT,
 };
 
+
 static void mem_function_exit(struct process *proc, const char *name)
 {
 	struct rp_data *rd = proc->rp_data;
-	int is_free = 0;
 
 	addr_t retval = fn_return_value(proc);
 	size_t arg0 = fn_argument(proc, 0);
@@ -74,6 +74,7 @@ static void mem_function_exit(struct process *proc, const char *name)
 				.res_id = (pointer_t)retval,
 		};
 		sp_rtrace_print_call(rd->fp, &call);
+		rp_write_backtraces(proc, &call);
 
 	} else if (strcmp(name, "__libc_calloc") == 0) {
 		size_t arg1;
@@ -91,6 +92,7 @@ static void mem_function_exit(struct process *proc, const char *name)
 				.res_id = (pointer_t)retval,
 		};
 		sp_rtrace_print_call(rd->fp, &call);
+		rp_write_backtraces(proc, &call);
 
 	} else if (strcmp(name, "__libc_memalign") == 0) {
 		size_t arg1;
@@ -108,6 +110,7 @@ static void mem_function_exit(struct process *proc, const char *name)
 				.res_id = (pointer_t)retval,
 		};
 		sp_rtrace_print_call(rd->fp, &call);
+		rp_write_backtraces(proc, &call);
 
 	} else if (strcmp(name, "__libc_realloc") == 0) {
 		size_t arg1 = fn_argument(proc, 1);
@@ -124,10 +127,7 @@ static void mem_function_exit(struct process *proc, const char *name)
 					.res_id = (pointer_t)arg0,
 			};
 			sp_rtrace_print_call(rd->fp, &call);
-
-			if (arguments.enable_free_bkt) rp_write_backtraces(proc);
-			else sp_rtrace_print_comment(rd->fp, "\n"); 
-			
+			rp_write_backtraces(proc, &call);
 		}
 		if (arg1 == 0 && retval == 0) {
 			/* realloc acting as free so return */
@@ -146,12 +146,12 @@ static void mem_function_exit(struct process *proc, const char *name)
 				.res_id = (pointer_t)retval,
 		};
 		sp_rtrace_print_call(rd->fp, &call);
+		rp_write_backtraces(proc, &call);
 
 	} else if (strcmp(name, "__libc_free") == 0 ) {
 		/* Suppress "free(NULL)" calls from trace output.
 		 * They are a no-op according to ISO
 		 */
-		is_free = 1;
 		if (arg0 == 0)
 			return;
 
@@ -165,6 +165,7 @@ static void mem_function_exit(struct process *proc, const char *name)
 				.res_id = (pointer_t)arg0,
 		};
 		sp_rtrace_print_call(rd->fp, &call);
+		rp_write_backtraces(proc, &call);
 
 	} else if (strcmp(name, "posix_memalign") == 0) {
 		size_t arg0 = fn_argument(proc, 0);
@@ -187,6 +188,7 @@ static void mem_function_exit(struct process *proc, const char *name)
 				.res_id = (pointer_t)retval,
 		};
 		sp_rtrace_print_call(rd->fp, &call);
+		rp_write_backtraces(proc, &call);
 
 	} else if (strcmp(name, "__libc_valloc") == 0 || strcmp(name, "valloc") == 0) {
 		/* suppress allocation failures */
@@ -201,20 +203,13 @@ static void mem_function_exit(struct process *proc, const char *name)
 				.res_id = (pointer_t)retval,
 		};
 		sp_rtrace_print_call(rd->fp, &call);
-
+		rp_write_backtraces(proc, &call);
 	}
 	else {
 		msg_warn("unexpected function exit (%s)\n", name);
 		return;
 	}
 	(rd->rp_number)++;
-	if (!is_free || arguments.enable_free_bkt) {
-		rp_write_backtraces(proc);
-	}
-	else {
-		sp_rtrace_print_comment(rd->fp, "\n"); 
-	}
-	
 }
 
 static int mem_library_match(const char *symname)

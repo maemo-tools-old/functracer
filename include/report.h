@@ -24,6 +24,8 @@
 #include <stdio.h>
 #include <sys/types.h>
 
+#include <sp_rtrace_defs.h>
+
 #include "process.h"
 #include "target_mem.h"
 
@@ -43,7 +45,7 @@ struct rp_alloc {
 };
 
 extern int rp_init(struct process *proc);
-extern void rp_write_backtraces(struct process *proc);
+extern void rp_write_backtraces(struct process *proc, sp_rtrace_fcall_t *fcall);
 extern void rp_finish(struct process *proc);
 
 #endif /* !FTK_REPORT_H */

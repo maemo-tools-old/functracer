@@ -75,6 +75,7 @@ static void memtransfer_function_exit(struct process *proc, const char *name)
 				.res_id = (pointer_t)retval,
 		};
 		sp_rtrace_print_call(rd->fp, &call);
+		rp_write_backtraces(proc, &call);
 
 	} else if (strcmp(name, "mempcpy") == 0) {
 		arg2 = fn_argument(proc, 2);
@@ -88,6 +89,7 @@ static void memtransfer_function_exit(struct process *proc, const char *name)
 				.res_id = (pointer_t)fn_argument(proc, 0),
 		};
 		sp_rtrace_print_call(rd->fp, &call);
+		rp_write_backtraces(proc, &call);
 
 	} else if (strcmp(name, "memmove") == 0) {
 		arg2 = fn_argument(proc, 2);
@@ -101,6 +103,7 @@ static void memtransfer_function_exit(struct process *proc, const char *name)
 				.res_id = (pointer_t)retval,
 		};
 		sp_rtrace_print_call(rd->fp, &call);
+		rp_write_backtraces(proc, &call);
 
 	} else if (strcmp(name, "memccpy") == 0) {
 		arg3 = fn_argument(proc, 3);
@@ -114,6 +117,7 @@ static void memtransfer_function_exit(struct process *proc, const char *name)
 				.res_id = (pointer_t)fn_argument(proc, 0),
 		};
 		sp_rtrace_print_call(rd->fp, &call);
+		rp_write_backtraces(proc, &call);
 
 	} else if (strcmp(name, "memset") == 0) {
 		arg2 = fn_argument(proc, 2);
@@ -127,6 +131,7 @@ static void memtransfer_function_exit(struct process *proc, const char *name)
 				.res_id = (pointer_t)retval,
 		};
 		sp_rtrace_print_call(rd->fp, &call);
+		rp_write_backtraces(proc, &call);
 
 	} else if (strcmp(name, "strcpy") == 0) {
 		int len = trace_mem_readstr(proc, retval, NULL, 0);
@@ -140,6 +145,7 @@ static void memtransfer_function_exit(struct process *proc, const char *name)
 				.res_id = (pointer_t)retval,
 		};
 		sp_rtrace_print_call(rd->fp, &call);
+		rp_write_backtraces(proc, &call);
 
 	} else if (strcmp(name, "strncpy") == 0) {
 		arg2 = fn_argument(proc, 2);
@@ -153,6 +159,7 @@ static void memtransfer_function_exit(struct process *proc, const char *name)
 				.res_id = (pointer_t)retval,
 		};
 		sp_rtrace_print_call(rd->fp, &call);
+		rp_write_backtraces(proc, &call);
 
 	} else if (strcmp(name, "stpcpy") == 0) {
 		int len = trace_mem_readstr(proc, retval, NULL, 0);
@@ -166,6 +173,7 @@ static void memtransfer_function_exit(struct process *proc, const char *name)
 				.res_id = (pointer_t)fn_argument(proc, 0),
 		};
 		sp_rtrace_print_call(rd->fp, &call);
+		rp_write_backtraces(proc, &call);
 
 	} else if (strcmp(name, "stpncpy") == 0) {
 		arg2 = fn_argument(proc, 2);
@@ -179,6 +187,7 @@ static void memtransfer_function_exit(struct process *proc, const char *name)
 				.res_id = (pointer_t)fn_argument(proc, 0),
 		};
 		sp_rtrace_print_call(rd->fp, &call);
+		rp_write_backtraces(proc, &call);
 
 	} else if (strcmp(name, "strcat") == 0) {
 		int len = trace_mem_readstr(proc, retval, NULL, 0);
@@ -192,6 +201,7 @@ static void memtransfer_function_exit(struct process *proc, const char *name)
 				.res_id = (pointer_t)retval,
 		};
 		sp_rtrace_print_call(rd->fp, &call);
+		rp_write_backtraces(proc, &call);
 
 	} else if (strcmp(name, "strncat") == 0) {
 		arg2 = fn_argument(proc, 2);
@@ -205,6 +215,7 @@ static void memtransfer_function_exit(struct process *proc, const char *name)
 				.res_id = (pointer_t)retval,
 		};
 		sp_rtrace_print_call(rd->fp, &call);
+		rp_write_backtraces(proc, &call);
 
 	} else if (strcmp(name, "bcopy") == 0) {
 		arg2 = fn_argument(proc, 2);
@@ -218,6 +229,7 @@ static void memtransfer_function_exit(struct process *proc, const char *name)
 				.res_id = (pointer_t)fn_argument(proc, 1),
 		};
 		sp_rtrace_print_call(rd->fp, &call);
+		rp_write_backtraces(proc, &call);
 
 	} else if (strcmp(name, "bzero") == 0) {
 		arg1 = fn_argument(proc, 1);
@@ -231,6 +243,7 @@ static void memtransfer_function_exit(struct process *proc, const char *name)
 				.res_id = (pointer_t)fn_argument(proc, 0),
 		};
 		sp_rtrace_print_call(rd->fp, &call);
+		rp_write_backtraces(proc, &call);
 
 	} else if (strcmp(name, "strdup") == 0) {
 		int len = trace_mem_readstr(proc, retval, NULL, 0);
@@ -244,6 +257,7 @@ static void memtransfer_function_exit(struct process *proc, const char *name)
 				.res_id = (pointer_t)retval,
 		};
 		sp_rtrace_print_call(rd->fp, &call);
+		rp_write_backtraces(proc, &call);
 
 	} else if (strcmp(name, "strndup") == 0) {
 		arg1 = fn_argument(proc, 1);
@@ -257,6 +271,7 @@ static void memtransfer_function_exit(struct process *proc, const char *name)
 				.res_id = (pointer_t)retval
 		};
 		sp_rtrace_print_call(rd->fp, &call);
+		rp_write_backtraces(proc, &call);
 
 	} else if (strcmp(name, "strdupa") == 0) {
 		int len = trace_mem_readstr(proc, retval, NULL, 0);
@@ -270,6 +285,7 @@ static void memtransfer_function_exit(struct process *proc, const char *name)
 				.res_id = (pointer_t)retval
 		};
 		sp_rtrace_print_call(rd->fp, &call);
+		rp_write_backtraces(proc, &call);
 
 	} else if (strcmp(name, "strndupa") == 0) {
 		arg1 = fn_argument(proc, 1);
@@ -283,6 +299,7 @@ static void memtransfer_function_exit(struct process *proc, const char *name)
 				.res_id = (pointer_t)retval
 		};
 		sp_rtrace_print_call(rd->fp, &call);
+		rp_write_backtraces(proc, &call);
 
 	} else if (strcmp(name, "wmemcpy") == 0) {
 		arg2 = fn_argument(proc, 2);
@@ -296,6 +313,7 @@ static void memtransfer_function_exit(struct process *proc, const char *name)
 				.res_id = (pointer_t)retval
 		};
 		sp_rtrace_print_call(rd->fp, &call);
+		rp_write_backtraces(proc, &call);
 
 	} else if (strcmp(name, "wmempcpy") == 0) {
 		arg2 = fn_argument(proc, 2);
@@ -309,6 +327,7 @@ static void memtransfer_function_exit(struct process *proc, const char *name)
 				.res_id = (pointer_t)(void*)fn_argument(proc, 0)
 		};
 		sp_rtrace_print_call(rd->fp, &call);
+		rp_write_backtraces(proc, &call);
 
 	} else if (strcmp(name, "wmemmove") == 0) {
 		arg2 = fn_argument(proc, 2);
@@ -322,6 +341,7 @@ static void memtransfer_function_exit(struct process *proc, const char *name)
 				.res_id = (pointer_t)(void*)retval
 		};
 		sp_rtrace_print_call(rd->fp, &call);
+		rp_write_backtraces(proc, &call);
 
 	} else if (strcmp(name, "wmemset") == 0) {
 		arg2 = fn_argument(proc, 2);
@@ -335,6 +355,7 @@ static void memtransfer_function_exit(struct process *proc, const char *name)
 				.res_id = (pointer_t)(void*)retval
 		};
 		sp_rtrace_print_call(rd->fp, &call);
+		rp_write_backtraces(proc, &call);
 
 	} else if (strcmp(name, "wcscpy") == 0) {
 		int len = trace_mem_readwstr(proc, retval, NULL, 0);
@@ -348,6 +369,7 @@ static void memtransfer_function_exit(struct process *proc, const char *name)
 				.res_id = (pointer_t)(void*)retval
 		};
 		sp_rtrace_print_call(rd->fp, &call);
+		rp_write_backtraces(proc, &call);
 
 	} else if (strcmp(name, "wcsncpy") == 0) {
 		arg2 = fn_argument(proc, 2);
@@ -361,6 +383,7 @@ static void memtransfer_function_exit(struct process *proc, const char *name)
 				.res_id = (pointer_t)(void*)retval
 		};
 		sp_rtrace_print_call(rd->fp, &call);
+		rp_write_backtraces(proc, &call);
 
 	} else if (strcmp(name, "wcpcpy") == 0) {
 		arg1 = fn_argument(proc, 1);
@@ -375,6 +398,7 @@ static void memtransfer_function_exit(struct process *proc, const char *name)
 				.res_id = (pointer_t)(void*)fn_argument(proc, 0)
 		};
 		sp_rtrace_print_call(rd->fp, &call);
+		rp_write_backtraces(proc, &call);
 
 	} else if (strcmp(name, "wcpncpy") == 0) {
 		arg2 = fn_argument(proc, 2);
@@ -388,6 +412,7 @@ static void memtransfer_function_exit(struct process *proc, const char *name)
 				.res_id = (pointer_t)(void*)fn_argument(proc, 0)
 		};
 		sp_rtrace_print_call(rd->fp, &call);
+		rp_write_backtraces(proc, &call);
 
 	} else if (strcmp(name, "wcscat") == 0) {
 		int len = trace_mem_readwstr(proc, retval, NULL, 0);
@@ -401,6 +426,7 @@ static void memtransfer_function_exit(struct process *proc, const char *name)
 				.res_id = (pointer_t)(void*)retval
 		};
 		sp_rtrace_print_call(rd->fp, &call);
+		rp_write_backtraces(proc, &call);
 
 	} else if (strcmp(name, "wcsncat") == 0) {
 		size_t arg2 = fn_argument(proc, 2);
@@ -414,6 +440,7 @@ static void memtransfer_function_exit(struct process *proc, const char *name)
 				.res_id = (pointer_t)(void*)retval
 		};
 		sp_rtrace_print_call(rd->fp, &call);
+		rp_write_backtraces(proc, &call);
 
 	} else if (strcmp(name, "wcsdup") == 0) {
 		int len = trace_mem_readwstr(proc, retval, NULL, 0);
@@ -427,13 +454,13 @@ static void memtransfer_function_exit(struct process *proc, const char *name)
 				.res_id = (pointer_t)(void*)retval
 		};
 		sp_rtrace_print_call(rd->fp, &call);
+		rp_write_backtraces(proc, &call);
 
 	} else {
 		msg_warn("unexpected function exit (%s)\n", name);
 		return;
 	}
 	(rd->rp_number)++;
-	rp_write_backtraces(proc);
 }
 
 static int memtransfer_library_match(const char *symname)
