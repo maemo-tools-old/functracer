@@ -10,7 +10,7 @@ functracer installation instructions
 The following packages must be installed before compiling functracer:
   autoconf(>=2.67), automake(>=1.11), libtool(>=2.2.6), pkg-config(>=0.25),
   binutils-dev(>=2.20.1), help2man(>=1.38.2), libunwind7-dev(>=0.99),
-  libsp-rtrace-dev(>=1.4)
+  libsp-rtrace-dev(>=1.6)
   
 Note that earlier versions might also work.
 
