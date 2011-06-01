@@ -1,3 +1,9 @@
+functracer (1.1), 1 Jun 2011:
+  * Fix crashes sometimes seen during process detach.
+  * New option --monitor: Report backtraces only for allocations having the
+    specified resource size.
+  * Depends on sp-rtrace 1.6.
+
 functracer (1.0.1), 04 Mar 2011:
   * Fix functracer spinning forever or doing double free when it
     detaches from (threading) gst-launch
