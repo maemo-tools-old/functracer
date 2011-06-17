@@ -360,11 +360,8 @@ static void trace_finish(struct process *proc)
 static int handle_interrupt(struct process *proc, int signo)
 {
 	if (proc->exiting && signo == SIGSTOP) {
-		if (!proc->callstack_depth) {
-			trace_finish(proc);
-			return 1;
-		}
-		proc->stopping = 1;
+		trace_finish(proc);
+		return 1;
 	}
 	return 0;
 }
@@ -424,13 +421,7 @@ static int dispatch_event(struct event *event)
 		break;
 	case EV_BREAKPOINT:
 		bkpt_handle(event->proc, event->data.addr);
-		if (event->proc->stopping && !event->proc->callstack_depth) {
-			debug(2, "Stopping trace after function return breakpoint triggered");
-			trace_finish(event->proc);
-		}
-		else {
-			continue_process(event->proc);
-		}
+		continue_process(event->proc);
 		break;
 	case EV_SINGLESTEP:
 		singlestep_handle(event->proc, event->data.addr);
@@ -438,10 +429,10 @@ static int dispatch_event(struct event *event)
 		continue_process(event->proc);
 		break;
 	case EV_SIGNAL:
-		if (handle_interrupt(event->proc, event->data.signo))
-			return 0;
 		if (event->proc->singlestep)
 			singlestep_after_signal(event->proc);
+		if (handle_interrupt(event->proc, event->data.signo))
+			return 0;
 		if (cb && cb->process.signal)
 			cb->process.signal(event->proc, event->data.signo);
 		if (event->data.signo == SIGUSR1)

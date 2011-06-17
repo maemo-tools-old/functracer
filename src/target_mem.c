@@ -58,10 +58,10 @@ static void trace_mem_io(struct process *proc, addr_t addr, void *buf, size_t co
 	unsigned char *buf_bytes = buf;
 	unsigned char *w_bytes = (unsigned char *)&w;
 
-	debug(3, "trace_mem_io(pid=%d, addr=0x%x, buf=%p, count=%d, write=%d", proc->pid, addr, buf, count, write);
+	debug(4, "trace_mem_io(pid=%d, addr=0x%x, buf=%p, count=%d, write=%d", proc->pid, addr, buf, count, write);
 	for (i = 0; i < 1 + ((count - 1) / WORD_SIZE); i++) {
 		w = trace_mem_readw(proc, addr + i * WORD_SIZE);
-		debug(4, "trace_mem_io (read): w = 0x%08lx", w);
+		debug(5, "trace_mem_io (read): w = 0x%08lx", w);
 		for (j = 0; j < WORD_SIZE && i * WORD_SIZE + j < count; j++) {
 			if (write)
 				w_bytes[j] = buf_bytes[i * WORD_SIZE + j];

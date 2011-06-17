@@ -60,11 +60,12 @@ struct process {
 	struct bt_data *bt_data;
 	struct rp_data *rp_data;
 	struct callstack *callstack;
+#ifdef DEBUG
 	int callstack_depth;
+#endif
 	int trace_control;
 	int singlestep;
 	int exiting;
-	int stopping;
 	int in_syscall;
 	struct process *parent;
 	struct process *next;

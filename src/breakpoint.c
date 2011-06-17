@@ -229,7 +229,7 @@ void bkpt_handle(struct process *proc, addr_t addr)
 	switch (bkpt->type) {
 	case BKPT_ENTRY:
 		symbol_name = bkpt->symbol;
-		debug(2, "entry breakpoint for %s()", symbol_name);
+		debug(2, "entry breakpoint for %s() (exiting=%d)", symbol_name, proc->exiting);
 		/* Set instruction pointer to SSOL address before calling
 		 * fn_callstack_push(), so that it can read the original
 		 * instruction from it. */
@@ -246,7 +246,7 @@ void bkpt_handle(struct process *proc, addr_t addr)
 		break;
 	case BKPT_RETURN:
 		symbol_name = fn_name(proc);
-		debug(2, "return breakpoint for %s()", symbol_name);
+		debug(2, "return breakpoint for %s() (exiting=%d)", symbol_name, proc->exiting);
 		/* Fixup return address before calling function.exit()
 		 * callback so that backtraces do not contain the SSOL
 		 * address. */
