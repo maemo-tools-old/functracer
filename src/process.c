@@ -38,6 +38,7 @@
 #include "process.h"
 #include "report.h"
 #include "trace.h"
+#include "solib.h"
 
 #define BUF_SIZE	4096
 
@@ -213,6 +214,7 @@ struct process *add_process(pid_t pid)
 		if (tmp->parent)
 			tmp->trace_control = tmp->parent->trace_control;
 	}
+	solib_initialize(tmp);
 
 	debug(1, "Adding PID %d, filename = \"%s\"", pid, tmp->filename);
 

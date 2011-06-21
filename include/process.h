@@ -31,6 +31,7 @@ struct dict;
 struct bt_data;
 struct rp_data;
 struct solib_list;
+struct solib_data;
 
 struct callstack {
 	void *data[3];
@@ -60,6 +61,9 @@ struct process {
 	struct bt_data *bt_data;
 	struct rp_data *rp_data;
 	struct callstack *callstack;
+	/* symbol handling functions */
+	struct solib_data *solib;
+
 #ifdef DEBUG
 	int callstack_depth;
 #endif

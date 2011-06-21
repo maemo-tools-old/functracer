@@ -27,8 +27,61 @@
 #ifndef FTK_SOLIB_H
 #define FTK_SOLIB_H
 
+#include <bfd.h>
+
 #include "process.h"
 #include "target_mem.h"
+
+
+/**
+ * Operation mode specific symbol access functions.
+ *
+ * In normal mode functracer reads symbol table from the target file.
+ * In audit mode (-a) functracer attempts to locate debug symbols and
+ * use the debug symbol table from it.
+ */
+struct solib_data {
+	/**
+	 * Opens target file.
+	 *
+	 * The opened file must be closed with close() function.
+	 * @param[in] solib       the solib data structure.
+	 * @param[in] filename    the file name.
+	 * @return                the opened file or NULL if failed.
+	 */
+	bfd *(*open)(struct solib_data *solib, const char *filename);
+
+	/**
+	 * Closes the opened file.
+	 *
+	 * @param[in] solib       the solib data structure.
+	 * @param[in] file        the file reference returned by open() function.
+	 */
+	int (*close)(struct solib_data *solib, bfd *file);
+
+	/**
+	 * Reads symbol table from the specified file.
+	 *
+	 * This function allocates the necessary space which
+	 * must be freed afterwards with free_symbols() function.
+	 * @param[in] file          the file to read from.
+	 * @param[out] symbols      the read symbols.
+	 * @return                  the number of symbols in table.
+	 */
+	long (*read_symbols)(bfd *file, asymbol ***symbols);
+
+
+	/**
+	 * Frees symbol table allocated by read_symbols() function.
+	 *
+	 * @param[in] symbols   the symbol table to free.
+	 */
+	void (*free_symbols)(asymbol **symbols);
+
+	/* name of the file containing debug symbols */
+	char *debug_name;
+};
+
 
 struct solib_list {
 	addr_t start_addr;
@@ -43,5 +96,12 @@ typedef void (*new_sym_t)(struct process *, const char *, const char *,
 extern void solib_update_list(struct process *proc, new_sym_t callback);
 extern addr_t solib_dl_debug_address(struct process *proc);
 extern void free_all_solibs(struct process *proc);
+
+/**
+ * Initializes solib symbol access handler.
+ *
+ * @param[in] proc   the process data;
+ */
+extern void solib_initialize(struct process *proc);
 
 #endif /* !FTK_SOLIB_H */

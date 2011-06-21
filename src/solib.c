@@ -35,6 +35,7 @@
 #include "debug.h"
 #include "maps.h"
 #include "solib.h"
+#include "options.h"
 
 static void warning_bfd(const char *filename, const char *msg)
 {
@@ -46,6 +47,7 @@ static void error_bfd(const char *filename, const char *msg)
 	msg_warn("\"%s\": %s: %s", filename, msg, bfd_errmsg(bfd_get_error()));
 	exit(EXIT_FAILURE);
 }
+
 
 static void resolve_path(char *filename, char **real_filename)
 {
@@ -74,6 +76,91 @@ static void lib_base_address(pid_t pid, char *filename, addr_t *addr)
 	}
 	maps_finish(&md);
 }
+
+/*
+ * solib symbol handling functions for default mode
+ */
+static bfd *solib_open(struct solib_data *solib, const char *filename)
+{
+	bfd *abfd = bfd_fopen(filename, "default", "rb", -1);
+	if (abfd == NULL) {
+		warning_bfd(filename, "could not open shared library file");
+		return NULL;
+	}
+	if (!bfd_check_format(abfd, bfd_object)) {
+		warning_bfd(filename, "not in shared library format");
+		bfd_close(abfd);
+		return NULL;
+	}
+	return abfd;
+}
+
+static int solib_close(struct solib_data *solib, bfd *file)
+{
+	return bfd_close(file);
+}
+
+static long solib_read_symbols(bfd *file, asymbol ***symbols)
+{
+	long storage_needed = bfd_get_dynamic_symtab_upper_bound(file);
+	if (storage_needed > 0) {
+		*symbols = xmalloc((unsigned)storage_needed);
+		return bfd_canonicalize_dynamic_symtab(file, *symbols);
+	}
+	return 0;
+}
+
+/*
+ * solib symbol handling functions for debug mode
+ */
+static bfd *solib_debug_open(struct solib_data *solib, const char *filename)
+{
+	static char *places[]={".","./.debug", "/usr/lib/debug", NULL};
+
+	/* locate and open the symbol file */
+	bfd *abfd = solib_open(solib, filename);
+	if (!abfd) return NULL;
+
+	int index = 0;
+	while (places[index]) {
+		solib->debug_name = bfd_follow_gnu_debuglink (abfd, places[index]);
+		if (solib->debug_name) {
+			bfd_close(abfd);
+			abfd = solib_open(solib, solib->debug_name);
+			if (!abfd) return NULL;
+			break;
+		}
+		index++;
+	}
+	/* read the symbol table from opened file */
+	if ((bfd_get_file_flags(abfd) & HAS_SYMS) == 0) {
+		warning_bfd(solib->debug_name ? solib->debug_name : filename, "not in shared library format");
+		solib->close(solib, abfd);
+		abfd = NULL;
+	}
+	return abfd;
+}
+
+static int solib_debug_close(struct solib_data *solib, bfd *file)
+{
+	int rc = bfd_close(file);
+	if (solib->debug_name) {
+		free(solib->debug_name);
+		solib->debug_name = NULL;
+	}
+	return rc;
+}
+
+static long solib_debug_read_symbols(bfd *file, asymbol ***symbols)
+{
+	unsigned int size;
+	long nsymbols = bfd_read_minisymbols(file, FALSE, (void *) symbols, &size);
+	if (nsymbols == 0) {
+		nsymbols = bfd_read_minisymbols(file, TRUE, (void *) symbols, &size);
+	}
+	return nsymbols;
+}
+
 
 /* bfd_lookup_symbol -- lookup the value for a specific symbol */
 static unsigned long bfd_lookup_symbol(bfd *abfd, const char *symname, flagword sect_flags)
@@ -257,10 +344,9 @@ static void solib_read_library(struct process *proc, char *filename,
 			       addr_t start_addr, new_sym_t callback)
 {
 	bfd *abfd;
-	long storage_needed, number_of_symbols;
+	long number_of_symbols;
 	asymbol *sym, **symbol_table;
 	addr_t symaddr;
-	const bfd_format bfd_fmt = bfd_object;
 	const flagword flags = BSF_FUNCTION;
 
 	/* Do not read symbols from the target program itself. */
@@ -274,21 +360,13 @@ static void solib_read_library(struct process *proc, char *filename,
 	if (strcmp(filename, "/lib/ld-2.5.so") == 0)
 		return;
 
-	abfd = bfd_fopen(filename, "default", "rb", -1);
+	abfd = proc->solib->open(proc->solib, filename);
 	if (abfd == NULL) {
-		warning_bfd(filename, "could not open shared library file");
 		return;
 	}
-	if (!bfd_check_format(abfd, bfd_fmt)) {
-		warning_bfd(filename, "not in shared library format");
-		goto err;
-	}
-	storage_needed = bfd_get_dynamic_symtab_upper_bound(abfd);
-	if (storage_needed > 0) {
+	number_of_symbols = proc->solib->read_symbols(abfd, &symbol_table);
+	if (number_of_symbols) {
 		int i;
-
-		symbol_table = xmalloc((unsigned)storage_needed);
-		number_of_symbols = bfd_canonicalize_dynamic_symtab(abfd, symbol_table);
 		for (i = 0; i < number_of_symbols; i++) {
 			sym = symbol_table[i];
 			if ((sym->flags & flags) == flags) {
@@ -303,10 +381,9 @@ static void solib_read_library(struct process *proc, char *filename,
 				callback(proc, filename, sym->name, symaddr);
 			}
 		}
-		free(symbol_table);
+		proc->solib->free_symbols(symbol_table);
 	}
-err:
-	if (!bfd_close(abfd))
+	if (!proc->solib->close(proc->solib, abfd))
 		error_bfd(filename, "could not close file");
 }
 
@@ -360,4 +437,29 @@ void solib_update_list(struct process *proc, new_sym_t callback)
 					   callback);
 		}
 	}
+}
+
+/**
+ * Symbol access functions for normal mode
+ */
+static struct solib_data solib_data_default = {
+	.open = solib_open,
+	.close = solib_close,
+	.read_symbols = solib_read_symbols,
+	.free_symbols = (void(*)(asymbol **))free,
+};
+
+/**
+ * Symbol access functions for audit mode
+ */
+static struct solib_data solib_data_debug = {
+	.open = solib_debug_open,
+	.close = solib_debug_close,
+	.read_symbols = solib_debug_read_symbols,
+	.free_symbols = (void(*)(asymbol **))free,
+};
+
+void solib_initialize(struct process *proc)
+{
+	proc->solib = arguments.audit ? &solib_data_debug : &solib_data_default;
 }
