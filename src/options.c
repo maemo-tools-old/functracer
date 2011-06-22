@@ -67,7 +67,7 @@ static const struct argp_option options[] = {
 	 "use a file to save backtraces instead of dump to stdout", 0},
 	{"path",  'l', "DIR", 0,
          "dump reports to a custom location (defaults to homedir)", 0},
-	{"audit", 'a', "SYMBOLS", 0, "custom tracked symbol list for audit module in format <symbol>[,<symbol>...]", 0},
+	{"audit", 'a', "SYMBOLS", 0, "custom tracked symbol list for audit module in format <symbol>[;<symbol>...]", 0},
 	{"monitor", 'M', "SIZES", 0, "monitor backtraces for resource allocations of the specified size, where SIZE is <size1>[,<size2>,...]", 0},
 	{"library", 'L', "NAMES", 0, "limit symbol scan only to the specified libraries, where NAMES is <library1>[,<library2>,...]", 0},
 	{"verbose", 'v', NULL, 0, "Show internal events", 0},
