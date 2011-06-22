@@ -36,6 +36,7 @@
 #include "maps.h"
 #include "solib.h"
 #include "options.h"
+#include "filter.h"
 
 static void warning_bfd(const char *filename, const char *msg)
 {
@@ -433,8 +434,9 @@ void solib_update_list(struct process *proc, new_sym_t callback)
 			if (cb && cb->library.load)
 				cb->library.load(proc, c->start_addr,
 						 c->end_addr, c->path);
-			solib_read_library(proc, c->path, c->start_addr,
-					   callback);
+			if (filter_validate(c->path)) {
+				solib_read_library(proc, c->path, c->start_addr, callback);
+			}
 		}
 	}
 }

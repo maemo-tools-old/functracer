@@ -34,6 +34,7 @@
 #include "options.h"
 #include "process.h"
 #include "trace.h"
+#include "filter.h"
 
 #define CAPACITY(a)        (sizeof(a) / sizeof(*a))
 
@@ -112,6 +113,7 @@ int main(int argc, char *argv[])
 	 * FIXME: cleanup when functracer is interrupted with CTRL+C too. */
 	cb_finish();
 	remove_all_processes();
+	filter_free();
 
 	return ret;
 }

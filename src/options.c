@@ -35,6 +35,7 @@
 #include "options.h"
 #include "report.h"
 #include "backtrace.h"
+#include "filter.h"
 
 #define DEFAULT_BT_DEPTH		10
 
@@ -66,12 +67,13 @@ static const struct argp_option options[] = {
 	 "use a file to save backtraces instead of dump to stdout", 0},
 	{"path",  'l', "DIR", 0,
          "dump reports to a custom location (defaults to homedir)", 0},
+	{"audit", 'a', "SYMBOLS", 0, "custom tracked symbol list for audit module in format <symbol>[,<symbol>...]", 0},
+	{"monitor", 'M', "SIZES", 0, "monitor backtraces for resource allocations of the specified size, where SIZE is <size1>[,<size2>,...]", 0},
+	{"library", 'L', "NAMES", 0, "limit symbol scan only to the specified libraries, where NAMES is <library1>[,<library2>,...]", 0},
 	{"verbose", 'v', NULL, 0, "Show internal events", 0},
 	{"help", 'h', NULL, 0, "Give this help list", -1},
 	{"usage", OPT_USAGE, NULL, 0, "Give a short usage message", -1},
 	{"version", 'V', NULL, 0, "Print program version", -1},
-	{"audit", 'a', "SYMBOLS", 0, "custom tracked symbol list for audit module in format <symbol>[;<symbol>...]", 0},
-	{"monitor", 'M', "SIZE", 0, "monitor backtraces for allocations of the specified size", 0},
 	{NULL, 0, NULL, 0, NULL, 0},
 };
 
@@ -169,6 +171,9 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 		break;
 	case 'M':
 		arg_data->filter_size = arg;
+		break;
+	case 'L':
+		filter_initialize(arg);
 		break;
 	default:
 		return ARGP_ERR_UNKNOWN;

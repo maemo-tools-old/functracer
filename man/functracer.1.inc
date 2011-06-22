@@ -6,7 +6,8 @@ functracer - list backtraces to tracked functions.
 
 Currently, functracer has the following plugins implemented:
 "memory" (used by default, when no plugin is specified), "file",
-"memtransfer", "gobject", "thread-resource" and "shmsysv".
+"memtransfer", "gobject", "thread-resource", "shmsysv", "shmposix" and
+"audit".
 They are installed in /usr/lib/functracer.
 
 The \fImemory\fP plugin is used to track memory allocation usage (calloc,
@@ -28,9 +29,24 @@ The \fIgobject\fP plugin is used to track GObject allocation and release
 The \fIthread-resource\fP plugin is used to track resource allocation/release
 by creating/joining threads (pthread_create, pthread_join, pthread_detatch).
 
-The \fIshmsysv\fP plugin is used to track shared memory segment creation and
-destruction by the target process and the address attching and detaching
+The \fIshmsysv\fP plugin is used to track System V shared memory segment creation
+and destruction by the target process and the address attaching and detaching
 operations (shmget, shmctl, shmat, shmdt).
+
+The \fIshmsposix\fP plugin is used to track posix shared memory segment creation
+and destruction by the target process and the address attaching and detaching
+operations (shm_open, shm_unlink, mmap, munmap).
+
+The \fIaudit\fP plugin is invoked automatically when -a option is used and
+it allows to track custom list of symbols specified by the -a option in format
+ <symbol1>[,<symbol2>,...]
+ 
+Note that audit plugin attempts to use dwarf debug symbols to locate the 
+target symbols instead of scanning elf symbol table as the rest of modules do.
+While this allows to track also not exported (for example static) functions,
+it slows down library loading performance. To reduce performance impact use
+-L option to specify the libraries that should be scanned.
+
 
 The function format output is defined below:
 
