@@ -70,6 +70,7 @@ static const struct argp_option options[] = {
 	{"audit", 'a', "SYMBOLS", 0, "custom tracked symbol list for audit module in format <symbol>[;<symbol>...]", 0},
 	{"monitor", 'M', "SIZES", 0, "monitor backtraces for resource allocations of the specified size, where SIZE is <size1>[,<size2>,...]", 0},
 	{"library", 'L', "NAMES", 0, "limit symbol scan only to the specified libraries, where NAMES is <library1>[,<library2>,...]", 0},
+	{"skip-symbol-check", 'S', NULL, 0, "skip checking if all of monitored symbols are located", 0},
 	{"verbose", 'v', NULL, 0, "Show internal events", 0},
 	{"help", 'h', NULL, 0, "Give this help list", -1},
 	{"usage", OPT_USAGE, NULL, 0, "Give a short usage message", -1},
@@ -175,6 +176,10 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 	case 'L':
 		filter_initialize(arg);
 		break;
+	case 'S':
+		arg_data->skip_symbol_check = true;
+		break;
+
 	default:
 		return ARGP_ERR_UNKNOWN;
 	}

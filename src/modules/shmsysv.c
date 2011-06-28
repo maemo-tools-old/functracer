@@ -53,7 +53,7 @@
 #include <search.h>
 #include <sp_rtrace_formatter.h>
 #include <sp_rtrace_defs.h>
-
+#include "util.h"
 
 #include "debug.h"
 #include "function.h"
@@ -62,6 +62,7 @@
 #include "process.h"
 #include "report.h"
 #include "context.h"
+#include "util.h"
 
 #define SHMSYSV_API_VERSION "2.0"
 #define RES_SIZE 1
@@ -302,18 +303,18 @@ static void function_exit(struct process *proc, const char *name)
 	rd->rp_number++;
 }
 
-/**
- * Verifies if the specified symbol is tracked by the module.
- * @param symname
- * @return
- */
-static int library_match(const char *symname)
+
+static struct plg_symbol symbols[] = {
+		{.name = "shmget", .hit = 0},
+		{.name = "shmctl", .hit = 0},
+		{.name = "shmdt", .hit = 0},
+		{.name = "shmat", .hit = 0},
+};
+
+static int get_symbols(struct plg_symbol **syms)
 {
-	return(
-			strcmp(symname, "shmget") == 0 ||
-			strcmp(symname, "shmctl") == 0 ||
-			strcmp(symname, "shmdt") == 0 ||
-			strcmp(symname, "shmat") == 0);
+	*syms = symbols;
+	return ARRAY_SIZE(symbols);
 }
 
 /**
@@ -337,7 +338,7 @@ struct plg_api *init(void)
 	static struct plg_api ma = {
 		.api_version = api_version,
 		.function_exit = function_exit,
-		.library_match = library_match,
+		.get_symbols = get_symbols,
 		.report_init = report_init,
 	};
 	return &ma;

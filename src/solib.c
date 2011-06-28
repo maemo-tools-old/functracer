@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <elf.h>
 
 #include "callback.h"
 #include "debug.h"
@@ -37,6 +38,23 @@
 #include "solib.h"
 #include "options.h"
 #include "filter.h"
+
+/**
+ * Program header structure, taken from binutils (include/elf/internal)
+ */
+struct elf_internal_phdr {
+  unsigned long	p_type;			/* Identifies program segment type */
+  unsigned long	p_flags;		/* Segment flags */
+  bfd_vma	p_offset;		/* Segment file offset */
+  bfd_vma	p_vaddr;		/* Segment virtual address */
+  bfd_vma	p_paddr;		/* Segment physical address */
+  bfd_vma	p_filesz;		/* Segment size in file */
+  bfd_vma	p_memsz;		/* Segment size in memory */
+  bfd_vma	p_align;		/* Segment alignment, file & memory */
+};
+typedef struct elf_internal_phdr Elf_Internal_Phdr;
+
+/* */
 
 static void warning_bfd(const char *filename, const char *msg)
 {
@@ -223,6 +241,7 @@ static int solib_is_prelinked(bfd *abfd)
 	return prelinked;
 }
 
+
 /* Based on enable_break() code from GDB 6.6 (gdb/solib-svr4.c). */
 addr_t solib_dl_debug_address(struct process *proc)
 {
@@ -232,6 +251,7 @@ addr_t solib_dl_debug_address(struct process *proc)
 	unsigned long sym_addr = 0;
 	char *buf, *interp_file = NULL;
 	addr_t start_addr = 0;
+	addr_t load_addr = 0;
 	const bfd_format bfd_fmt = bfd_object;
 
 	abfd = bfd_fopen(proc->filename, "default", "rb", -1);
@@ -241,6 +261,28 @@ addr_t solib_dl_debug_address(struct process *proc)
 		warning_bfd(proc->filename, "not in executable format");
 		goto close_abfd;
 	}
+	/* Read the process entry point address. This address is used to
+	 * set program start breakpoint to check if all of plugin symbols
+	 * were located in the loaded libraries. */
+	long phdr_size = bfd_get_elf_phdr_upper_bound(abfd);
+	Elf_Internal_Phdr *phdr_table = xmalloc(phdr_size);
+	int i, phdr_count = bfd_get_elf_phdrs(abfd, phdr_table);
+	if (phdr_count == -1) {
+		error_bfd(proc->filename, "failed to read elf program headers");
+		goto close_abfd;
+	}
+	for (i = 0; i < phdr_count; i++) {
+		if ((phdr_table[i].p_type == PT_LOAD) && (!phdr_table[i].p_offset)) {
+			if (!phdr_table[i].p_vaddr) {
+				lib_base_address(proc->pid, proc->filename, &load_addr);
+			}
+			break;
+		}
+	}
+	proc->start_address = abfd->start_address + load_addr;
+
+	/* */
+	sym_addr = bfd_lookup_symbol(abfd, "_dl_debug_state", SEC_CODE);
 
 	/* Find the .interp section. */
 	sect = bfd_get_section_by_name(abfd, ".interp");
@@ -395,7 +437,6 @@ void solib_update_list(struct process *proc, new_sym_t callback)
 	struct solib_list *k = proc->shared->solib_list;
 	struct solib_list **k_link = &proc->shared->solib_list;
 	struct callback *cb = cb_get();
-
 	current_solibs(proc, &cur_sos);
 	while (k) {
 		struct solib_list *c = cur_sos;

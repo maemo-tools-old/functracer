@@ -27,6 +27,8 @@
 
 #include <sys/types.h>
 
+#include "target_mem.h"
+
 struct dict;
 struct bt_data;
 struct rp_data;
@@ -71,6 +73,8 @@ struct process {
 	int singlestep;
 	int exiting;
 	int in_syscall;
+	addr_t start_address;
+
 	struct process *parent;
 	struct process *next;
 };

@@ -38,6 +38,7 @@
 #include "process.h"
 #include "report.h"
 #include "context.h"
+#include "util.h"
 
 #define WSIZE 4
 #define POINTER 4
@@ -463,37 +464,44 @@ static void memtransfer_function_exit(struct process *proc, const char *name)
 	(rd->rp_number)++;
 }
 
-static int memtransfer_library_match(const char *symname)
+static struct plg_symbol symbols[] = {
+		{.name = "memcpy", .hit = 0},
+		{.name = "mempcpy", .hit = 0},
+		{.name = "memmove", .hit = 0},
+		{.name = "memccpy", .hit = 0},
+		{.name = "memset", .hit = 0},
+		{.name = "strcpy", .hit = 0},
+		{.name = "strncpy", .hit = 0},
+		{.name = "stpcpy", .hit = 0},
+		{.name = "stpncpy", .hit = 0},
+		{.name = "strcat", .hit = 0},
+		{.name = "strncat", .hit = 0},
+		{.name = "bcopy", .hit = 0},
+		{.name = "bzero", .hit = 0},
+		{.name = "strdup", .hit = 0},
+		{.name = "strndup", .hit = 0},
+/*		{.name = "strdupa", .hit = 0},
+		{.name = "strndupa", .hit = 0},
+*/
+		{.name = "wmemcpy", .hit = 0},
+		{.name = "wmempcpy", .hit = 0},
+		{.name = "wmemmove", .hit = 0},
+		{.name = "wmemset", .hit = 0},
+		{.name = "wcscpy", .hit = 0},
+		{.name = "wcsncpy", .hit = 0},
+		{.name = "wcpcpy", .hit = 0},
+		{.name = "wcpncpy", .hit = 0},
+		{.name = "wcscat", .hit = 0},
+		{.name = "wcsncat", .hit = 0},
+		{.name = "wcsdupX", .hit = 0},
+};
+
+static int get_symbols(struct plg_symbol **syms)
 {
-	return(strcmp(symname, "memcpy") == 0 ||
-				 strcmp(symname, "mempcpy") == 0 ||
-				 strcmp(symname, "memmove") == 0 ||
-				 strcmp(symname, "memccpy") == 0 ||
-				 strcmp(symname, "memset") == 0 ||
-				 strcmp(symname, "strcpy") == 0 ||
-				 strcmp(symname, "strncpy") == 0 ||
-				 strcmp(symname, "stpcpy") == 0 ||
-				 strcmp(symname, "stpncpy") == 0 ||
-				 strcmp(symname, "strcat") == 0 ||
-				 strcmp(symname, "strncat") == 0 ||
-				 strcmp(symname, "bcopy") == 0 ||
-				 strcmp(symname, "bzero") == 0 ||
-				 strcmp(symname, "strdup") == 0 ||
-				 strcmp(symname, "strndup") == 0 ||
-				 strcmp(symname, "strdupa") == 0 ||
-				 strcmp(symname, "strndupa") == 0 ||
-				 strcmp(symname, "wmemcpy") == 0 ||
-				 strcmp(symname, "wmempcpy") == 0 ||
-				 strcmp(symname, "wmemmove") == 0 ||
-				 strcmp(symname, "wmemset") == 0 ||
-				 strcmp(symname, "wcscpy") == 0 ||
-				 strcmp(symname, "wcsncpy") == 0 ||
-				 strcmp(symname, "wcpcpy") == 0 ||
-				 strcmp(symname, "wcpncpy") == 0 ||
-				 strcmp(symname, "wcscat") == 0 ||
-				 strcmp(symname, "wcsncat") == 0 ||
-				 strcmp(symname, "wcsdup") == 0);
+	*syms = symbols;
+	return ARRAY_SIZE(symbols);
 }
+
 
 static void memtransfer_report_init(struct process *proc)
 {
@@ -506,7 +514,7 @@ struct plg_api *init(void)
 	static struct plg_api ma = {
 		.api_version = memtransfer_api_version,
 		.function_exit = memtransfer_function_exit,
-		.library_match = memtransfer_library_match,
+		.get_symbols = get_symbols,
 		.report_init = memtransfer_report_init,
 	};
 	return &ma;

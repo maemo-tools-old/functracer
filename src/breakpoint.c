@@ -107,7 +107,7 @@ static struct breakpoint *register_breakpoint(struct process *proc, addr_t addr,
 			bkpt->symbol = strdup(symname);
 		}
 		register_breakpoint_(proc, fixed_addr, bkpt);
-		if (type == BKPT_RETURN || type == BKPT_SENTINEL) {
+		if (type == BKPT_RETURN || type == BKPT_SENTINEL || type == BKPT_START) {
 			ssol_addr = fixed_addr;
 		} else {
 			ssol_addr = ssol_new_slot(proc);
@@ -118,7 +118,7 @@ static struct breakpoint *register_breakpoint(struct process *proc, addr_t addr,
 		bkpt->type = type;
 		bkpt->insn = breakpoint_instruction(addr);
 	}
-	if (type == BKPT_RETURN || type == BKPT_SENTINEL) {
+	if (type == BKPT_RETURN || type == BKPT_SENTINEL || type == BKPT_START) {
 		trace_mem_write(proc, bkpt->addr, bkpt->insn->value, bkpt->insn->size);
 		bkpt->enabled = 1;
 	} else
@@ -266,9 +266,17 @@ void bkpt_handle(struct process *proc, addr_t addr)
 	case BKPT_SENTINEL:
 		/* A singlestep was interrupted by a signal. Restart it here.
 		 */
+		debug(1, "SENTINEL");
 		set_instruction_pointer(proc, addr - MAX_INSN_SIZE);
 		proc->singlestep = 1;
 		break;
+
+	case BKPT_START:
+		/* program entry point reached, check loaded symbols */
+		plg_check_symbols(false);
+		disable_breakpoint((struct process *)proc, breakpoint_from_address(proc, proc->start_address));
+		break;
+
 	default:
 		error_exit("unknown breakpoint type");
 	}
@@ -284,7 +292,13 @@ void bkpt_init(struct process *proc)
 		ssol_init(proc);
 		register_ssol_return_breakpoint(proc);
 		register_dl_debug_breakpoint(proc);
+		if (proc->start_address) {
+			register_breakpoint(proc, proc->start_address, BKPT_START, NULL);
+		}
 		solib_update_list(proc, register_entry_breakpoint);
+		/* check plugin symbol match for attached processes */
+		if (arguments.npids) plg_check_symbols(false);
+
 	} else {
 		proc->shared = proc->parent->shared;
 		proc->shared->ref_count++;

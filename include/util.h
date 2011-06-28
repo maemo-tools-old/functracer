@@ -27,4 +27,14 @@
 
 extern long xptrace(int request, pid_t pid, void *addr, void *data);
 
+#ifndef ARRAY_SIZE
+ #define ARRAY_SIZE(x)   sizeof(x) / sizeof(x[0])
+#endif
+
+/* C++ name demangking support */
+#define DMGL_PARAMS  (1 << 0) /* Include function args */
+#define DMGL_ANSI  (1 << 1)   /* Include const, volatile, etc */
+
+extern char* cplus_demangle(const char* symbol, int flags);
+
 #endif /* !FTK_UTIL_H */

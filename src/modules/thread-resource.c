@@ -50,6 +50,7 @@
 #include "process.h"
 #include "report.h"
 #include "context.h"
+#include "util.h"
 
 #define THREAD_API_VERSION "2.0"
 #define RES_SIZE 1
@@ -187,28 +188,17 @@ static void thread_function_exit(struct process *proc, const char *name)
 	(rd->rp_number)++;
 }
 
-static int thread_library_match(const char *symname)
+
+static struct plg_symbol symbols[] = {
+		{.name = "pthread_join", .hit = 0},
+		{.name = "pthread_create", .hit = 0},
+		{.name = "pthread_detach", .hit = 0},
+};
+
+static int get_symbols(struct plg_symbol **syms)
 {
-	return(
-			/* TODO: finalize process tracking
-			strcmp(symname, "system") == 0 ||
-			strcmp(symname, "__fork") == 0 ||
-			strcmp(symname, "__vfork") == 0 ||
-			strcmp(symname, "clone") == 0 ||
-			strcmp(symname, "execv") == 0 ||
-			strcmp(symname, "execl") == 0 ||
-			strcmp(symname, "execve") == 0 ||
-			strcmp(symname, "execle") == 0 ||
-			strcmp(symname, "execvp") == 0 ||
-			strcmp(symname, "execlp") == 0 ||
-			strcmp(symname, "waitpid") == 0 ||
-			strcmp(symname, "wait") == 0 ||
-			strcmp(symname, "wait4") == 0 ||
-			strcmp(symname, "wait3") == 0 ||
-			*/
-			strcmp(symname, "pthread_join") == 0 ||
-			strcmp(symname, "pthread_create") == 0 ||
-			strcmp(symname, "pthread_detach") == 0);
+	*syms = symbols;
+	return ARRAY_SIZE(symbols);
 }
 
 static void thread_report_init(struct process *proc)
@@ -222,7 +212,7 @@ struct plg_api *init(void)
 	static struct plg_api ma = {
 		.api_version = thread_api_version,
 		.function_exit = thread_function_exit,
-		.library_match = thread_library_match,
+		.get_symbols = get_symbols,
 		.report_init = thread_report_init,
 	};
 	return &ma;

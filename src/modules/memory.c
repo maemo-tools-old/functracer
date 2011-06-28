@@ -39,6 +39,7 @@
 #include "report.h"
 #include "target_mem.h"
 #include "context.h"
+#include "util.h"
 
 #define MEM_API_VERSION "2.0"
 
@@ -212,15 +213,20 @@ static void mem_function_exit(struct process *proc, const char *name)
 	(rd->rp_number)++;
 }
 
-static int mem_library_match(const char *symname)
+static struct plg_symbol symbols[] = {
+		{.name = "__libc_calloc", .hit = 0},
+		{.name = "__libc_malloc", .hit = 0},
+		{.name = "__libc_realloc", .hit = 0},
+		{.name = "__libc_free", .hit = 0},
+		{.name = "__libc_memalign", .hit = 0},
+		{.name = "posix_memalign", .hit = 0},
+		{.name = "valloc", .hit = 0},
+};
+
+static int get_symbols(struct plg_symbol **syms)
 {
-	return(strcmp(symname, "__libc_calloc") == 0 ||
-	       strcmp(symname, "__libc_malloc") == 0 ||
-	       strcmp(symname, "__libc_realloc") == 0 ||
-	       strcmp(symname, "__libc_free") == 0 ||
-	       strcmp(symname, "__libc_memalign") == 0 ||
-				 strcmp(symname, "posix_memalign") == 0 ||
-				 strcmp(symname, "valloc") == 0);
+	*syms = symbols;
+	return ARRAY_SIZE(symbols);
 }
 
 static void mem_report_init(struct process *proc)
@@ -234,7 +240,7 @@ struct plg_api *init(void)
 	static struct plg_api ma = {
 		.api_version = mem_api_version,
 		.function_exit = mem_function_exit,
-		.library_match = mem_library_match,
+		.get_symbols = get_symbols,
 		.report_init = mem_report_init,
 	};
 	return &ma;

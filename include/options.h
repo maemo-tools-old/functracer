@@ -26,7 +26,7 @@
 #define TT_OPTIONS_H
 
 #include <sys/types.h>
-
+#include <stdbool.h>
 #include <sp_rtrace_filter.h>
 
 #define MAX_NPIDS 20
@@ -46,9 +46,16 @@ struct arguments {
 	int verbose;
 	char *plugin;
 	char *path;
+	/* audit option arguments */
 	char *audit;
+	/* allocation size filter option arguments */
 	char *filter_size;
+	/* allocation size filter */
 	sp_rtrace_filter_t *filter;
+	/* don't check if monitored symbols are located */
+	bool skip_symbol_check;
+	/* set to true when functracer is stopping */
+	bool stopping;
 };
 
 extern struct arguments arguments;

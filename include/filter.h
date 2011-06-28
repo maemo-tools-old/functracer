@@ -49,7 +49,7 @@ void filter_initialize(const char *list);
 /**
  * Frees resources allocated by filter
  */
-void filter_free();
+void filter_free(void);
 
 /**
  * Validates the specified library name against the filter.

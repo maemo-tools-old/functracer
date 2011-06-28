@@ -39,6 +39,7 @@
 #include "process.h"
 #include "report.h"
 #include "context.h"
+#include "util.h"
 
 #define FILE_API_VERSION "2.0"
 #define RES_SIZE 1
@@ -47,8 +48,6 @@
 #define DETAILS_DESC    25
 #define DETAILS_OPT     10
 #define DETAILS_NAME    (MAX_DETAILS_LEN - DETAILS_DESC - DETAILS_OPT)
-
-#define ARRAY_SIZE(x)   sizeof(x) / sizeof(x[0])
 
 static sp_rtrace_resource_t res_fd = {
 		.id = 1,
@@ -579,28 +578,34 @@ static void file_function_exit(struct process *proc, const char *name)
 	(rd->rp_number)++;
 }
 
-static int file_library_match(const char *symname)
+
+static struct plg_symbol symbols[] = {
+		{.name = "_IO_fopen", .hit = 0},
+		{.name = "_IO_fclose", .hit = 0},
+		{.name = "__open", .hit = 0},
+		{.name = "__open64", .hit = 0},
+		{.name = "__close", .hit = 0},
+		{.name = "fcloseall", .hit = 0},
+		{.name = "creat", .hit = 0},
+		{.name = "freopen", .hit = 0},
+		{.name = "_IO_fdopen", .hit = 0},
+		{.name = "accept", .hit = 0},
+		{.name = "dup", .hit = 0},
+		{.name = "__dup2", .hit = 0},
+		{.name = "socket", .hit = 0},
+		{.name = "fcntl", .hit = 0},
+		{.name = "socketpair", .hit = 0},
+		{.name = "inotify_init", .hit = 0},
+		{.name = "pipe", .hit = 0},
+		{.name = "pipe2", .hit = 0},
+};
+
+static int get_symbols(struct plg_symbol **syms)
 {
-	return(strcmp(symname, "_IO_fopen") == 0 ||
-				strcmp(symname, "_IO_fclose") == 0 ||
-				strcmp(symname, "__open") == 0 ||
-				strcmp(symname, "__open64") == 0 ||
-				strcmp(symname, "__close") == 0 ||
-				strcmp(symname, "fcloseall") == 0 ||
-				strcmp(symname, "creat") == 0 ||
-				strcmp(symname, "freopen") == 0 ||
-				strcmp(symname, "_IO_fdopen") == 0 ||
-				strcmp(symname, "accept") == 0 ||
-				strcmp(symname, "dup") == 0 ||
-				strcmp(symname, "__dup2") == 0 ||
-				strcmp(symname, "socket") == 0 ||
-				strcmp(symname, "fcntl") == 0 ||
-				strcmp(symname, "socketpair") == 0 ||
-				strcmp(symname, "inotify_init") == 0 ||
-				strcmp(symname, "pipe") == 0 ||
-				strcmp(symname, "pipe2") == 0
-				);
+	*syms = symbols;
+	return ARRAY_SIZE(symbols);
 }
+
 
 static void file_report_init(struct process *proc)
 {
@@ -614,7 +619,7 @@ struct plg_api *init(void)
 	static struct plg_api ma = {
 		.api_version = file_api_version,
 		.function_exit = file_function_exit,
-		.library_match = file_library_match,
+		.get_symbols = get_symbols,
 		.report_init = file_report_init,
 	};
 	return &ma;

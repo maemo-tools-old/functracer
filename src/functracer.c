@@ -76,6 +76,7 @@ static void kill_process(struct process *proc, int signo)
 static void signal_exit(int sig)
 {
 	debug(1, "Received interrupt signal; exiting...");
+	arguments.stopping = true;
 	for_each_process(kill_process, sig);
 }
 

@@ -27,10 +27,10 @@
 
 #include <stdint.h>
 
-#include "process.h"
-
 /*typedef void *addr_t;*/
 typedef uintptr_t addr_t;
+
+struct process;
 
 extern long trace_mem_readw(struct process *proc, addr_t addr);
 extern void trace_mem_writew(struct process *proc, addr_t addr, long w);

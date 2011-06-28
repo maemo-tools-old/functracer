@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <stdio.h>
+#include <libiberty.h>
 
 #include "filter.h"
 

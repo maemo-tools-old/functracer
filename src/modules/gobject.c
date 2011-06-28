@@ -38,6 +38,7 @@
 #include "process.h"
 #include "report.h"
 #include "context.h"
+#include "util.h"
 
 #define GOBJECT_API_VERSION "2.0"
 #define RES_SIZE 4
@@ -108,11 +109,16 @@ static void gobject_function_exit(struct process *proc, const char *name)
 	(rd->rp_number)++;
 }
 
-static int gobject_library_match(const char *symname)
+static struct plg_symbol symbols[] = {
+		{.name = "g_object_newv", .hit = 0},
+		{.name = "g_object_ref", .hit = 0},
+		{.name = "g_object_unref", .hit = 0},
+};
+
+static int get_symbols(struct plg_symbol **syms)
 {
-	return( 	strcmp(symname, "g_object_newv") == 0 ||
-			strcmp(symname, "g_object_ref") == 0 ||
-			strcmp(symname, "g_object_unref") == 0);
+	*syms = symbols;
+	return ARRAY_SIZE(symbols);
 }
 
 static void gobject_report_init(struct process *proc)
@@ -126,7 +132,7 @@ struct plg_api *init(void)
 	static struct plg_api ma = {
 		.api_version = gobject_api_version,
 		.function_exit = gobject_function_exit,
-		.library_match = gobject_library_match,
+		.get_symbols = get_symbols,
 		.report_init = gobject_report_init,
 	};
 	return &ma;

@@ -25,7 +25,17 @@
 #ifndef FTK_PLUGINS_H
 #define FTK_PLUGINS_H
 
+#include <stdbool.h>
+
 #include "process.h"
+
+/**
+ * Structure defining symbols monitored by a plugin.
+ */
+struct plg_symbol {
+	char *name;
+	int hit;
+};
 
 struct plg_api {
 	char *api_version;
@@ -39,14 +49,28 @@ struct plg_api {
 	void (*process_interrupt)(struct process *proc);
 	void (*syscall_enter)(struct process *proc, int sysno);
 	void (*syscall_exit)(struct process *proc, int sysno);
-	int (*library_match)(const char *name);
+	int (*get_symbols)(struct plg_symbol **symbols);
 	void (*report_init)(struct process *proc);
 };
+
 
 void plg_init(void);
 void plg_finish(void);
 void plg_function_exit(struct process *proc, const char *name);
 int plg_match(const char *symname);
+
+/**
+ * Checks if all of the plugin symbols have been found in the
+ * loaded libraries.
+ *
+ * This function will display warning message about every
+ * unmatched symbol unless if silent is set to true. Consequent
+ * calls won't display messages about already warned symbols.
+ *
+ * @param[in] silent   set 1 to suppress warning messages.
+ * @return             the number of unmatched symbols.
+ */
+int plg_check_symbols(bool silent);
 
 /**
  * Initializes plugin report printing.

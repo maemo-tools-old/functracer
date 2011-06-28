@@ -25,6 +25,8 @@
 #include <stdio.h>
 #include <sys/ptrace.h>
 
+#include "process.h"
+
 #include "debug.h"
 #include "target_mem.h"
 #include "util.h"

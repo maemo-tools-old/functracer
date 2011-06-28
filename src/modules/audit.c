@@ -28,14 +28,13 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
-
+#include <libiberty.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/wait.h>
 #include <unistd.h>
 #include <sched.h>
 #include <sp_rtrace_formatter.h>
-#include <sp_rtrace_tracker.h>
 #include <sp_rtrace_defs.h>
 
 
@@ -46,6 +45,7 @@
 #include "process.h"
 #include "report.h"
 #include "context.h"
+#include "util.h"
 
 #define AUDIT_API_VERSION "2.0"
 
@@ -61,45 +61,140 @@ static sp_rtrace_resource_t res_audit = {
 		.flags = SP_RTRACE_RESOURCE_DEFAULT,
 };
 
-static sp_rtrace_tracker_t tracker;
+
+/* the monitored symbol array */
+static struct plg_symbol *symbols = NULL;
+/* the number of monitored symbols */
+static int plg_symbol_count = 0;
+/* the limit of monitored symbol array */
+static int plg_symbol_limit = 32;
+
+static void parse_item(char *item);
 
 static void audit_function_exit(struct process *proc, const char *name)
 {
 	struct rp_data *rd = proc->rp_data;
 
 	assert(proc->rp_data != NULL);
-	
-	char* symname = sp_rtrace_tracker_query_symbol(&tracker, name);
 
-	if (symname) {
-		sp_rtrace_fcall_t call = {
-			.type = SP_RTRACE_FTYPE_ALLOC,
-			.index = rd->rp_number++,
-			.context = context_mask,
-			.timestamp = RP_TIMESTAMP,
-			.name = (char*)symname,
-			.res_size = RES_SIZE,
-			.res_id = (pointer_t)RES_ID,
-		};
-		sp_rtrace_print_call(rd->fp, &call);
-		rp_write_backtraces(proc, &call);
-		free(symname);
+	if (name[0] == 'I' && name[1] == 'A' &&	name[2] == '_' && name[3] == '_') {
+		name += 4;
+	}
 
-	} else {
+	char *demangled_name = (char*)cplus_demangle(name, DMGL_ANSI | DMGL_PARAMS);
+	char *target_name = demangled_name ? demangled_name : name;
+
+	int i;
+	for (i = 0; i < plg_symbol_count; i++) {
+		if (!strcmp(symbols[i].name, target_name)) {
+			sp_rtrace_fcall_t call = {
+				.type = SP_RTRACE_FTYPE_ALLOC,
+				.index = rd->rp_number++,
+				.context = context_mask,
+				.timestamp = RP_TIMESTAMP,
+				.name = (char*)target_name,
+				.res_size = RES_SIZE,
+				.res_id = (pointer_t)RES_ID,
+			};
+			sp_rtrace_print_call(rd->fp, &call);
+			rp_write_backtraces(proc, &call);
+			break;
+		}
+	}
+	if (demangled_name) free(demangled_name);
+	if (i == plg_symbol_count) {
 		msg_warn("unexpected function exit (%s)\n", name);
 		return;
 	}
 }
 
-static int audit_library_match(const char *symname)
+/**
+ * Loads audit item information from file.
+ * @param filename
+ */
+static void load_config(const char *filename)
 {
-	char* name =  sp_rtrace_tracker_query_symbol(&tracker, symname);
-	int rc = 0;
-	if (name) {
-		free(name);
-		rc = 1;
+	FILE* fp = fopen(filename, "r");
+	if (fp) {
+		char buffer[1024];
+		while (fgets(buffer, sizeof(buffer), fp)) {
+			int len = strlen(buffer) - 1;
+			if (buffer[len] == '\n') buffer[len] = '\0';
+			parse_item(buffer);
+		}
+		fclose(fp);
 	}
-	return rc;
+}
+
+/**
+ * Adds symbol to monitored symbol table.
+ * @param symbol
+ */
+static void add_symbol(const char *symbol)
+{
+	/* increase container size if necessary */
+	if (plg_symbol_count == plg_symbol_limit) {
+		plg_symbol_limit <<= 1;
+		struct plg_symbol *ptr = realloc(symbols, plg_symbol_limit * sizeof(struct plg_symbol));
+		if (!ptr) {
+			return;
+		}
+		symbols = ptr;
+	}
+	symbols[plg_symbol_count].name = strdup(symbol);
+	symbols[plg_symbol_count].hit = 0;
+	plg_symbol_count++;
+}
+
+/**
+ * Parses audit item.
+ *
+ * A audit item is <function>|@<filename> where:
+ *   <function> - monitored function name.
+ *   <filename> - filename containing audit items (one per line).
+ * @param item
+ */
+static void parse_item(char *item)
+{
+	while (*item == ' ') item++;
+	char* ptr = item + strlen(item);
+	while (*--ptr == ' ') *ptr = '\0';
+
+	/* check if the item contains configuration file name */
+	if (*item == '@') {
+		load_config(item + 1);
+		return;
+	}
+	/* add item to the tracked symbol list */
+	add_symbol(item);
+}
+
+/**
+ * Initializes monitored symbol table.
+ *
+ * @param[in] arg   the list of audit items in format <item1>[,<item2>...]
+ */
+static void symbols_init(const char *arg)
+{
+	symbols = xcalloc(plg_symbol_limit, sizeof(struct plg_symbol));
+	if (arg) {
+
+		char *str = strdup(arg);
+		if (str == NULL) return;
+
+		char *item = strtok(str, ",");
+		while (item) {
+			parse_item(item);
+			item = strtok(NULL, ",");
+		}
+		free(str);
+	}
+}
+
+static int get_symbols(struct plg_symbol **syms)
+{
+	*syms = symbols;
+	return plg_symbol_count;
 }
 
 static void audit_report_init(struct process *proc)
@@ -108,15 +203,15 @@ static void audit_report_init(struct process *proc)
 	sp_rtrace_print_resource(proc->rp_data->fp, &res_audit);
 }
 
+
 struct plg_api *init(void)
 {
-
-	sp_rtrace_tracker_init(&tracker, arguments.audit);
+	symbols_init(arguments.audit);
 
 	static struct plg_api ma = {
 		.api_version = audit_api_version,
 		.function_exit = audit_function_exit,
-		.library_match = audit_library_match,
+		.get_symbols = get_symbols,
 		.report_init = audit_report_init,
 	};
 	return &ma;

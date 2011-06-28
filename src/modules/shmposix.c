@@ -44,6 +44,7 @@
 #include "report.h"
 #include "target_mem.h"
 #include "context.h"
+#include "util.h"
 
 #define MODULE_API_VERSION "2.0"
 
@@ -707,20 +708,23 @@ static void module_function_exit(struct process *proc, const char *name)
 	(rd->rp_number)++;
 }
 
-static int module_library_match(const char *symname)
+static struct plg_symbol symbols[] = {
+		{.name = "shm_open", .hit = 0},
+		{.name = "shm_unlink", .hit = 0},
+		{.name = "open", .hit = 0},
+		{.name = "open64", .hit = 0},
+		{.name = "creat", .hit = 0},
+		{.name = "mmap", .hit = 0},
+		{.name = "mmap2", .hit = 0},
+		{.name = "mmap64", .hit = 0},
+		{.name = "munmap", .hit = 0},
+		{.name = "close", .hit = 0},
+};
+
+static int get_symbols(struct plg_symbol **syms)
 {
-	return(
-		strcmp(symname, "shm_open") == 0 ||
-		strcmp(symname, "shm_unlink") == 0 ||
-		strcmp(symname, "open") == 0 ||
-		strcmp(symname, "open64") == 0 ||
-		strcmp(symname, "creat") == 0 ||
-		strcmp(symname, "mmap") == 0 ||
-		strcmp(symname, "mmap2") == 0 ||
-		strcmp(symname, "mmap64") == 0 ||
-		strcmp(symname, "munmap") == 0 ||
-		strcmp(symname, "close") == 0 ||
-		false);
+	*syms = symbols;
+	return ARRAY_SIZE(symbols);
 }
 
 static void module_report_init(struct process *proc)
@@ -738,7 +742,7 @@ struct plg_api *init(void)
 	static struct plg_api ma = {
 		.api_version = module_api_version,
 		.function_exit = module_function_exit,
-		.library_match = module_library_match,
+		.get_symbols = get_symbols,
 		.report_init = module_report_init,
 	};
 	return &ma;

@@ -28,12 +28,16 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <signal.h>
+#include <unistd.h>
+
 
 #include "config.h"
 #include "debug.h"
 #include "options.h"
 #include "plugins.h"
 #include "process.h"
+#include "util.h"
 
 #define FT_API_VERSION "2.0"
 
@@ -110,12 +114,55 @@ int plg_match(const char *symname)
 	if (handle == NULL)
 		return 0;
 
-	if (plg_api->library_match == NULL) {
+	if (plg_api->get_symbols == NULL) {
 		msg_warn("Could not read symbol");
 		return 0;
 	}
+	int rc = 0;
 
-	return plg_api->library_match(symname);
+	if (symname[0] == 'I' && symname[1] == 'A' && symname[2] == '_' && symname[3] == '_') {
+		symname += 4;
+	}
+
+	char *demangled_name = (char*)cplus_demangle(symname, DMGL_ANSI | DMGL_PARAMS);
+	char *target_name = demangled_name ? demangled_name : symname;
+
+	struct plg_symbol *syms;
+	int nsyms = plg_api->get_symbols(&syms);
+	int i;
+	for (i = 0; i < nsyms; i++) {
+		if (!strcmp(syms[i].name, target_name)) {
+			syms[i].hit++;
+			rc = 1;
+			break;
+		}
+	}
+	if (demangled_name) free(demangled_name);
+	return rc;
+}
+
+int plg_check_symbols(bool silent)
+{
+	if (arguments.skip_symbol_check) {
+		return 0;
+	}
+	if (plg_api == NULL || plg_api->get_symbols == NULL) {
+		return -1;
+	}
+	struct plg_symbol *syms;
+	int nsyms = plg_api->get_symbols(&syms);
+	int i, rc = 0;
+	for (i = 0; i < nsyms; i++) {
+		if (!syms[i].hit) {
+			rc++;
+			if (!silent) msg_warn("Failed to locate symbol: %s", syms[i].name);
+		}
+	}
+	if (rc) {
+		msg_warn("Aborting trace because of missing symbols");
+		kill(getpid(), SIGINT);
+	}
+	return rc;
 }
 
 void plg_init(void)

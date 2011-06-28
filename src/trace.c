@@ -41,6 +41,7 @@
 #include "syscall.h"
 #include "trace.h"
 #include "util.h"
+#include "options.h"
 
 struct event {
 	struct process *proc;
@@ -183,8 +184,17 @@ static void trace_set_options(pid_t pid)
 	xptrace(PTRACE_SETOPTIONS, pid, NULL, (void *)options);
 }
 
+static void trace_detach(pid_t pid)
+{
+	xptrace(PTRACE_DETACH, pid, NULL, NULL);
+}
+
 static int new_process(struct process *parent_proc, pid_t child_pid)
 {
+	if (arguments.stopping) {
+		trace_detach(child_pid);
+		return 0;
+	}
 	struct process *child_proc;
 	struct callback *cb = cb_get();
 
@@ -212,7 +222,6 @@ static int new_process(struct process *parent_proc, pid_t child_pid)
 	bkpt_init(child_proc);
 	trace_set_options(child_pid);
 	continue_process(child_proc);
-
 	return 0;
 }
 
@@ -335,11 +344,6 @@ static int handle_new_process(pid_t child_pid)
 	return retval;
 }
 
-
-static void trace_detach(pid_t pid)
-{
-	xptrace(PTRACE_DETACH, pid, NULL, NULL);
-}
 
 
 static void trace_finish(struct process *proc)

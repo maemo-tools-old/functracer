@@ -46,7 +46,7 @@ struct breakpoint;
 struct breakpoint {
 	addr_t addr, ssol_addr;
 	struct bkpt_insn *insn;
-	enum { BKPT_ENTRY, BKPT_RETURN, BKPT_SOLIB, BKPT_SENTINEL } type;
+	enum { BKPT_ENTRY, BKPT_RETURN, BKPT_SOLIB, BKPT_SENTINEL, BKPT_START } type;
 	char *symbol;
 	int refcnt;
 	int enabled;
