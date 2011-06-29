@@ -43,13 +43,14 @@ option (e.g. "-e /home/user/plg/foo.so").
 ------------------------
 The basic plugin infrastructure consists of three functions:
 
-- api_version: tells to functracer what API version is supported by the plugin.
+- char* api_version: tells to functracer what API version is supported by the plugin.
   This version is verified by functracer and if it is not compatible, the tool
   refuses to load the plugin.
 
-- library_match: this should return the function names that will be tracked by
-  functracer. The function names should match those as exported by the library
-  (see more details in "Issues and Limitations" section).
+- int get_symbols(struct plg_symbol **symbols): this should assign the tracked
+  symbol table to *symbols variable and return the number of tracked symbols.
+  The symbols should match those as exported by the library (see more details in
+  "Issues and Limitations" section).
 
 - function_exit: this is the place where the data is collected. In this
   function, the user tells to functracer what to report about the tracked
@@ -57,6 +58,10 @@ The basic plugin infrastructure consists of three functions:
   ID and the return value, and events are reported to the trace files using
   the rp_alloc() function for resource allocation and rp_free() for resource
   destruction.
+  
+- report_init: initializes tracked resources. Plugin can track one or more
+  resources (for example file plugin which tracks file pointers and descriptors).
+  Every resource must be reported with sp_rtrace_print_resource function.
 
 The functracer API must be used for retrieving or logging any data (just add
 the correct header in user-defined plugin). See functracer source code for more
@@ -92,23 +97,34 @@ definitions (plugins.h).
 Secondly, we have to define the plugin version, which must be compatible with
 the current functracer plugin API.
 
-#define FOO_API_VERSION "2.0"
-static char foo_api_version[] = FOO_API_VERSION;
+#define API_VERSION "2.0"
+static char api_version[] = API_VERSION;
 
 Third, we define what functions will be tracked, in this example the malloc and
 free functions will be tracked. See some considerations about function names in
-section "Issues and Limitations".
+section "Issues and Limitations". The .hit field contains number of symbol matches
+found in the checked libraries.
 
-static int foo_library_match(const char *symname)
+static struct plg_symbol symbols[] = {
+		{.name = "__libc_malloc", .hit = 0},
+		{.name = "__libc_free", .hit = 0},
+};
+
+Usually get_symbols will return the declared symbol table. In some cases (audit
+plugin) the symbol table might be created dynamically during report_init() 
+function (or during the first call of get_symbols() function) and the created 
+table returned by get_symbols().
+
+static int get_symbols(struct plg_symbol **syms)
 {
-        return(strcmp(symname, "__libc_malloc") == 0 ||
-               strcmp(symname, "__libc_free") == 0);
+	*syms = symbols;
+	return ARRAY_SIZE(symbols);
 }
 
 The next step is to define what to do when the function exits. A small example
 using some parts of the memory plugin is shown below:
 
-static void foo_function_exit(struct process *proc, const char *name)
+static void function_exit(struct process *proc, const char *name)
 {
         /* Get the report data to loggin information. */ 
         struct rp_data *rd = proc->rp_data;
@@ -121,8 +137,22 @@ static void foo_function_exit(struct process *proc, const char *name)
 
         /* Verify what is the function. */
         if (strcmp(name, "__libc_malloc") == 0) {
+		/* don't register failed allocations */
+		if (retval == 0) return;
+		/* define the call event structure */
+		sp_rtrace_fcall_t call = {
+				.type = SP_RTRACE_FTYPE_ALLOC,
+				.index = rd->rp_number,
+				.context = context_mask,
+				.timestamp = RP_TIMESTAMP,
+				.name = "malloc",
+				.res_size = arg0,
+				.res_id = (pointer_t)retval,
+		};
                 /* Write the data to trace file. */
-                rp_alloc(proc, rd->rp_number, "malloc", arg0, retval);
+		sp_rtrace_print_call(rd->fp, &call);
+		/* Write backtrace data */
+		rp_write_backtraces(proc, &call);
 
         } else if (strcmp(name, "__libc_free") == 0 ) {
                 /* Suppress "free(NULL)" calls from trace output. 
@@ -130,8 +160,20 @@ static void foo_function_exit(struct process *proc, const char *name)
                  */
                 if (arg0 == 0)
                         return;
+		/* define the call event structure */
+		sp_rtrace_fcall_t call = {
+				.type = SP_RTRACE_FTYPE_FREE,
+				.index = rd->rp_number,
+				.context = context_mask,
+				.timestamp = RP_TIMESTAMP,
+				.name = "free",
+				.res_size = 0,
+				.res_id = (pointer_t)arg0,
+		};
                 /* Write the data to trace file. */
-                rp_free(proc, rd->rp_number, "free", arg0);
+		sp_rtrace_print_call(rd->fp, &call);
+		/* Write backtrace data */
+		rp_write_backtraces(proc, &call);
 
         } else {
                 msg_warn("unexpected function exit (%s)\n", name);
@@ -142,8 +184,6 @@ static void foo_function_exit(struct process *proc, const char *name)
          * next events).
          */
         (rd->rp_number)++;
-	/* Write the respective backtraces line to trace file */
-        rp_write_backtraces(proc);
 }
 
 The last step is to initialize the plugin structure. See example below:
@@ -151,9 +191,10 @@ The last step is to initialize the plugin structure. See example below:
 struct plg_api *init()
 {
         static struct plg_api ma = {
-                .api_version = foo_api_version,
-                .function_exit = foo_function_exit,
-                .library_match = foo_library_match,
+                .api_version = api_version,
+                .function_exit = function_exit,
+		.get_symbols = get_symbols,
+		.report_init = report_init,
         };
         /* ... */
 }
@@ -286,6 +327,7 @@ reasons:
    the compiler/linker should be used too, otherwise the function is not found
    by BFD. Examples: __close, _IO_fopen, _IO_fclose etc. See the current
    plugins sources for details.
+   However C++ names are demangled before checking.
 
 - The instruction rewriting support on ARM is currently limited to a set of
   instructions used by current plugins. This means that some new functions may
