@@ -125,7 +125,7 @@ int plg_match(const char *symname)
 	}
 
 	char *demangled_name = (char*)cplus_demangle(symname, DMGL_ANSI | DMGL_PARAMS);
-	char *target_name = demangled_name ? demangled_name : symname;
+	const char *target_name = demangled_name ? demangled_name : symname;
 
 	struct plg_symbol *syms;
 	int nsyms = plg_api->get_symbols(&syms);

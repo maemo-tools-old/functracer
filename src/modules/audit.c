@@ -82,7 +82,7 @@ static void audit_function_exit(struct process *proc, const char *name)
 	}
 
 	char *demangled_name = (char*)cplus_demangle(name, DMGL_ANSI | DMGL_PARAMS);
-	char *target_name = demangled_name ? demangled_name : name;
+	const char *target_name = demangled_name ? demangled_name : name;
 
 	int i;
 	for (i = 0; i < plg_symbol_count; i++) {
