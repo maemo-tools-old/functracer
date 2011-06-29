@@ -53,28 +53,46 @@ static const char doc[] = "Run PROGRAM and track selected functions.";
 
 /* definitions of arguments for argp functions */
 static const struct argp_option options[] = {
-	{"pid", 'p', "PID", 0, "which PID to track", 0},
+	{"pid", 'p', "PID", 0,
+			"The process identifier to track.", 0},
 	{"track", 'e', "PLUGIN", 0,
-	 "which set of functions to track", 0},
-	{"debug", 'd', NULL, 0, "maximum debug level", 0},
-	{"no-time", 'I', NULL, 0, "disable timestamps for every event", 0},
-	{"start", 's', NULL, 0, "enable tracking memory from beginning", 0},
-	{"free-backtraces", 'b', NULL, 0, 
-	 "enable backtraces for free() function", 0},
-	{"depth", 't', "NUMBER", 0, "maximum backtrace depth", 0},
-	{"resolve-name", 'r', NULL, 0, "enable symbol name resolution", 0},
-	{"file",  'f', NULL, 0,
-	 "use a file to save backtraces instead of dump to stdout", 0},
-	{"path",  'l', "DIR", 0,
-         "dump reports to a custom location (defaults to homedir)", 0},
-	{"audit", 'a', "SYMBOLS", 0, "custom tracked symbol list for audit module in format <symbol>[;<symbol>...]", 0},
-	{"monitor", 'M', "SIZES", 0, "monitor backtraces for resource allocations of the specified size, where SIZE is <size1>[,<size2>,...]", 0},
-	{"library", 'L', "NAMES", 0, "limit symbol scan only to the specified libraries, where NAMES is <library1>[,<library2>,...]", 0},
-	{"skip-symbol-check", 'S', NULL, 0, "skip checking if all of monitored symbols are located", 0},
-	{"verbose", 'v', NULL, 0, "Show internal events", 0},
-	{"help", 'h', NULL, 0, "Give this help list", -1},
-	{"usage", OPT_USAGE, NULL, 0, "Give a short usage message", -1},
-	{"version", 'V', NULL, 0, "Print program version", -1},
+			"The plugin for function tracking. By default memory plugin is used.", 0},
+	{"debug", 'd', NULL, 0,
+			"Increase debug level. When compiled with --enable-debug option it specifies "
+			"debug message severity.", 0},
+	{"no-time", 'I', NULL, 0,
+			"Disable timestamps for all events.", 0},
+	{"start", 's', NULL, 0,
+			"Enable tracking from beginning.", 0},
+	{"backtrace-all", 'A', NULL, 0,
+			"Enable backtrace reporting for all functions. By default only allocation function "
+			"backtraces are  reported  because de-allocation backtraces are less interesting and "
+			"most often only adds unnecessary overhead.", 0},
+	{"backtrace-depth", 'b', "NUMBER", 0,
+			"The  maximum  number  of  frame  return addresses in stack trace. 0 will disable "
+			"backtracing functionality. Reducing backtrace depth improves performance, but gives "
+			"less information of the function call origins.", 0},
+	{"resolve-name", 'r', NULL, 0,
+			"Enable symbol name resolution.", 0},
+	{"output-dir",  'o', "DIR", 0,
+			"The output directory for storing trace data. If output directory is not "
+			"specified functracer dumps the data in standard output.", 0},
+	{"audit", 'a', "SYMBOLS", 0,
+			"Custom tracked symbol list for audit module in format <symbol>[;<symbol>...]", 0},
+	{"monitor", 'M', "SIZES", 0,
+			"Monitor backtraces for resource allocations of the specified size, where SIZE is <size1>[,<size2>,...]", 0},
+	{"library", 'L', "NAMES", 0,
+			"Limit symbol scan only to the specified libraries, where NAMES is <library1>[,<library2>,...]", 0},
+	{"skip-symbol-check", 'S', NULL, 0,
+			"Skip check if all of monitored symbols are located.", 0},
+	{"verbose", 'v', NULL, 0,
+			"Show internal events.", 0},
+	{"help", 'h', NULL, 0,
+			"Give this help list.", -1},
+	{"usage", OPT_USAGE, NULL, 0,
+			"Give a short usage message.", -1},
+	{"version", 'V', NULL, 0,
+			"Print program version.", -1},
 	{NULL, 0, NULL, 0, NULL, 0},
 };
 
@@ -103,7 +121,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 		}
 		arg_data->npids++;
 		break;
-	case 't':
+	case 'b':
 		arg_data->depth = atoi(arg);
 		if (arg_data->depth < 0 || arg_data->depth > MAX_BT_DEPTH) {
 			argp_error(state, "Depth must be between 0 and %d", MAX_BT_DEPTH);
@@ -126,11 +144,8 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 	case 's':
 		arg_data->enabled++;
 		break;
-	case 'b':
+	case 'A':
 		arg_data->enable_free_bkt++;
-		break;
-	case 'f':
-		arg_data->save_to_file++;
 		break;
 	case 'h':
 		argp_state_help(state, stdout,  ARGP_HELP_STD_HELP);
@@ -139,7 +154,8 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 	case 'I':
 		arg_data->time = 0;
 		break;
-	case 'l':
+	case 'o':
+		arg_data->save_to_file++;
 		arg_data->path = arg;
 		if (stat(arg_data->path, &buf) || !S_ISDIR(buf.st_mode)) {
 			argp_error(state, "Path must be a valid directory path");
