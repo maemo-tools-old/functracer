@@ -60,7 +60,7 @@ static const struct argp_option options[] = {
 	{"debug", 'd', NULL, 0,
 			"Increase debug level. When compiled with --enable-debug option it specifies "
 			"debug message severity.", 0},
-	{"no-time", 'I', NULL, 0,
+	{"no-time", 'T', NULL, 0,
 			"Disable timestamps for all events.", 0},
 	{"start", 's', NULL, 0,
 			"Enable tracking from beginning.", 0},
