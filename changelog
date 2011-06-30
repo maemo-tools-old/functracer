@@ -1,3 +1,13 @@
+functracer (1.2), 30 Jun 2011:
+  * Fix target process crashes on detaching.
+  * Use debug symbols for audit (-a) option.
+  * Add -L option to specify libraries to scan.
+  * Update command line  options to be consistent with sp-rtrace
+      -b  ->  -A
+      -l  ->  -o
+      -t  ->  -b
+  * Change disable timestamps option to -T.
+
 functracer (1.1), 1 Jun 2011:
   * Fix crashes sometimes seen during process detach.
   * New option --monitor: Report backtraces only for allocations having the
