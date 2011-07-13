@@ -43,12 +43,13 @@ it allows to track custom list of symbols specified by the -a option in format
  
 Note that audit plugin attempts to use dwarf debug symbols to locate the 
 target symbols instead of scanning elf symbol table as the rest of modules do.
-While this allows to track also not exported (for example static) functions,
+While this allows to track e.g. static functions that are not exported,
 it slows down library loading performance. To reduce performance impact use
--L option to specify the libraries that should be scanned.
+-L option to limit the set of the libraries that should be scanned.
 
 
-The function format output is defined below:
+The trace output format is defined by the libsp-rtrace library and documented
+in detail by the sp-rtrace package.  Basically it looks like this:
 
 - for resource allocation functions:
 .RS 1
@@ -144,29 +145,29 @@ After running functracer, we have the following output:
  Process/Thread 1597 has exited with code 0
 
 [NOTES]
-- The built-in symbol resolving in functracer (option "-r") has some limitations compared to the postprocessor symbol resolving (functracer-postproc):
+- The built-in symbol resolving in functracer (option "-r") has some limitations compared to the postprocessor symbol resolving (with sp-rtrace-postproc):
 .br
 	- it does not resolve source file name and line number.
 .br
-	- it does not do demangling for C++ symbol names (low-level symbol names into human readable names).
+	- it does not demangle C++ symbol names (low-level symbol names into human readable names).
 
 - To see the list of process invocations, just type the following where the trace files were saved:
 .br
-	# grep ^Process allocs*.trace
+	# grep ^Process *.rtrace.txt
 
 .br
-- Note that messages in allocs*.trace about processes use "process/thread" instead of just "process". This is a ptrace limitation, because it does not distinguish between threads and process IDs.
+- Note that messages in *.rtrace.txt about processes use "process/thread" instead of just "process". This is a ptrace limitation, because it does not distinguish between threads and process IDs.
 
 .br
 - To control the dumping of output files, just send SIGUSR1 to the tracked application (NOT functracer itself) to toggle the tracing on/off. Tracing is not enabled by default on application start, unless "-s" option is used.
 
 .br
-- The output file is created by default in the current user home directory. This can be changed using the -l option. The file is named "allocs-<PID>.<n>.trace".
+- The output file is created by default in the current user home directory. This can be changed using the -o option. The file is named "<PID>-<n>.rtrace.txt".
 
 .br
-- There is a noticeable impact on the traced program performance.
+- There is a noticeable impact on the traced program performance which depends on how often the traced functions get called and how deep backtraces are.
 
-For complete information, see README.
+For more information, see README.
 
 [AUTHOR]
 \fBFunctracer\fR has been developed by:
@@ -183,9 +184,11 @@ Bruno Abinader <bruno.abinader@indt.org.br>
 Ricardo Guimaraes <ricardo.guimaraes@indt.org.br>
 .br
 Thiago Santos <thiago.santos@indt.org.br>
+.br
+Andris Zeila <andris.zeila@accenture.com>
 
 [COPYRIGHT]
-Copyright (C) 2008-2010 Nokia Corporation.
+Copyright (C) 2008-2011 Nokia Corporation.
 
 This is free software.  You may redistribute copies of it under the terms
 of the GNU General Public License as published by the Free Software Foundation;
@@ -193,6 +196,5 @@ either version 2 of the License, or (at your option) any later version.
 There is NO WARRANTY, to the extent permitted by law.
 
 [SEE ALSO]
-\fBfunctracer-postproc (1) \fR
-
+\fBsp-rtrace-postproc (1) \fR
 
