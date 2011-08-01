@@ -131,7 +131,7 @@ int plg_match(const char *symname)
 	int nsyms = plg_api->get_symbols(&syms);
 	int i;
 	for (i = 0; i < nsyms; i++) {
-		if (!strcmp(syms[i].name, target_name)) {
+		if (!strcmp_pattern(syms[i].name, target_name)) {
 			syms[i].hit++;
 			rc = 1;
 			break;

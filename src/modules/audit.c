@@ -52,6 +52,8 @@
 #define RES_SIZE 	1
 #define RES_ID		1
 
+#define SYMBOL_SEPARATOR  ";"
+
 static char audit_api_version[] = AUDIT_API_VERSION;
 
 static sp_rtrace_resource_t res_audit = {
@@ -71,6 +73,15 @@ static int plg_symbol_limit = 32;
 
 static void parse_item(char *item);
 
+/**
+ * Compare text string against a pattern.
+ *
+ * The pattern has follwing format: <text>[*]
+ * Where ending '*' matches all strings starting with <text>
+ * return
+ */
+
+
 static void audit_function_exit(struct process *proc, const char *name)
 {
 	struct rp_data *rd = proc->rp_data;
@@ -86,7 +97,7 @@ static void audit_function_exit(struct process *proc, const char *name)
 
 	int i;
 	for (i = 0; i < plg_symbol_count; i++) {
-		if (!strcmp(symbols[i].name, target_name)) {
+		if (!strcmp_pattern(symbols[i].name, target_name)) {
 			sp_rtrace_fcall_t call = {
 				.type = SP_RTRACE_FTYPE_ALLOC,
 				.index = rd->rp_number++,
@@ -182,10 +193,10 @@ static void symbols_init(const char *arg)
 		char *str = strdup(arg);
 		if (str == NULL) return;
 
-		char *item = strtok(str, ",");
+		char *item = strtok(str, SYMBOL_SEPARATOR);
 		while (item) {
 			parse_item(item);
-			item = strtok(NULL, ",");
+			item = strtok(NULL, SYMBOL_SEPARATOR);
 		}
 		free(str);
 	}
