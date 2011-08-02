@@ -30,7 +30,7 @@
 #include <sys/stat.h>
 #include <signal.h>
 #include <unistd.h>
-
+#include <fnmatch.h>
 
 #include "config.h"
 #include "debug.h"
@@ -131,7 +131,7 @@ int plg_match(const char *symname)
 	int nsyms = plg_api->get_symbols(&syms);
 	int i;
 	for (i = 0; i < nsyms; i++) {
-		if (!strcmp_pattern(syms[i].name, target_name)) {
+		if (!fnmatch(syms[i].name, target_name, 0)) {
 			syms[i].hit++;
 			rc = 1;
 			break;

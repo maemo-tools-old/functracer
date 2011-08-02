@@ -36,6 +36,7 @@
 #include <sched.h>
 #include <sp_rtrace_formatter.h>
 #include <sp_rtrace_defs.h>
+#include <fnmatch.h>
 
 
 #include "debug.h"
@@ -97,7 +98,7 @@ static void audit_function_exit(struct process *proc, const char *name)
 
 	int i;
 	for (i = 0; i < plg_symbol_count; i++) {
-		if (!strcmp_pattern(symbols[i].name, target_name)) {
+		if (!fnmatch(symbols[i].name, target_name, 0)) {
 			sp_rtrace_fcall_t call = {
 				.type = SP_RTRACE_FTYPE_ALLOC,
 				.index = rd->rp_number++,

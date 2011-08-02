@@ -49,19 +49,3 @@ long xptrace(int request, pid_t pid, void *addr, void *data)
 	return ret;
 }
 
-int strcmp_pattern(const char* pattern, const char* text)
-{
-	const char *pattern_start = pattern;
-	while (*pattern == *text) {
-		if (*pattern == '\0')
-			return 0;
-		pattern++;
-		text++;
-	}
-	if ( (*pattern == '*' && *(pattern + 1) == '\0') ||
-		 (*pattern == '\0' && pattern > pattern_start && *(pattern - 1) == '*') ) {
-		return 0;
-	}
-	return *pattern - *text;
-}
-

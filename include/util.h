@@ -38,18 +38,4 @@ extern long xptrace(int request, pid_t pid, void *addr, void *data);
 extern char* cplus_demangle(const char* symbol, int flags);
 
 
-/**
- * Compare text string against a pattern.
- *
- * The pattern has following format: <text>[*]
- * Where ending '*' matches all strings starting with <text>
- * @param pattern  - the pattern to compare against.
- * @param text     - the text string to compare.
- * @return         <0 - pattern is 'less' than the text.
- *                  0 - text matches the pattern.
- *                 >0 - pattern is 'greater' than the text.
- */
-int strcmp_pattern(const char* pattern, const char* text);
-
-
 #endif /* !FTK_UTIL_H */
