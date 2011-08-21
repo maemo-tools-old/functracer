@@ -85,8 +85,8 @@ static const struct argp_option options[] = {
 			"Limit symbol scan only to the specified libraries, where NAMES is <library1>[,<library2>,...]", 0},
 	{"skip-symbol-check", 'S', NULL, 0,
 			"Skip check if all of monitored symbols are located.", 0},
-	{"verbose", 'v', NULL, 0,
-			"Show internal events.", 0},
+	{"quiet", 'q', NULL, 0,
+			"Hide internal event messages.", 0},
 	{"help", 'h', NULL, 0,
 			"Give this help list.", -1},
 	{"usage", OPT_USAGE, NULL, 0,
@@ -162,8 +162,8 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 			return ENOENT;
 		}
 		break;
-	case 'v':
-		arg_data->verbose++;
+	case 'q':
+		arg_data->verbose = 0;
 		break;
 	case 'V':
 		printf("%s\n", argp_program_version);
@@ -212,6 +212,7 @@ int process_options(int argc, char *argv[], int *remaining)
 	arguments.depth = MAX_BT_DEPTH > DEFAULT_BT_DEPTH ? DEFAULT_BT_DEPTH : MAX_BT_DEPTH;
 	arguments.plugin = "memory";
 	arguments.time = -1;
+	arguments.verbose = 1;
 
 	/* parse and process arguments */
 	ret = argp_parse(&argp, argc, argv,
