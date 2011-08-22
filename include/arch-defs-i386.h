@@ -25,7 +25,7 @@
 #ifndef FT_ARCH_DEFS_I386_H
 #define FT_ARCH_DEFS_I386_H
 
-#define MAX_BT_DEPTH		64	/* maximum backtrace depth */
+#define MAX_BT_DEPTH		256	/* maximum backtrace depth */
 #define DECR_PC_AFTER_BREAK	1	/* decrement after breakpoint */
 #define MAX_INSN_SIZE		8	/* maximum instruction size */
 
