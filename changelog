@@ -1,3 +1,8 @@
+functracer (1.3), 23 Aug 2011:
+  * Replace 'verbose' option with 'quiet' to provide by default more state
+    information output.
+  * Increase maximum backtrace depth to 256.
+
 functracer (1.2.1), 3 Aug 2011:
   * Fix audit module symbol parsing:
     - Use ';' as symbol separator,
