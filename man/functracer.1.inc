@@ -39,7 +39,8 @@ operations (shm_open, shm_unlink, mmap, munmap).
 
 The \fIaudit\fP plugin is invoked automatically when -a option is used and
 it allows to track custom list of symbols specified by the -a option in format
- <symbol1>[,<symbol2>,...]
+(separator is semicolon because C++ symbol signatures can contain colons):
+ <symbol1>[;<symbol2>,...]
  
 Note that audit plugin attempts to use dwarf debug symbols to locate the 
 target symbols instead of scanning elf symbol table as the rest of modules do.
