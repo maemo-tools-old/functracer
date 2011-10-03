@@ -31,6 +31,7 @@
 #include <signal.h>
 #include <unistd.h>
 #include <fnmatch.h>
+#include <errno.h>
 
 #include "config.h"
 #include "debug.h"
@@ -131,10 +132,26 @@ int plg_match(const char *symname)
 	int nsyms = plg_api->get_symbols(&syms);
 	int i;
 	for (i = 0; i < nsyms; i++) {
+		/* check for normal symbol match */
 		if (!fnmatch(syms[i].name, target_name, 0)) {
 			syms[i].hit++;
 			rc = 1;
 			break;
+		}
+		/* check for versioned symbol match */
+		char* pvers = strchr(target_name, '@');
+		if (pvers) {
+			char vname[PATH_MAX];
+			int vlen = pvers - target_name;
+			memcpy(vname, target_name, vlen);
+			vname[vlen] = '\0';
+			if (!fnmatch(syms[i].name, vname, 0)) {
+				syms[i].hit += 0x10000;
+				if (arguments.track_versioned) {
+					rc = 1;
+					break;
+				}
+			}
 		}
 	}
 	if (demangled_name) free(demangled_name);
@@ -152,10 +169,24 @@ int plg_check_symbols(bool silent)
 	struct plg_symbol *syms;
 	int nsyms = plg_api->get_symbols(&syms);
 	int i, rc = 0;
+	/* reset errno so it doesn't get reported with msg_warn() function */
+	errno = 0;
+
 	for (i = 0; i < nsyms; i++) {
-		if (!syms[i].hit) {
+		/* The hit counter low word contains number of normal hits while the high
+		 * word contains number of 'versioned' symbol hits.
+		 * Give symbol lookup failure if either:
+		 * 1) tracking of versioned symbols is disabled and no normal symbol hits were found,
+		 * 2) tracking of versioned symbosl is enabled and no symbol hits were found.
+		 */
+		if (!(syms[i].hit & 0xFFFF) && !(arguments.track_versioned && syms[i].hit) ) {
 			rc++;
 			if (!silent) msg_warn("Failed to locate symbol: %s", syms[i].name);
+		}
+		/* Give a warning if versioned symbol hit was found with disabled versioned
+		 * symbol tracking. */
+		if ( (syms[i].hit & 0xFFFF0000) && !arguments.track_versioned) {
+			if (!silent) msg_warn("Found untracked versioned symbols for name: %s", syms[i].name);
 		}
 	}
 	if (rc) {

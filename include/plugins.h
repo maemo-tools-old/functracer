@@ -33,7 +33,10 @@
  * Structure defining symbols monitored by a plugin.
  */
 struct plg_symbol {
+	/* the symbol name */
 	char *name;
+	/* the number of hits encountered during library symbol matching.
+	 * Low word contains normal hits while high word contains versioned hits. */
 	int hit;
 };
 
