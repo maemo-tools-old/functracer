@@ -56,9 +56,6 @@ struct arguments {
 	bool skip_symbol_check;
 	/* set to true when functracer is stopping */
 	bool stopping;
-
-	/* track also versioned symbols */
-	bool track_versioned;
 };
 
 extern struct arguments arguments;

@@ -85,8 +85,6 @@ static const struct argp_option options[] = {
 			"Limit symbol scan only to the specified libraries, where NAMES is <library1>[,<library2>,...]", 0},
 	{"skip-symbol-check", 'S', NULL, 0,
 			"Skip check if all of monitored symbols are located.", 0},
-	{"versioned", 'v', NULL, 0,
-			"Track versioned symbols.", 0},
 	{"quiet", 'q', NULL, 0,
 			"Hide internal event messages.", 0},
 	{"help", 'h', NULL, 0,
@@ -166,9 +164,6 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 		break;
 	case 'q':
 		arg_data->verbose = 0;
-		break;
-	case 'v':
-		arg_data->track_versioned = true;
 		break;
 	case 'V':
 		printf("%s\n", argp_program_version);
