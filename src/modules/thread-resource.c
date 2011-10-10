@@ -64,6 +64,13 @@ static sp_rtrace_resource_t res_thread = {
 		.flags = SP_RTRACE_RESOURCE_DEFAULT,
 };
 
+static sp_rtrace_resource_t res_thread_detached = {
+		.id = 2,
+		.type = "_pthread_t",
+		.desc = "posix thread, created detached",
+		.flags = SP_RTRACE_RESOURCE_DEFAULT,
+};
+
 
 static void thread_function_exit(struct process *proc, const char *name)
 {
@@ -131,6 +138,8 @@ static void thread_function_exit(struct process *proc, const char *name)
 				.name = "pthread_join",
 				.res_size = 0,
 				.res_id = (pointer_t)fn_argument(proc, 0),
+				.res_type = (void*)res_thread.type,
+				.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
 		};
 		sp_rtrace_print_call(rd->fp, &call);
 		rp_write_backtraces(proc, &call);
@@ -147,10 +156,6 @@ static void thread_function_exit(struct process *proc, const char *name)
 			trace_mem_read(proc, attr_addr, &attr, sizeof(pthread_attr_t));
 			pthread_attr_getdetachstate(&attr, &state);
 		}
-		/* track only joinable threads */
-		if (state == PTHREAD_CREATE_DETACHED) {
-			return;
-		}
 
 		sp_rtrace_fcall_t call = {
 				.type = SP_RTRACE_FTYPE_ALLOC,
@@ -160,7 +165,15 @@ static void thread_function_exit(struct process *proc, const char *name)
 				.name = "pthread_create",
 				.res_size = RES_SIZE,
 				.res_id = (pointer_t)trace_mem_readw(proc, fn_argument(proc, 0)),
+				.res_type = (void*)res_thread.type,
+				.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
 		};
+
+		/* threads created as detached have own resource type */
+		if (state == PTHREAD_CREATE_DETACHED) {
+			call.res_type = (void*)res_thread_detached.type;
+		}
+
 		sp_rtrace_print_call(rd->fp, &call);
 		rp_write_backtraces(proc, &call);
 
@@ -177,6 +190,8 @@ static void thread_function_exit(struct process *proc, const char *name)
 				.name = "pthread_detach",
 				.res_size = 0,
 				.res_id = (pointer_t)fn_argument(proc, 0),
+				.res_type = (void*)res_thread.type,
+				.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
 		};
 		sp_rtrace_print_call(rd->fp, &call);
 		rp_write_backtraces(proc, &call);
@@ -205,6 +220,7 @@ static void thread_report_init(struct process *proc)
 {
 	assert(proc->rp_data != NULL);
 	sp_rtrace_print_resource(proc->rp_data->fp, &res_thread);
+	sp_rtrace_print_resource(proc->rp_data->fp, &res_thread_detached);
 }
 
 struct plg_api *init(void)
