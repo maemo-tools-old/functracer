@@ -60,7 +60,7 @@ static char thread_api_version[] = THREAD_API_VERSION;
 static sp_rtrace_resource_t res_thread = {
 		.id = 1,
 		.type = "pthread_t",
-		.desc = "posix thread",
+		.desc = "posix thread, joinable",
 		.flags = SP_RTRACE_RESOURCE_DEFAULT,
 };
 
