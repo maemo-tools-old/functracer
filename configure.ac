@@ -61,18 +61,31 @@ AC_CHECK_LIB([unwind-ptrace], [_UPT_access_mem],
   -lunwind-generic
 )
 
+# Check for dlopen
+AC_CHECK_LIB([dl], [dlopen],
+  [LIBS_DL="-ldl"],
+  [AC_MSG_ERROR([dlopen library is required for plugins])],
+)
+FT_LIBS="${FT_LIBS} $LIBS_DL"
+
+# Check for zlib availability
+AC_CHECK_LIB([z], [inflate],
+  [LIBS_Z="-lz"],
+  [AC_MSG_ERROR([zlib library is required])],
+)
+
+# Check for liberty_pic
+AC_CHECK_LIB([iberty_pic], [cplus_demangle],
+ [LIBS_IBERTY="-liberty_pic"],
+ [LIBS_IBERTY="-liberty"]
+)
+
 # Check for BFD availability
 # Linking with libiberty.a is necessary due to Scratchbox bug
 AC_CHECK_LIB([bfd], [bfd_fopen],
-  [FT_LIBS="${FT_LIBS} -lbfd /usr/lib/libiberty.a"],
-  [AC_MSG_ERROR([BFD library is required])],
-  /usr/lib/libiberty.a
-)
-
-# Check for dlopen
-AC_CHECK_LIB([dl], [dlopen],
-  [FT_LIBS="${FT_LIBS} -ldl"],
-  [AC_MSG_ERROR([dlopen library is required for plugins])],
+  [FT_LIBS="${FT_LIBS} -lbfd $LIBS_IBERTY $LIBS_DL $LIBS_Z"],
+  [AC_MSG_ERROR([BFD library is required: $LIBS_DL $LIBS_Z $LIBS_IBERTY])],
+  [$LIBS_DL $LIBS_Z $LIBS_IBERTY]
 )
 
 # Check for libsp-rtrace1 libary
