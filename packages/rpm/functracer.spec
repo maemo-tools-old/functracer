@@ -1,5 +1,3 @@
-%define _defaultdocdir %{_datadir}/doc
-
 Name: functracer
 Version: 1.3.2
 Release: 1%{?dist}
