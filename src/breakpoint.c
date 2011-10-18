@@ -118,12 +118,20 @@ static struct breakpoint *register_breakpoint(struct process *proc, addr_t addr,
 		bkpt->type = type;
 		bkpt->insn = breakpoint_instruction(addr);
 	}
-	if (type == BKPT_RETURN || type == BKPT_SENTINEL || type == BKPT_START) {
-		trace_mem_write(proc, bkpt->addr, bkpt->insn->value, bkpt->insn->size);
-		bkpt->enabled = 1;
-	} else
-		enable_breakpoint(proc, bkpt);
-
+	switch (type) {
+		case BKPT_START: {
+			trace_mem_read(proc, bkpt->addr, bkpt->orig_insn.data, MAX_INSN_SIZE);
+		}
+		case BKPT_RETURN:
+		case BKPT_SENTINEL: {
+			trace_mem_write(proc, bkpt->addr, bkpt->insn->value, bkpt->insn->size);
+			bkpt->enabled = 1;
+			break;
+		}
+		default: {
+			enable_breakpoint(proc, bkpt);
+		}
+	}
 	return bkpt;
 }
 
@@ -275,6 +283,7 @@ void bkpt_handle(struct process *proc, addr_t addr)
 		/* program entry point reached, check loaded symbols */
 		plg_check_symbols(false);
 		disable_breakpoint((struct process *)proc, breakpoint_from_address(proc, proc->start_address));
+		set_instruction_pointer(proc, bkpt->addr);
 		break;
 
 	default:
