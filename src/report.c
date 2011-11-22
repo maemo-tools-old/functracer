@@ -94,8 +94,7 @@ static int rp_write_header(struct process *proc)
 
 		rd->fp = fopen(path, "a");
 		if (rd->fp == NULL) {
-			error_exit("rp_init(): fopen");
-			bt_finish(proc->bt_data);
+			msg_warn("Failed to create report file");
 			free(rd);
 			proc->rp_data = rd = NULL;
 			return -1;

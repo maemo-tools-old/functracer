@@ -159,7 +159,9 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 		arg_data->path = arg;
 		if (stat(arg_data->path, &buf) || !S_ISDIR(buf.st_mode)) {
 			argp_error(state, "Path must be a valid directory path");
-			return ENOENT;
+		}
+		if (access(arg_data->path, W_OK | X_OK) == -1) {
+			argp_error(state, "No access to the output directory %s (%s)", arg, strerror(errno));
 		}
 		break;
 	case 'q':
