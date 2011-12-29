@@ -159,7 +159,9 @@ int plg_check_symbols(bool silent)
 		}
 	}
 	if (rc) {
-		msg_warn("Aborting trace because of missing symbols");
+		msg_warn("Aborting trace because of missing symbols.\nIf this message is due "
+				 "to trying to trace a binary that doesn't link all the libraries in "
+				 "which these symbols are, you can use the -S option to skip the check.");
 		kill(getpid(), SIGINT);
 	}
 	return rc;
