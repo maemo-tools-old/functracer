@@ -715,7 +715,7 @@ static struct plg_symbol symbols[] = {
 		{.name = "open64", .hit = 0},
 		{.name = "creat", .hit = 0},
 		{.name = "mmap", .hit = 0},
-		{.name = "mmap2", .hit = 0},
+//		{.name = "mmap2", .hit = 0},
 		{.name = "mmap64", .hit = 0},
 		{.name = "munmap", .hit = 0},
 		{.name = "close", .hit = 0},
