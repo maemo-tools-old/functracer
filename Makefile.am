@@ -11,4 +11,4 @@ man-local:
 	help2man src/functracer -N -o man/functracer.1 -i man/functracer.1.inc
 	
 distclean-local:
-	rm man/*.1
+	$(RM) man/*.1
