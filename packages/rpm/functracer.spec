@@ -8,7 +8,7 @@ URL: http://www.gitorious.org/+maemo-tools-developers/maemo-tools/functracer
 Source: %{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-build
 BuildRequires: autoconf, automake, pkg-config, help2man, libtool, binutils-devel, libunwind-devel
-BuildRequires: libsp-rtrace-devel, zlib-devel
+BuildRequires: libsp-rtrace-devel
 
 %description
  Functracer is a debugging tool. It collects backtraces, arguments and return

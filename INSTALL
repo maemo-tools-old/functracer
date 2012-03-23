@@ -14,6 +14,10 @@ The following packages must be installed before compiling functracer:
   
 Note that earlier versions might also work.
 
+On RPM based systems, corresponding packages are most likely named as:
+  autoconf, automake, pkg-config, libtool, help2man, binutils-devel,
+  libunwind-devel, libsp-rtrace-devel
+
 
 1.2 Compilation & Installation
 ------------------------------
@@ -36,5 +40,3 @@ steps in the functracer directory:
 
 The -d functracer option works only if functracer has been compiled with
 --enable-debug option (see Compilation & Installation).
-
-
