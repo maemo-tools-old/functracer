@@ -1,6 +1,18 @@
 functracer installation instructions
 ====================================
 
+0. Supported platforms
+----------------------
+
+Functracer supports tracing of 32-bit ARM and x86 binaries only.
+
+(Support is mainly about being able to run instructions left under
+function entry point breakpoints from a different address.)
+
+Currently it doesn't support e.g. ARM Thumb instructions, enabled
+by default on Ubuntu (but not on Debian?), or 64-bit x86.
+
+
 1. Compiling from sources
 -------------------------
 
