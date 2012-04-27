@@ -35,7 +35,7 @@ if { [ ft_compile "${srcdir}/${subdir}/${testfile}.c" "${srcdir}/${subdir}/${bin
 }
 
 # set options for functracer
-ft_options "-s" "-r" "-f" "-l" "${srcdir}/${subdir}/" "-a" "malloc" "-e" "${srcdir}/../src/modules/.libs/audit.so" 
+ft_options "-s" "-o" "${srcdir}/${subdir}/" "-a" "malloc" "-e" "${srcdir}/../src/modules/.libs/audit.so" 
 
 # Run PUT for functracer.
 set exec_output [ft_runtest $srcdir/$subdir $srcdir/$subdir/$binfile]
@@ -48,7 +48,7 @@ ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt "malloc\(" 1
 
 catch "exec sh -c {rm -rf ${srcdir}/${subdir}/*.rtrace.txt}"
 # set options for functracer
-ft_options "-s" "-r" "-f" "-l" "${srcdir}/${subdir}/" "-a" "@${srcdir}/${subdir}/symbols" "-e" "${srcdir}/../src/modules/.libs/audit.so"
+ft_options "-s" "-o" "${srcdir}/${subdir}/" "-a" "@${srcdir}/${subdir}/symbols" "-e" "${srcdir}/../src/modules/.libs/audit.so"
 
 # Run PUT for functracer.
 set exec_output [ft_runtest $srcdir/$subdir $srcdir/$subdir/$binfile]

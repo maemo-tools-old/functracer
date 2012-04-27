@@ -38,7 +38,7 @@ if { [ ft_compile "${srcdir}/${subdir}/${testfile}.c" "${srcdir}/${subdir}/${bin
 }
 
 # set options for functracer
-ft_options "-s" "-r" "-f" "-l" "${srcdir}/${subdir}/" "-e" "${srcdir}/../src/modules/.libs/thread-resource.so" 
+ft_options "-s" "-o" "${srcdir}/${subdir}/" "-e" "${srcdir}/../src/modules/.libs/thread-resource.so" 
 
 # Run PUT for functracer.
 set exec_output [ft_runtest $srcdir/$subdir $srcdir/$subdir/$binfile]
