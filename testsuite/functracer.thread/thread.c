@@ -1,7 +1,7 @@
 /*
  * This file is part of Functracer.
  *
- * Copyright (C) 2011 by Nokia Corporation
+ * Copyright (C) 2011-2012 by Nokia Corporation
  *
  * Contact: Eero Tamminen <eero.tamminen@nokia.com>
  *
@@ -34,13 +34,13 @@ void* entry (void *arg)
 int main(void)
 {
 	pthread_t th;
-    pthread_attr_t tattr;
+	pthread_attr_t tattr;
 
-    pthread_attr_init(&tattr);
+	pthread_attr_init(&tattr);
 
-    int rc = pthread_create(&th, &tattr, entry, NULL);
-    if (rc == 0) {
-    	pthread_join(th, NULL);
-    }
-    return 0;
+	int rc = pthread_create(&th, &tattr, entry, NULL);
+	if (rc == 0) {
+		pthread_join(th, NULL);
+	}
+	return 0;
 }

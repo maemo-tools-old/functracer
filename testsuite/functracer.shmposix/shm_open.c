@@ -36,5 +36,5 @@ int main(void)
 	if (rc == -1) return -1;
 
 	shm_unlink(SEGMENT_NAME);
-    return 0;
+	return 0;
 }
