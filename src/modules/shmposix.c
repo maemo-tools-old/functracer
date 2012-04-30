@@ -4,7 +4,7 @@
  *
  * This file is part of Functracer.
  *
- * Copyright (C) 2010 by Nokia Corporation
+ * Copyright (C) 2010-2012 by Nokia Corporation
  *
  * Contact: Eero Tamminen <eero.tamminen@nokia.com>
  *
@@ -195,7 +195,7 @@ static void nreg_validate_hash(const void* item, const VISIT which, int depth __
 
 			case postorder:
 			case leaf: {
-				const nreg_node_t* pnode = *(nreg_node_t**)item;
+				const nreg_node_t* pnode = *(nreg_node_t* const *)item;
 				if (pnode->hash == nreg_validate_hash_value) nreg_validate_hash_result = false;
 				break;
 			}
@@ -244,7 +244,7 @@ static unsigned int nreg_calc_hash(const char* name)
  */
 static unsigned int nreg_get_hash(const char* name)
 {
-	nreg_node_t node = {.name = (char*)name};
+	nreg_node_t node = {.name = name};
 
 	nreg_node_t** ppnode = tfind(&node, &nreg_root, nreg_compare_name);
 	if (!ppnode) {
@@ -613,7 +613,7 @@ static void module_function_exit(struct process *proc, const char *name)
 			.timestamp = RP_TIMESTAMP,
 			.res_type = (void*)(pfd ? (pfd->type == FD_POSIX ? res_pshmmap.type : res_fshmmap.type) : res_shmmap.type),
 			.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
-			.name = (char*)name,
+			.name = name,
 			.res_id = (pointer_t)rc,
 			.res_size = (size_t)fn_argument(proc, 1),
 			.index = rd->rp_number,
@@ -623,13 +623,14 @@ static void module_function_exit(struct process *proc, const char *name)
 		char arg_length[16]; snprintf(arg_length, sizeof(arg_length), "0x%lx", fn_argument(proc, 1));
 		char arg_prot[16]; snprintf(arg_prot, sizeof(arg_prot), "0x%lx", fn_argument(proc, 2));
 		char arg_flags[16]; snprintf(arg_flags, sizeof(arg_flags), "0x%x", flags);
-		char arg_fd[16]; snprintf(arg_fd, sizeof(arg_fd), "0x%lx", (unsigned long)fd);
+		char arg_fd[16]; snprintf(arg_fd, sizeof(arg_fd), "%d", fd);
 		char arg_offset[16]; snprintf(arg_offset, sizeof(arg_offset), "0x%lx", fn_argument(proc, 5));
 		char arg_mode[16];
 		sp_rtrace_farg_t args[] = {
 			{.name="length", .value=arg_length},
 			{.name="prot", .value=arg_prot},
 			{.name="flags", .value=arg_flags},
+			{.name="fd", .value=arg_fd},
 			{.name="offset", .value=arg_offset},
 			{.name = NULL}, // reserved for fd name
 			{.name = NULL}, // reserved for fd mode
@@ -637,8 +638,8 @@ static void module_function_exit(struct process *proc, const char *name)
 		};
 		if (flags & (MAP_ANONYMOUS | MAP_ANON)) {
 			/* hide the fd argument for anonymous mappings */
-			args[4].name = NULL;
-			args[4].value = NULL;
+			args[3].name = NULL;
+			args[3].value = NULL;
 		}
 		else if (pfd) {
 			args[5].name = "name";
