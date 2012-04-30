@@ -46,7 +46,7 @@ static void filter_insert_item(const char *name)
 void filter_initialize(const char *list)
 {
 	char* split;
-	char* delim = ",";
+	const char* delim = ",";
 	char buffer[PATH_MAX];
 	strcpy(buffer, list);
 	char* ptr = strtok_r(buffer, delim, &split);
@@ -56,7 +56,7 @@ void filter_initialize(const char *list)
 	}
 }
 
-void filter_free()
+void filter_free(void)
 {
 	while (filter_root) {
 		struct filter_data *filter = filter_root->next;
