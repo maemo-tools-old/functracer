@@ -41,7 +41,10 @@ The \fIaudit\fP plugin is invoked automatically when -a option is used and
 it allows to track custom list of symbols specified by the -a option in format
 (separator is semicolon because C++ symbol signatures can contain colons):
  <symbol1>[;<symbol2>,...]
- 
+
+Instead of giving symbols name directly, you can also give a name of a file
+containing the names (one per line) by prefixing the given file name with '@'.
+
 Note that audit plugin attempts to use dwarf debug symbols to locate the 
 target symbols instead of scanning elf symbol table as the rest of modules do.
 While this allows to track e.g. static functions that are not exported,
@@ -189,7 +192,7 @@ Thiago Santos <thiago.santos@indt.org.br>
 Andris Zeila <andris.zeila@accenture.com>
 
 [COPYRIGHT]
-Copyright (C) 2008-2011 Nokia Corporation.
+Copyright (C) 2008-2012 Nokia Corporation.
 
 This is free software.  You may redistribute copies of it under the terms
 of the GNU General Public License as published by the Free Software Foundation;
