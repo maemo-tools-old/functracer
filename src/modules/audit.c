@@ -4,7 +4,7 @@
  *
  * This file is part of Functracer.
  *
- * Copyright (C) 2010 by Nokia Corporation
+ * Copyright (C) 2010-2012 by Nokia Corporation
  *
  * Contact: Eero Tamminen <eero.tamminen@nokia.com>
  *
@@ -104,7 +104,7 @@ static void audit_function_exit(struct process *proc, const char *name)
 				.index = rd->rp_number++,
 				.context = context_mask,
 				.timestamp = RP_TIMESTAMP,
-				.name = (char*)target_name,
+				.name = target_name,
 				.res_size = RES_SIZE,
 				.res_id = (pointer_t)RES_ID,
 			};
