@@ -82,7 +82,7 @@ void trace_mem_read(struct process *proc, addr_t addr, void *buf, size_t count)
 	trace_mem_io(proc, addr, buf, count, 0);
 }
 
-void trace_mem_write(struct process *proc, addr_t addr, void *buf, size_t count)
+void trace_mem_write(struct process *proc, addr_t addr, const void *buf, size_t count)
 {
 	trace_mem_io(proc, addr, buf, count, 1);
 }

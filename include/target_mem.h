@@ -37,7 +37,7 @@ extern void trace_mem_writew(struct process *proc, addr_t addr, long w);
 extern long trace_user_readw(struct process *proc, long offset);
 extern void trace_user_writew(struct process *proc, long offset, long w);
 extern void trace_mem_read(struct process *proc, addr_t addr, void *buf, size_t count);
-extern void trace_mem_write(struct process *proc, addr_t addr, void *buf, size_t count);
+extern void trace_mem_write(struct process *proc, addr_t addr, const void *buf, size_t count);
 extern void trace_getregs(struct process *proc, void *regs);
 extern void trace_setregs(struct process *proc, void *regs);
 extern size_t trace_mem_readstr(struct process* proc, addr_t addr, char* buffer, size_t size);

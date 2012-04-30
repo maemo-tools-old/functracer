@@ -77,7 +77,7 @@ static long syscall_remote(struct process *proc, long sysnum, unsigned int argnu
 	trace_setregs(proc, &mmap_regs);
 
 	/* set syscall instruction */
-	trace_mem_write(proc, orig_regs_p[ip_reg], (char *)syscall_data.insns,
+	trace_mem_write(proc, orig_regs_p[ip_reg], syscall_data.insns,
 			sizeof(syscall_data.insns));
 
 	/* execute syscall instruction and stop again */
@@ -137,7 +137,7 @@ void ssol_init(struct process *proc)
 	debug(1, "pid=%d", proc->pid);
 	if (proc->shared->ssol == NULL)
 		proc->shared->ssol = xcalloc(1, sizeof(struct ssol));
-	proc->shared->ssol->first = (addr_t)mmap_remote(proc, NULL, SSOL_LENGTH,
+	proc->shared->ssol->first = mmap_remote(proc, NULL, SSOL_LENGTH,
 		PROT_READ | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 	assert(proc->shared->ssol->first > 0);
 	proc->shared->ssol->last = proc->shared->ssol->first;
