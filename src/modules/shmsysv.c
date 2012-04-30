@@ -1,7 +1,7 @@
 /*
  * This file is part of Functracer.
  *
- * Copyright (C) 2010 by Nokia Corporation
+ * Copyright (C) 2010-2012 by Nokia Corporation
  *
  * Contact: Eero Tamminen <eero.tamminen@nokia.com>
  *
@@ -91,7 +91,7 @@ static sp_rtrace_resource_t res_control = {
 #ifdef __amd64__
  #define IPC_64  0x00
 #else
- #define IPC_64 	  0x100
+ #define IPC_64  0x100
 #endif
 
 static char api_version[] = SHMSYSV_API_VERSION;
@@ -117,8 +117,8 @@ static void* addr2shmid = NULL;
  */
 static int compare_nodes(const void* node1, const void* node2)
 {
-	addrmap_t* map1 = (addrmap_t*)node1;
-	addrmap_t* map2 = (addrmap_t*)node2;
+	const addrmap_t* map1 = (const addrmap_t*)node1;
+	const addrmap_t* map2 = (const addrmap_t*)node2;
 	return map1->addr - map2->addr;
 }
 
