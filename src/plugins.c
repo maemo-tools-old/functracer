@@ -1,7 +1,7 @@
 /*
  * This file is part of Functracer.
  *
- * Copyright (C) 2008 by Nokia Corporation
+ * Copyright (C) 2008,2010-2012 by Nokia Corporation
  *
  * Contact: Eero Tamminen <eero.tamminen@nokia.com>
  *
@@ -169,21 +169,26 @@ int plg_check_symbols(bool silent)
 
 void plg_init(void)
 {
-	char plg_name[PATH_MAX];
-	struct stat buf;
-
-	/* First check if arguments.plugin (full path/filename) exists,
- 	 * otherwise then prefixing it with default plugin directory and
-	 * postfixing with .so */
-	if (stat(arguments.plugin, &buf) == 0 && S_ISREG(buf.st_mode))
-		strncpy(plg_name, arguments.plugin, sizeof(plg_name));
-	else
+	/* First check if arguments.plugin (path/filename) exists,
+ 	 * otherwise prefix it with default plugin directory and
+	 * postfix with .so
+	 */
+	if (strchr(arguments.plugin, '/')) {
+		struct stat buf;
+		if (stat(arguments.plugin, &buf) == 0 && S_ISREG(buf.st_mode)) {
+			plg_load_module(arguments.plugin);
+		} else {
+			msg_warn("Non-existing plugin path/filename given");
+		}
+	} else {
+		char plg_name[PATH_MAX];
 		snprintf(plg_name, sizeof(plg_name), "%s/%s.so", PLG_PATH,
 		 	 arguments.plugin);
-	plg_load_module(plg_name);
+		plg_load_module(plg_name);
+	}
 }
 
-void plg_finish()
+void plg_finish(void)
 {
 	if (handle != NULL) {
 		dlclose(handle);
