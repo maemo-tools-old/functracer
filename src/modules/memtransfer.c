@@ -3,7 +3,7 @@
  *
  * This file is part of Functracer.
  *
- * Copyright (C) 2009-2010 by Nokia Corporation
+ * Copyright (C) 2009-2012 by Nokia Corporation
  *
  * Contact: Eero Tamminen <eero.tamminen@nokia.com>
  *
@@ -49,7 +49,7 @@ static char memtransfer_api_version[] = MEMTRANSFER_API_VERSION;
 static sp_rtrace_resource_t res_memory = {
 		.id = 1,
 		.type = "memtransfer",
-		.desc = "memory transfer operations in bytes",
+		.desc = "memory read/write/set/copy operations in bytes",
 		.flags = SP_RTRACE_RESOURCE_DEFAULT,
 };
 
@@ -493,7 +493,7 @@ static struct plg_symbol symbols[] = {
 		{.name = "wcpncpy", .hit = 0},
 		{.name = "wcscat", .hit = 0},
 		{.name = "wcsncat", .hit = 0},
-		{.name = "wcsdupX", .hit = 0},
+		{.name = "wcsdup", .hit = 0},
 };
 
 static int get_symbols(struct plg_symbol **syms)
