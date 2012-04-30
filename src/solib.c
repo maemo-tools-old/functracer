@@ -134,8 +134,9 @@ static long solib_read_symbols(bfd *file, asymbol ***symbols)
  */
 static bfd *solib_debug_open(struct solib_data *solib, const char *filename)
 {
-	static char *places[]={".","./.debug", "/usr/lib/debug", NULL};
-
+	static const char *places[] = {
+		".", "./.debug", "/usr/lib/debug", NULL
+	};
 	/* locate and open the symbol file */
 	bfd *abfd = solib_open(solib, filename);
 	if (!abfd) return NULL;
