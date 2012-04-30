@@ -1,4 +1,8 @@
-AM_CFLAGS = -Wall -Wextra -Wstrict-prototypes -Wno-unused-parameter -fPIC
+AM_CFLAGS = -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes \
+	-Wwrite-strings -Wsign-compare -Wformat-security \
+	-Wbad-function-cast -Wpointer-arith \
+	 -fPIC
+#-Wcast-qual
 
 pkglib_LTLIBRARIES = memory.la file.la
 memory_la_SOURCES = memory.c
