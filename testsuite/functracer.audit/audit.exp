@@ -1,6 +1,6 @@
 # This file is part of Functracer.
 #
-# Copyright (C) 2008,2011 by Nokia Corporation
+# Copyright (C) 2008,2011-2012 by Nokia Corporation
 # Copyright (C) 1997-2007 Juan Cespedes <cespedes@debian.org>
 #
 # Contact: Eero Tamminen <eero.tamminen@nokia.com>
@@ -35,7 +35,7 @@ if { [ ft_compile "${srcdir}/${subdir}/${testfile}.c" "${srcdir}/${subdir}/${bin
 }
 
 # set options for functracer
-ft_options "-s" "-o" "${srcdir}/${subdir}/" "-a" "malloc" "-e" "${srcdir}/../src/modules/.libs/audit.so" 
+ft_options "-s" "-o" "${srcdir}/${subdir}/" "-a" "malloc;free" "-e" "${srcdir}/../src/modules/.libs/audit.so"
 
 # Run PUT for functracer.
 set exec_output [ft_runtest $srcdir/$subdir $srcdir/$subdir/$binfile]
@@ -43,8 +43,9 @@ set exec_output [ft_runtest $srcdir/$subdir $srcdir/$subdir/$binfile]
 # Check the output of this program.
 verbose "ft runtest output: $exec_output\n"
 
-# Verify the output by matching the malloc/free on .trace files.
-ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt "malloc\(" 1
+# Verify that malloc/free were catched (with dummy "1" args)
+ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " malloc\(1\) = 0x" 1
+ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " free\(1\) = 0x" 1
 
 catch "exec sh -c {rm -rf ${srcdir}/${subdir}/*.rtrace.txt}"
 # set options for functracer
@@ -57,6 +58,7 @@ set exec_output [ft_runtest $srcdir/$subdir $srcdir/$subdir/$binfile]
 verbose "ft runtest output: $exec_output\n"
 
 # Verify the output by matching the malloc/free on .trace files.
-ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt "malloc\(" 1
-ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt "realloc\(" 1
-
+# Verify that malloc/free were catched (with dummy "1" args)
+ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " malloc\(1\) = 0x" 1
+ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " realloc\(1\) = 0x" 1
+ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " free\(1\) = 0x" 1
