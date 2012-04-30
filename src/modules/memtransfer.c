@@ -87,7 +87,7 @@ static void memtransfer_function_exit(struct process *proc, const char *name)
 				.timestamp = RP_TIMESTAMP,
 				.name = "mempcpy",
 				.res_size = arg2,
-				.res_id = (pointer_t)fn_argument(proc, 0),
+				.res_id = fn_argument(proc, 0),
 		};
 		sp_rtrace_print_call(rd->fp, &call);
 		rp_write_backtraces(proc, &call);
@@ -115,7 +115,7 @@ static void memtransfer_function_exit(struct process *proc, const char *name)
 				.timestamp = RP_TIMESTAMP,
 				.name = "memccpy",
 				.res_size = arg3,
-				.res_id = (pointer_t)fn_argument(proc, 0),
+				.res_id = fn_argument(proc, 0),
 		};
 		sp_rtrace_print_call(rd->fp, &call);
 		rp_write_backtraces(proc, &call);
@@ -171,7 +171,7 @@ static void memtransfer_function_exit(struct process *proc, const char *name)
 				.timestamp = RP_TIMESTAMP,
 				.name = "stpcpy",
 				.res_size = len,
-				.res_id = (pointer_t)fn_argument(proc, 0),
+				.res_id = fn_argument(proc, 0),
 		};
 		sp_rtrace_print_call(rd->fp, &call);
 		rp_write_backtraces(proc, &call);
@@ -185,7 +185,7 @@ static void memtransfer_function_exit(struct process *proc, const char *name)
 				.timestamp = RP_TIMESTAMP,
 				.name = "stpncpy",
 				.res_size = arg2,
-				.res_id = (pointer_t)fn_argument(proc, 0),
+				.res_id = fn_argument(proc, 0),
 		};
 		sp_rtrace_print_call(rd->fp, &call);
 		rp_write_backtraces(proc, &call);
@@ -227,7 +227,7 @@ static void memtransfer_function_exit(struct process *proc, const char *name)
 				.timestamp = RP_TIMESTAMP,
 				.name = "bcopy",
 				.res_size = arg2,
-				.res_id = (pointer_t)fn_argument(proc, 1),
+				.res_id = fn_argument(proc, 1),
 		};
 		sp_rtrace_print_call(rd->fp, &call);
 		rp_write_backtraces(proc, &call);
@@ -241,7 +241,7 @@ static void memtransfer_function_exit(struct process *proc, const char *name)
 				.timestamp = RP_TIMESTAMP,
 				.name = "bzero",
 				.res_size = arg1,
-				.res_id = (pointer_t)fn_argument(proc, 0),
+				.res_id = fn_argument(proc, 0),
 		};
 		sp_rtrace_print_call(rd->fp, &call);
 		rp_write_backtraces(proc, &call);
@@ -325,7 +325,7 @@ static void memtransfer_function_exit(struct process *proc, const char *name)
 				.timestamp = RP_TIMESTAMP,
 				.name = "wmempcpy",
 				.res_size = arg2*WSIZE,
-				.res_id = (pointer_t)(void*)fn_argument(proc, 0)
+				.res_id = fn_argument(proc, 0)
 		};
 		sp_rtrace_print_call(rd->fp, &call);
 		rp_write_backtraces(proc, &call);
@@ -396,7 +396,7 @@ static void memtransfer_function_exit(struct process *proc, const char *name)
 				.timestamp = RP_TIMESTAMP,
 				.name = "wcpcpy",
 				.res_size = len*WSIZE,
-				.res_id = (pointer_t)(void*)fn_argument(proc, 0)
+				.res_id = fn_argument(proc, 0)
 		};
 		sp_rtrace_print_call(rd->fp, &call);
 		rp_write_backtraces(proc, &call);
@@ -410,7 +410,7 @@ static void memtransfer_function_exit(struct process *proc, const char *name)
 				.timestamp = RP_TIMESTAMP,
 				.name = "wcpncpy",
 				.res_size = arg2*WSIZE,
-				.res_id = (pointer_t)(void*)fn_argument(proc, 0)
+				.res_id = fn_argument(proc, 0)
 		};
 		sp_rtrace_print_call(rd->fp, &call);
 		rp_write_backtraces(proc, &call);
