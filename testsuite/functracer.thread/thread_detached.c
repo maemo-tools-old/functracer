@@ -1,7 +1,7 @@
 /*
  * This file is part of Functracer.
  *
- * Copyright (C) 2011 by Nokia Corporation
+ * Copyright (C) 2011-2012 by Nokia Corporation
  *
  * Contact: Eero Tamminen <eero.tamminen@nokia.com>
  *
@@ -33,15 +33,19 @@ void* entry (void *arg)
 
 int main(void)
 {
+	int rc;
 	pthread_t th;
-    pthread_attr_t tattr;
-
-    pthread_attr_init(&tattr);
-
-
-    int rc = pthread_create(&th, &tattr, entry, NULL);
-    if (rc == 0) {
-    	pthread_detach(th);
-    }
-    return 0;
+	pthread_attr_t tattr;
+	
+	/* normal thread that's detached */
+	pthread_attr_init(&tattr);
+	rc = pthread_create(&th, &tattr, entry, NULL);
+	if (rc == 0) {
+		pthread_detach(th);
+	}
+	
+	/* detached thread */
+	pthread_attr_setdetachstate(&tattr, PTHREAD_CREATE_DETACHED);
+	pthread_create(&th, &tattr, entry, NULL);
+	return 0;
 }
