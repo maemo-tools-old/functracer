@@ -1,7 +1,7 @@
 /*
  * This file is part of Functracer.
  *
- * Copyright (C) 2008 by Nokia Corporation
+ * Copyright (C) 2008-2012 by Nokia Corporation
  *
  * Contact: Eero Tamminen <eero.tamminen@nokia.com>
  *
@@ -56,20 +56,20 @@ static const struct argp_option options[] = {
 	{"pid", 'p', "PID", 0,
 			"The process identifier to track.", 0},
 	{"track", 'e', "PLUGIN", 0,
-			"The plugin for function tracking. By default memory plugin is used.", 0},
+			"Name or path of plugin to use for tracing. 'memory' plugin is used by default.", 0},
 	{"debug", 'd', NULL, 0,
-			"Increase debug level. When compiled with --enable-debug option it specifies "
+			"Increase debug level. When configured with --enable-debug option it specifies "
 			"debug message severity.", 0},
 	{"no-time", 'T', NULL, 0,
 			"Disable timestamps for all events.", 0},
 	{"start", 's', NULL, 0,
-			"Enable tracking from beginning.", 0},
+			"Enable tracking immediately.", 0},
 	{"backtrace-all", 'A', NULL, 0,
 			"Enable backtrace reporting for all functions. By default only allocation function "
-			"backtraces are  reported  because de-allocation backtraces are less interesting and "
-			"most often only adds unnecessary overhead.", 0},
+			"backtraces are reported (because de-allocation backtraces are less interesting and "
+			"most often only add unnecessary overhead).", 0},
 	{"backtrace-depth", 'b', "NUMBER", 0,
-			"The  maximum  number  of  frame  return addresses in stack trace. 0 will disable "
+			"The maximum number of frames addresses in stack trace. 0 will disable "
 			"backtracing functionality. Reducing backtrace depth improves performance, but gives "
 			"less information of the function call origins.", 0},
 	{"resolve-name", 'r', NULL, 0,
@@ -78,11 +78,13 @@ static const struct argp_option options[] = {
 			"The output directory for storing trace data. If output directory is not "
 			"specified functracer dumps the data in standard output.", 0},
 	{"audit", 'a', "SYMBOLS", 0,
-			"Custom tracked symbol list for audit module in format <symbol>[;<symbol>...]", 0},
+			"Custom tracked symbol names list for audit module in format <symbol[;symbol...]>|@<filename>. "
+			"In file the symbol names are separated by newlines.", 0},
 	{"monitor", 'M', "SIZES", 0,
 			"Monitor backtraces for resource allocations of the specified size, where SIZE is <size1>[,<size2>,...]", 0},
 	{"library", 'L', "NAMES", 0,
-			"Limit symbol scan only to the specified libraries, where NAMES is <library1>[,<library2>,...]", 0},
+			"Limit symbol scan only to the specified libraries, where NAMES is <library1>[,<library2>,...]. "
+			"Speeds startup when auditing programs linking large libraries.", 0},
 	{"skip-symbol-check", 'S', NULL, 0,
 			"Skip check if all of monitored symbols are located.", 0},
 	{"quiet", 'q', NULL, 0,
