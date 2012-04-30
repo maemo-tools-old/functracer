@@ -45,7 +45,7 @@ static void *handle = NULL;
 static struct plg_api *plg_api;
 
 
-static void *plg_get_symbol(char *name)
+static void *plg_get_symbol(const char *name)
 {
     return dlsym(handle, name);
 }
