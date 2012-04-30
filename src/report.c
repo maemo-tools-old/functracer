@@ -103,8 +103,8 @@ static int rp_write_header(struct process *proc)
 		rd->fp = stdout;
 
 	buf = cmd_from_pid(proc->pid, 1);
-	sprintf(pid_s, "%d", proc->pid);
-	sprintf(btdepth_s, "%d", arguments.depth);
+	snprintf(pid_s, sizeof(pid_s), "%d", proc->pid);
+	snprintf(btdepth_s, sizeof(btdepth_s), "%d", arguments.depth);
 
 	sp_rtrace_header_t header =  {
 			.fields = {
