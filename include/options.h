@@ -44,7 +44,7 @@ struct arguments {
 	int enable_free_bkt;
 	int time;
 	int verbose;
-	char *plugin;
+	const char *plugin;
 	char *path;
 	/* audit option arguments */
 	char *audit;
