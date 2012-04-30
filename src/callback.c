@@ -151,17 +151,17 @@ static void process_interrupt(struct process *proc)
 	}
 }
 
-static void syscall_enter(struct process *proc, int sysno)
+static void syscall_enter(__attribute__((unused)) struct process *proc, __attribute__((unused)) int sysno)
 {
 	debug(3, "syscall entry (pid=%d, sysno=%d)", proc->pid, sysno);
 }
 
-static void syscall_exit(struct process *proc, int sysno)
+static void syscall_exit(__attribute__((unused)) struct process *proc, __attribute__((unused)) int sysno)
 {
 	debug(3, "syscall exit (pid=%d, sysno=%d)", proc->pid, sysno);
 }
 
-static void function_enter(struct process *proc, const char *name)
+static void function_enter(__attribute__((unused)) struct process *proc, __attribute__((unused)) const char *name)
 {
 	debug(3, "function entry (pid=%d, name=%s)", proc->pid, name);
 }

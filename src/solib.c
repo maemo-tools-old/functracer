@@ -99,7 +99,7 @@ static void lib_base_address(pid_t pid, char *filename, addr_t *addr)
 /*
  * solib symbol handling functions for default mode
  */
-static bfd *solib_open(struct solib_data *solib, const char *filename)
+static bfd *solib_open(__attribute__((unused)) struct solib_data *solib, const char *filename)
 {
 	bfd *abfd = bfd_fopen(filename, "default", "rb", -1);
 	if (abfd == NULL) {
@@ -114,7 +114,7 @@ static bfd *solib_open(struct solib_data *solib, const char *filename)
 	return abfd;
 }
 
-static int solib_close(struct solib_data *solib, bfd *file)
+static int solib_close(__attribute__((unused)) struct solib_data *solib, bfd *file)
 {
 	return bfd_close(file);
 }
