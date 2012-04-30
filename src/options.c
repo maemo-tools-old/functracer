@@ -39,7 +39,8 @@
 
 #define DEFAULT_BT_DEPTH		10
 
-#define AUDIT_PLUGIN 	"audit"
+#define PLUGIN_DEFAULT	"memory"
+#define PLUGIN_AUDIT 	"audit"
 
 const char *argp_program_version = PACKAGE_STRING;
 
@@ -138,7 +139,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 		break;
 	case 'a':
 		arg_data->audit = arg;
-		arg_data->plugin = AUDIT_PLUGIN;
+		arg_data->plugin = PLUGIN_AUDIT;
 		break;
 	case 'r':
 		arg_data->resolve_name++;
@@ -214,7 +215,7 @@ int process_options(int argc, char *argv[], int *remaining)
 	/* Initial values */
 	memset(&arguments, 0, sizeof(struct arguments));
 	arguments.depth = MAX_BT_DEPTH > DEFAULT_BT_DEPTH ? DEFAULT_BT_DEPTH : MAX_BT_DEPTH;
-	arguments.plugin = "memory";
+	arguments.plugin = PLUGIN_DEFAULT;
 	arguments.time = -1;
 	arguments.verbose = 1;
 
