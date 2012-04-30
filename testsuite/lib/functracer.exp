@@ -1,6 +1,6 @@
-# This file is part of Func2008tracer.
+# This file is part of Functracer.
 #
-# Copyright (C) 2008,2011 by Nokia Corporation
+# Copyright (C) 2008,2011-2012 by Nokia Corporation
 # Copyright (C) 1997-2007 Juan Cespedes <cespedes@debian.org>
 #
 # Contact: Eero Tamminen <eero.tamminen@nokia.com>
@@ -195,7 +195,7 @@ proc ft_saveoutput { args } {
 # instance number is ignored in this test.
 # Return:
 #      0 = number of PATTERN in FILE_TO_SEARCH inqual to INSTANCE_NO.
-#      1 = number of PATTERN in FILE_TO_SEARCH qual to INSTANCE_NO.
+#      1 = number of PATTERN in FILE_TO_SEARCH equal to INSTANCE_NO.
 #
 proc ft_verify_output { file_to_search pattern {instance_no 0}} {
 
