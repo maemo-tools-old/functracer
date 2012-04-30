@@ -1,7 +1,7 @@
 /*
  * This file is part of Functracer.
  *
- * Copyright (C) 2008 by Nokia Corporation
+ * Copyright (C) 2008,2010-2012 by Nokia Corporation
  *
  * Contact: Eero Tamminen <eero.tamminen@nokia.com>
  *
@@ -80,5 +80,15 @@ int plg_check_symbols(bool silent);
  * @param proc
  */
 void plg_rp_init(struct process *proc);
+
+/**
+ * Module initialization function
+ * 
+ * Each module has an init function called by functracer after
+ * the module is loaded.
+ * 
+ * @return   pointer to struct with module info
+ */
+struct plg_api *init(void);
 
 #endif /* !FTK_PLUGINS_H */
