@@ -1,7 +1,7 @@
 /*
  * This file is part of Functracer.
  *
- * Copyright (C) 2008 by Nokia Corporation
+ * Copyright (C) 2011-2012 by Nokia Corporation
  *
  * Contact: Eero Tamminen <eero.tamminen@nokia.com>
  *
@@ -23,8 +23,7 @@
  */
 
 #include <stdlib.h>
-
-#include "sp_rtrace_context.h"
+#include <sp_rtrace_context.h>
 
 int main(void)
 {
