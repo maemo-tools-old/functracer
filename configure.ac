@@ -88,6 +88,12 @@ AC_CHECK_LIB([bfd], [bfd_fopen],
   [$LIBS_DL $LIBS_Z $LIBS_IBERTY]
 )
 
+# Hack: "bfd_hide_sym_by_version" function has been introduced
+#       in binutils-2.22, (ab)use this for the version check
+AC_CHECK_LIB([bfd], [bfd_hide_sym_by_version],
+  [CPPFLAGS="${CPPFLAGS} -DHAVE_BINUTILS_2_22_OR_NEWER"]
+)
+
 # Check for libsp-rtrace1 libary
 AC_CHECK_LIB([sp-rtrace1], [sp_rtrace_print_comment],
   [FT_LIBS="${FT_LIBS} -lsp-rtrace1"],

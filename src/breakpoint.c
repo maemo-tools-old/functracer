@@ -68,7 +68,8 @@ static void disable_breakpoint(struct process *proc, struct breakpoint *bkpt)
 
 static struct breakpoint *breakpoint_from_address(struct process *proc, addr_t addr)
 {
-	struct breakpoint *bkpt = dict_find_entry(proc->shared->breakpoints, (void *)addr);
+	struct breakpoint *bkpt = dict_find_entry(proc->shared->breakpoints,
+		(void *)fixup_address(addr));
 	return bkpt != NULL && !bkpt->enabled ? NULL : bkpt;
 }
 

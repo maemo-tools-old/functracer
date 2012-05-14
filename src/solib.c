@@ -54,6 +54,57 @@ struct elf_internal_phdr {
 };
 typedef struct elf_internal_phdr Elf_Internal_Phdr;
 
+struct elf_internal_sym {
+  bfd_vma	st_value;		/* Value of the symbol */
+  bfd_vma	st_size;		/* Associated symbol size */
+  unsigned long	st_name;		/* Symbol name, index in string tbl */
+  unsigned char	st_info;		/* Type and binding attributes */
+  unsigned char	st_other;		/* Visibilty, and target specific */
+  unsigned char st_target_internal;	/* Internal-only information */
+  unsigned int  st_shndx;		/* Associated section index */
+};
+typedef struct elf_internal_sym Elf_Internal_Sym;
+
+typedef struct
+{
+  /* The BFD symbol.  */
+  asymbol symbol;
+  /* ELF symbol information.  */
+  Elf_Internal_Sym internal_elf_sym;
+} elf_symbol_type;
+
+enum arm_st_branch_type {
+  ST_BRANCH_TO_ARM,
+  ST_BRANCH_TO_THUMB,
+  ST_BRANCH_LONG,
+  ST_BRANCH_UNKNOWN
+};
+
+#define ARM_SYM_BRANCH_TYPE(SYM) \
+  ((enum arm_st_branch_type) (SYM)->st_target_internal)
+
+#define ELF_ST_TYPE(val)		((val) & 0xF)
+
+/* Check whether the symbol is a thumb function, based on a hint from
+ *     http://sources.redhat.com/ml/gdb-patches/2011-03/msg01105.html
+ */
+static int is_thumb_func(asymbol *sym)
+{
+#ifdef __arm__
+	Elf_Internal_Sym *internal_sym =
+		&((elf_symbol_type *)sym)->internal_elf_sym;
+	/* STT_ARM_TFUNC was used before binutils-2.22 */
+	if (ELF_ST_TYPE(internal_sym->st_info) == STT_ARM_TFUNC)
+		return 1;
+#ifdef HAVE_BINUTILS_2_22_OR_NEWER
+	/* ST_BRANCH_TO_THUMB is used starting from binutils-2.22 */
+	if (ARM_SYM_BRANCH_TYPE(internal_sym) == ST_BRANCH_TO_THUMB)
+		return 1;
+#endif
+#endif
+	return 0;
+}
+
 /* */
 
 static void warning_bfd(const char *filename, const char *msg)
@@ -202,6 +253,8 @@ static unsigned long bfd_lookup_symbol(bfd *abfd, const char *symname, flagword 
 			    && (sym->section->flags & sect_flags) == sect_flags) {
 				/* Bfd symbols are section relative. */
 				symaddr = sym->value + sym->section->vma;
+				if (is_thumb_func(sym))
+					symaddr |= 1;
 				break;
 			}
 		}
@@ -222,6 +275,8 @@ static unsigned long bfd_lookup_symbol(bfd *abfd, const char *symname, flagword 
 			    && (sym->section->flags & sect_flags) == sect_flags) {
 				/* Bfd symbols are section relative. */
 				symaddr = sym->value + sym->section->vma;
+				if (is_thumb_func(sym))
+					symaddr |= 1;
 				break;
 			}
 		}
@@ -420,6 +475,8 @@ static void solib_read_library(struct process *proc, char *filename,
 					continue;
 				if (!solib_is_prelinked(abfd))
 					symaddr += start_addr;
+				if (is_thumb_func(sym))
+					symaddr |= 1;
 				/* Bfd symbols are section relative. */
 				/* FIXME: pass SONAME instead of library filename. */
 				callback(proc, filename, sym->name, symaddr);
