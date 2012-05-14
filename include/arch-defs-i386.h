@@ -28,5 +28,6 @@
 #define MAX_BT_DEPTH		256	/* maximum backtrace depth */
 #define DECR_PC_AFTER_BREAK	1	/* decrement after breakpoint */
 #define MAX_INSN_SIZE		8	/* maximum instruction size */
+#define FT_PTRACE_SINGLESTEP	PTRACE_SINGLESTEP
 
 #endif /* !FT_ARCH_DEFS_I386_H */

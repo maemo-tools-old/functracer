@@ -164,7 +164,7 @@ static void continue_process(struct process *proc)
 	debug(3, "pid=%d", proc->pid);
 
 	if (proc->singlestep)
-		xptrace(PTRACE_SINGLESTEP, proc->pid, NULL, NULL);
+		xptrace(FT_PTRACE_SINGLESTEP, proc->pid, NULL, NULL);
 	else
 		xptrace(PTRACE_CONT, proc->pid, NULL, NULL);
 }

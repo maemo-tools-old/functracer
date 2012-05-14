@@ -26,6 +26,7 @@
  */
 
 #include <linux/ptrace.h>
+#include <string.h>
 
 #include "breakpoint.h"
 #include "debug.h"
@@ -130,8 +131,13 @@ int ssol_prepare_bkpt(struct breakpoint *bkpt, void *safe_insn)
 	long orig_insn = bkpt->orig_insn.insn;
 	long *insn = (long *)safe_insn;
 
+	if (bkpt->insn->size == 2) /* thumb */
+		return -1;
+
 	/* by default, the instruction is unmodified */
-	*insn = orig_insn;
+	memcpy(insn, &bkpt->orig_insn.insn, 4);
+	/* insert a breakpoint after the instruction */
+	memcpy(insn + 1, bkpt->insn->value, bkpt->insn->size);
 
 	/* SOLIB breakpoints are handled specially, and their original
 	 * instruction is not even executed. */
