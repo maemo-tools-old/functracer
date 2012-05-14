@@ -59,6 +59,10 @@
 #define TST_reg(insn)		((insn & 0x0ff0f010) == 0x01100000)
 #define TST_imm(insn)		((insn & 0x0ff0f000) == 0x03100000)
 #define RSB_reg(insn)		((insn & 0x0fe00010) == 0x00600000)
+#define ORR_reg(insn)		((insn & 0x0fe00010) == 0x01800000)
+
+#define SUB_reg_reg_imm(insn)	((insn & 0x0fe00000) == 0x02400000)
+#define LSL_reg_reg_imm(insn)	((insn & 0x0fef0070) == 0x01A00000)
 
 addr_t bkpt_get_address(struct process *proc)
 {
@@ -204,6 +208,19 @@ int ssol_prepare_bkpt(struct breakpoint *bkpt, void *safe_insn)
 	/* Reverse Subtract register from register (Rd != PC, Rm != PC and Rn != PC) */
 	if (RSB_reg(orig_insn) && ARM_Rd(orig_insn) != ARM_PC &&
 		 ARM_Rm(orig_insn) != ARM_PC && ARM_Rn(orig_insn) != ARM_PC) {
+		return 0;
+	}
+	/* ORR register with register (Rd != PC, Rm != PC and Rn != PC) */
+	if (ORR_reg(orig_insn) && ARM_Rd(orig_insn) != ARM_PC &&
+		 ARM_Rm(orig_insn) != ARM_PC && ARM_Rn(orig_insn) != ARM_PC) {
+		return 0;
+	}
+	if (SUB_reg_reg_imm(orig_insn) && ARM_Rd(orig_insn) != ARM_PC &&
+		 ARM_Rn(orig_insn) != ARM_PC) {
+		return 0;
+	}
+	if (LSL_reg_reg_imm(orig_insn) && ARM_Rd(orig_insn) != ARM_PC &&
+		 ARM_Rm(orig_insn) != ARM_PC) {
 		return 0;
 	}
 	return -1;
