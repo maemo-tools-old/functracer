@@ -53,13 +53,14 @@ static long syscall_remote(struct process *proc, long sysnum, unsigned int argnu
 	long ret, retval;
 	int status;
 	unsigned int i;
-	const unsigned int ip_reg = syscall_data.ip_reg;
-	const unsigned int sysnum_reg = syscall_data.sysnum_reg;
-	const unsigned int retval_reg = syscall_data.retval_reg;
-	char orig_insns[sizeof(syscall_data.insns)];
+	struct syscall_data *syscall_data = get_syscall_data(proc);
+	const unsigned int ip_reg = syscall_data->ip_reg;
+	const unsigned int sysnum_reg = syscall_data->sysnum_reg;
+	const unsigned int retval_reg = syscall_data->retval_reg;
+	char orig_insns[sizeof(syscall_data->insns)];
 
 	/* only up to six arguments are supported */
-	assert(argnum <= ARRAY_SIZE(syscall_data.regs));
+	assert(argnum <= ARRAY_SIZE(syscall_data->regs));
 
 	/* save original register values */
 	memset(&orig_regs, 0, sizeof(elf_gregset_t));
@@ -67,18 +68,18 @@ static long syscall_remote(struct process *proc, long sysnum, unsigned int argnu
 
 	/* save original instructions */
 	trace_mem_read(proc, orig_regs_p[ip_reg], orig_insns,
-		       sizeof(syscall_data.insns));
+		       sizeof(syscall_data->insns));
 
 	/* set register values for system call */
 	memcpy(&mmap_regs, &orig_regs, sizeof(elf_gregset_t));
 	mmap_regs_p[sysnum_reg] = sysnum;
 	for (i = 0; i < argnum; i++)
-		mmap_regs_p[syscall_data.regs[i]] = args[i];
+		mmap_regs_p[syscall_data->regs[i]] = args[i];
 	trace_setregs(proc, &mmap_regs);
 
 	/* set syscall instruction */
-	trace_mem_write(proc, orig_regs_p[ip_reg], syscall_data.insns,
-			sizeof(syscall_data.insns));
+	trace_mem_write(proc, orig_regs_p[ip_reg], syscall_data->insns,
+			sizeof(syscall_data->insns));
 
 	/* execute syscall instruction and stop again */
 	xptrace(PTRACE_CONT, proc->pid, 0, 0);
@@ -96,7 +97,7 @@ static long syscall_remote(struct process *proc, long sysnum, unsigned int argnu
 
 	/* restore original instructions */
 	trace_mem_write(proc, orig_regs_p[ip_reg], orig_insns,
-			sizeof(syscall_data.insns));
+			sizeof(syscall_data->insns));
 
 	return retval;
 }

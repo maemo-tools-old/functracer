@@ -40,7 +40,7 @@ struct syscall_data {
 	const unsigned int retval_reg;
 };
 
-extern struct syscall_data syscall_data;
+extern struct syscall_data *get_syscall_data(struct process *proc);
 extern int get_syscall_nr(struct process *proc, int *nr);
 extern long get_syscall_arg(struct process *proc, int arg_num);
 

@@ -27,7 +27,7 @@
 #include "syscall.h"
 #include "target_mem.h"
 
-struct syscall_data syscall_data = {
+struct syscall_data syscall_data_i386 = {
 	/* cd 80 - int 0x80; cc - breakpoint instruction */
 	.insns = { 0xcd, 0x80, 0xcc },
 	.regs = { EBX, ECX, EDX, ESI, EDI, EBP },
@@ -35,6 +35,11 @@ struct syscall_data syscall_data = {
 	.sysnum_reg = EAX,
 	.retval_reg = EAX
 };
+
+struct syscall_data *get_syscall_data(struct process *proc)
+{
+	return &syscall_data_i386;
+}
 
 int get_syscall_nr(struct process *proc, int *nr)
 {
