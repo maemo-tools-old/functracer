@@ -114,6 +114,15 @@ static void pre_rn_pc(struct process *proc, struct breakpoint *bkpt)
 	bkpt->ssol_data = (void *)r0;
 }
 
+static void pre_rn_pc_thumb(struct process *proc, struct breakpoint *bkpt)
+{
+	long pc = bkpt->addr;
+	long r0 = trace_user_readw(proc, off_r0);
+	/* If Rn is PC, the value used is Align(PC, 4) + 4 */
+	trace_user_writew(proc, off_r0, (pc & ~3) + 4);
+	bkpt->ssol_data = (void *)r0;
+}
+
 static void post_rn_pc(struct process *proc, struct breakpoint *bkpt)
 {
 	/* Restore original R0 value */
@@ -129,24 +138,113 @@ static void post_branch(struct process *proc, struct breakpoint *bkpt)
 	set_instruction_pointer(proc, pc + 8 + disp);
 }
 
+static int ssol_prepare_bkpt_thumb(struct breakpoint *bkpt, void *safe_insn)
+{
+	int bits_15_11;
+	unsigned short *insn_s = (unsigned short *)safe_insn;
+	memcpy(insn_s, &bkpt->orig_insn.insn, 4);
+
+	/* If bits [15:11] of the first halfword are 0x1D, 0x1E or 0x1F,
+	   then it is a 32-bit thumb instruction */
+	bits_15_11 = (insn_s[0] >> 11) & ((1 << 5) - 1);
+	if (bits_15_11 >= 0x1D && bits_15_11 <= 0x1F)
+	{
+		/* 32-bit thumb instruction */
+
+		memcpy(&insn_s[2], bkpt->insn->value, bkpt->insn->size);
+
+		if ((insn_s[0] == 0xE92D) && ((insn_s[1] & 0xA000) == 0)) {
+			/* PUSH {register_list} */
+			return 0;
+		}
+		if (((insn_s[0] & 0xFF80) == 0xFB00) &&
+		    ((insn_s[0] & 0x000F) != 0x000F) &&
+		    ((insn_s[1] & 0x000F) != 0x000F) &&
+		    ((insn_s[1] & 0x0F00) != 0x0F00)) {
+			/* MUL/MLA variants (regs != PC) */
+			return 0;
+		}
+	}
+	else
+	{
+		/* 16-bit thumb instruction */
+
+		memcpy(insn_s, &bkpt->orig_insn.insn, 2);
+		memcpy(&insn_s[1], bkpt->insn->value, bkpt->insn->size);
+
+		if ((insn_s[0] & 0xF800) == 0x4800) {
+			/* LDR (literal) 16-bit variant */
+			unsigned short orig_insn16 = insn_s[0];
+			
+			/* This is a bit tricky, because we need to replace
+			 * 16-bit instruction with a 32-bit one.
+			 * The straightforward solution does not work, because
+			 * we need the length of the original instruction to
+			 * be correctly calculated in "ssol_insn_size" function.
+			 * And the length is obtained by calculating the
+			 * difference between the breakpoint address and SSOL
+			 * area start. Hence just doing a simple 16-bit -> 32-bit
+			 * replacement in the SSOL area would result in
+			 * incorrectly assuming that the length is 4 bytes.
+			 *
+			 * So we still keep the breakpoint at insn_s[1],
+			 * but branch around it.
+			 */
+			insn_s[0] = 0xE000; /* branch forward to insn_s[2] */
+			insn_s[4] = 0xE7FB; /* branch back to insn_s[1] */
+
+			/* "LDR Rt, [pc, imm8]]" -> "LDR.W Rt, [r0, imm12]]" */
+			insn_s[2] = 0xF8D0;
+			insn_s[3] = ((orig_insn16 & 0x0700) << 4) +
+					(orig_insn16 & 0xFF) * 4;
+			bkpt->ssol_pre_handler = pre_rn_pc_thumb;
+			if ((orig_insn16 & 0x0700) != 0) {
+				/* Destination is not r0, it has to be resoted */
+				bkpt->ssol_post_handler = post_rn_pc;
+			}
+			return 0;
+		}
+		if ((insn_s[0] & 0xFE00)== 0xB400) {
+			/* PUSH {register_list} */
+			return 0;
+		}
+		if ((insn_s[0] & 0xFC00) == 0x4000) {
+			/* Data-processing instructions */
+			return 0;
+		}
+		if ((insn_s[0] & 0xC000) == 0x0000) {
+			/* Data-processing instructions (immediate) */
+			return 0;
+		}
+		if (((insn_s[0] & 0xFF00) == 0x4600) &&
+		    ((insn_s[0] & 0x87) != 0x87) &&
+		    ((insn_s[0] & 0x78) != 0x78)) {
+			/* MOV reg1, reg2 (reg1 != PC, reg2 != PC) */
+			return 0;
+		}
+	}
+	return -1;
+}
+
 /* TODO: add support for more instructions */
 int ssol_prepare_bkpt(struct breakpoint *bkpt, void *safe_insn)
 {
 	long orig_insn = bkpt->orig_insn.insn;
 	long *insn = (long *)safe_insn;
 
+	/* SOLIB breakpoints are handled specially, and their original
+	 * instruction is not even executed. */
+	if (bkpt->type == BKPT_SOLIB)
+		return 0;
+
 	if (bkpt->insn->size == 2) /* thumb */
-		return -1;
+		return ssol_prepare_bkpt_thumb(bkpt, safe_insn);
 
 	/* by default, the instruction is unmodified */
 	memcpy(insn, &bkpt->orig_insn.insn, 4);
 	/* insert a breakpoint after the instruction */
 	memcpy(insn + 1, bkpt->insn->value, bkpt->insn->size);
 
-	/* SOLIB breakpoints are handled specially, and their original
-	 * instruction is not even executed. */
-	if (bkpt->type == BKPT_SOLIB)
-		return 0;
 	/* Store multiple (Rn != PC and PC not in register list) */
 	if (STM(orig_insn) && ARM_Rn(orig_insn) != ARM_PC &&
 	    !ARM_reglist(orig_insn, ARM_PC)) {
