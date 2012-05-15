@@ -43,6 +43,7 @@
 #define WSIZE 4
 #define POINTER 4
 #define MEMTRANSFER_API_VERSION "2.0"
+#define MEMTRANSFER_ERROR "ERROR: unexpected functracer memtransfer function '%s'!\n"
 
 static char memtransfer_api_version[] = MEMTRANSFER_API_VERSION;
 
@@ -52,7 +53,6 @@ static sp_rtrace_resource_t res_memory = {
 		.desc = "memory read/write/set/copy operations in bytes",
 		.flags = SP_RTRACE_RESOURCE_DEFAULT,
 };
-
 
 static void write_function(struct process *proc, const char *name, size_t size, pointer_t id)
 {
@@ -79,110 +79,117 @@ static void memtransfer_function_exit(struct process *proc, const char *name)
 	addr_t retval = fn_return_value(proc);
 
 	/* 8-bit char functions */
-	if (strcmp(name, "memcpy") == 0) {
-		write_function(proc, name, fn_argument(proc, 2), retval);
-	} else if (strcmp(name, "mempcpy") == 0) {
-		write_function(proc, name, fn_argument(proc, 2), fn_argument(proc, 0));
-	} else if (strcmp(name, "memmove") == 0) {
-		write_function(proc, name, fn_argument(proc, 2), retval);
-	} else if (strcmp(name, "memccpy") == 0) {
-		write_function(proc, name, fn_argument(proc, 3), fn_argument(proc, 0));
-	} else if (strcmp(name, "memset") == 0) {
-		write_function(proc, name, fn_argument(proc, 2), retval);
-	} else if (strcmp(name, "strcpy") == 0) {
-		len = trace_mem_readstr(proc, retval, NULL, 0);
-		write_function(proc, name, len, retval);
-	} else if (strcmp(name, "strncpy") == 0) {
-		write_function(proc, name, fn_argument(proc, 2), retval);
-	} else if (strcmp(name, "stpcpy") == 0) {
-		len = trace_mem_readstr(proc, retval, NULL, 0);
-		write_function(proc, name, len, fn_argument(proc, 0));
-	} else if (strcmp(name, "stpncpy") == 0) {
-		write_function(proc, name, fn_argument(proc, 2), fn_argument(proc, 0));
-	} else if (strcmp(name, "strcat") == 0) {
-		len = trace_mem_readstr(proc, retval, NULL, 0);
-		write_function(proc, name, len, retval);
-	} else if (strcmp(name, "strncat") == 0) {
-		write_function(proc, name, fn_argument(proc, 2), retval);
-	} else if (strcmp(name, "bcopy") == 0) {
-		write_function(proc, name, fn_argument(proc, 2), fn_argument(proc, 1));
-	} else if (strcmp(name, "bzero") == 0) {
-		write_function(proc, name, fn_argument(proc, 1), fn_argument(proc, 0));
-	} else if (strcmp(name, "strdup") == 0) {
-		len = trace_mem_readstr(proc, retval, NULL, 0);
-		write_function(proc, name, len, retval);
-	} else if (strcmp(name, "strndup") == 0) {
-		write_function(proc, name, fn_argument(proc, 1), retval);
-	} else if (strcmp(name, "strdupa") == 0) {
-		len = trace_mem_readstr(proc, retval, NULL, 0);
-		write_function(proc, name, len, retval);
-	} else if (strcmp(name, "strndupa") == 0) {
-		write_function(proc, name, fn_argument(proc, 1), retval);
-
-	/* wide character functions */
-	} else if (strcmp(name, "wmemcpy") == 0) {
-		write_function(proc, name, WSIZE * fn_argument(proc, 2), retval);
-	} else if (strcmp(name, "wmempcpy") == 0) {
-		write_function(proc, name, WSIZE * fn_argument(proc, 2), fn_argument(proc, 0));
-	} else if (strcmp(name, "wmemmove") == 0) {
-		write_function(proc, name, WSIZE * fn_argument(proc, 2), retval);
-	} else if (strcmp(name, "wmemset") == 0) {
-		write_function(proc, name, WSIZE * fn_argument(proc, 2), retval);
-	} else if (strcmp(name, "wcscpy") == 0) {
-		len = trace_mem_readwstr(proc, retval, NULL, 0);
-		write_function(proc, name, WSIZE * len, retval);
-	} else if (strcmp(name, "wcsncpy") == 0) {
-		write_function(proc, name, WSIZE * fn_argument(proc, 2), retval);
-	} else if (strcmp(name, "wcpcpy") == 0) {
-		arg1 = fn_argument(proc, 1);
-		len = trace_mem_readwstr(proc, arg1, NULL, 0);
-		write_function(proc, name, WSIZE * len, fn_argument(proc, 0));
-	} else if (strcmp(name, "wcpncpy") == 0) {
-		write_function(proc, name, WSIZE * fn_argument(proc, 2), fn_argument(proc, 0));
-	} else if (strcmp(name, "wcscat") == 0) {
-		len = trace_mem_readwstr(proc, retval, NULL, 0);
-		write_function(proc, name, WSIZE * len, retval);
-	} else if (strcmp(name, "wcsncat") == 0) {
-		write_function(proc, name, WSIZE * fn_argument(proc, 2), retval);
-	} else if (strcmp(name, "wcsdup") == 0) {
-		len = trace_mem_readwstr(proc, retval, NULL, 0);
-		write_function(proc, name, WSIZE * len, retval);
-	} else {
-		msg_warn("unexpected function exit (%s)\n", name);
-		return;
+	if (*name == 'b' || *name == 'm') {
+		if (strcmp(name, "bcopy") == 0) {
+			write_function(proc, name, fn_argument(proc, 2), fn_argument(proc, 1));
+		} else if (strcmp(name, "bzero") == 0) {
+			write_function(proc, name, fn_argument(proc, 1), fn_argument(proc, 0));
+		} else if (strcmp(name, "memccpy") == 0) {
+			write_function(proc, name, fn_argument(proc, 3), fn_argument(proc, 0));
+		} else if (strcmp(name, "memcpy") == 0) {
+			write_function(proc, name, fn_argument(proc, 2), retval);
+		} else if (strcmp(name, "memmove") == 0) {
+			write_function(proc, name, fn_argument(proc, 2), retval);
+		} else if (strcmp(name, "mempcpy") == 0) {
+			write_function(proc, name, fn_argument(proc, 2), fn_argument(proc, 0));
+		} else if (strcmp(name, "memset") == 0) {
+			write_function(proc, name, fn_argument(proc, 2), retval);
+		} else {
+			msg_error(MEMTRANSFER_ERROR, name);
+		}
+	} else if (*name == 's') {
+		if (strcmp(name, "stpcpy") == 0) {
+			len = trace_mem_readstr(proc, retval, NULL, 0);
+			write_function(proc, name, len, fn_argument(proc, 0));
+		} else if (strcmp(name, "stpncpy") == 0) {
+			write_function(proc, name, fn_argument(proc, 2), fn_argument(proc, 0));
+		} else if (strcmp(name, "strcat") == 0) {
+			len = trace_mem_readstr(proc, retval, NULL, 0);
+			write_function(proc, name, len, retval);
+		} else if (strcmp(name, "strcpy") == 0) {
+			len = trace_mem_readstr(proc, retval, NULL, 0);
+			write_function(proc, name, len, retval);
+		} else if (strcmp(name, "strdup") == 0) {
+			len = trace_mem_readstr(proc, retval, NULL, 0);
+			write_function(proc, name, len, retval);
+		} else if (strcmp(name, "strdupa") == 0) {
+			len = trace_mem_readstr(proc, retval, NULL, 0);
+			write_function(proc, name, len, retval);
+		} else if (strcmp(name, "strncat") == 0) {
+			write_function(proc, name, fn_argument(proc, 2), retval);
+		} else if (strcmp(name, "strncpy") == 0) {
+			write_function(proc, name, fn_argument(proc, 2), retval);
+		} else if (strcmp(name, "strndup") == 0) {
+			write_function(proc, name, fn_argument(proc, 1), retval);
+		} else if (strcmp(name, "strndupa") == 0) {
+			write_function(proc, name, fn_argument(proc, 1), retval);
+		} else {
+			msg_error(MEMTRANSFER_ERROR, name);
+		}
+	} else if (*name == 'w') {
+		/* wide character functions */
+		if (strcmp(name, "wcpcpy") == 0) {
+			arg1 = fn_argument(proc, 1);
+			len = trace_mem_readwstr(proc, arg1, NULL, 0);
+			write_function(proc, name, WSIZE * len, fn_argument(proc, 0));
+		} else if (strcmp(name, "wcpncpy") == 0) {
+			write_function(proc, name, WSIZE * fn_argument(proc, 2), fn_argument(proc, 0));
+		} else if (strcmp(name, "wcscat") == 0) {
+			len = trace_mem_readwstr(proc, retval, NULL, 0);
+			write_function(proc, name, WSIZE * len, retval);
+		} else if (strcmp(name, "wcscpy") == 0) {
+			len = trace_mem_readwstr(proc, retval, NULL, 0);
+			write_function(proc, name, WSIZE * len, retval);
+		} else if (strcmp(name, "wcsdup") == 0) {
+			len = trace_mem_readwstr(proc, retval, NULL, 0);
+			write_function(proc, name, WSIZE * len, retval);
+		} else if (strcmp(name, "wcsncat") == 0) {
+			write_function(proc, name, WSIZE * fn_argument(proc, 2), retval);
+		} else if (strcmp(name, "wcsncpy") == 0) {
+			write_function(proc, name, WSIZE * fn_argument(proc, 2), retval);
+		} else if (strcmp(name, "wmemcpy") == 0) {
+			write_function(proc, name, WSIZE * fn_argument(proc, 2), retval);
+		} else if (strcmp(name, "wmemmove") == 0) {
+			write_function(proc, name, WSIZE * fn_argument(proc, 2), retval);
+		} else if (strcmp(name, "wmempcpy") == 0) {
+			write_function(proc, name, WSIZE * fn_argument(proc, 2), fn_argument(proc, 0));
+		} else if (strcmp(name, "wmemset") == 0) {
+			write_function(proc, name, WSIZE * fn_argument(proc, 2), retval);
+		} else {
+			msg_error(MEMTRANSFER_ERROR, name);
+		}
 	}
 }
 
 static struct plg_symbol symbols[] = {
-		{.name = "memcpy", .hit = 0},
-		{.name = "mempcpy", .hit = 0},
-		{.name = "memmove", .hit = 0},
+		{.name = "bcopy", .hit = 0},
+		{.name = "bzero", .hit = 0},
 		{.name = "memccpy", .hit = 0},
+		{.name = "memcpy", .hit = 0},
+		{.name = "memmove", .hit = 0},
+		{.name = "mempcpy", .hit = 0},
 		{.name = "memset", .hit = 0},
-		{.name = "strcpy", .hit = 0},
-		{.name = "strncpy", .hit = 0},
 		{.name = "stpcpy", .hit = 0},
 		{.name = "stpncpy", .hit = 0},
 		{.name = "strcat", .hit = 0},
-		{.name = "strncat", .hit = 0},
-		{.name = "bcopy", .hit = 0},
-		{.name = "bzero", .hit = 0},
+		{.name = "strcpy", .hit = 0},
 		{.name = "strdup", .hit = 0},
+//		{.name = "strdupa", .hit = 0},
+		{.name = "strncat", .hit = 0},
+		{.name = "strncpy", .hit = 0},
 		{.name = "strndup", .hit = 0},
-/*		{.name = "strdupa", .hit = 0},
-		{.name = "strndupa", .hit = 0},
-*/
-		{.name = "wmemcpy", .hit = 0},
-		{.name = "wmempcpy", .hit = 0},
-		{.name = "wmemmove", .hit = 0},
-		{.name = "wmemset", .hit = 0},
-		{.name = "wcscpy", .hit = 0},
-		{.name = "wcsncpy", .hit = 0},
+//		{.name = "strndupa", .hit = 0},
 		{.name = "wcpcpy", .hit = 0},
 		{.name = "wcpncpy", .hit = 0},
 		{.name = "wcscat", .hit = 0},
-		{.name = "wcsncat", .hit = 0},
+		{.name = "wcscpy", .hit = 0},
 		{.name = "wcsdup", .hit = 0},
+		{.name = "wcsncat", .hit = 0},
+		{.name = "wcsncpy", .hit = 0},
+		{.name = "wmemcpy", .hit = 0},
+		{.name = "wmemmove", .hit = 0},
+		{.name = "wmempcpy", .hit = 0},
+		{.name = "wmemset", .hit = 0},
 };
 
 static int get_symbols(struct plg_symbol **syms)
