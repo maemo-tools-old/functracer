@@ -89,7 +89,7 @@ static sp_rtrace_resource_t res_shmfd = {
 /*
  * The functracer does not support module uninitialization. Because of this
  * the internal API uninitialization routines aren't currently needed and
- * disabled with UNUSED_INTERNAL_API_FUNCTION define.
+ * disabled with DO_INTERNAL_CLEANUP define.
  * Enable them on an as-needed basis.
  */
 
@@ -104,10 +104,13 @@ static sp_rtrace_resource_t res_shmfd = {
  */
 
 /**
- * Name resgistry node
+ * Name registry node
  */
 typedef struct nreg_node_t {
 	/* the object name */
+#ifndef DO_INTERNAL_CLEANUP	/* unfreed, so it can be const? */
+	const
+#endif
 	char* name;
 	/* the unique resource identifier */
 	unsigned int hash;
@@ -141,7 +144,7 @@ static int nreg_compare_name(const void* item1, const void* item2)
 }
 
 
-#ifdef UNUSED_INTERNAL_API_FUNCTION
+#ifdef DO_INTERNAL_CLEANUP
 /**
  * Releases resource allocated for name registry node.
  *
@@ -258,7 +261,7 @@ static unsigned int nreg_get_hash(const char* name)
 	return (*ppnode)->hash;
 }
 
-#ifdef UNUSED_INTERNAL_API_FUNCTION
+#ifdef DO_INTERNAL_CLEANUP
 /**
  * Releases resources allocated by name registry.
  */
@@ -303,7 +306,7 @@ typedef struct fdreg_node_t {
 /* the file descriptor registry root node */
 static void* fdreg_root;
 
-#ifdef UNUSED_INTERNAL_API_FUNCTION
+#ifdef DO_INTERNAL_CLEANUP
 /**
  * Releases resources allocated for file descriptor registry node.
  *
@@ -334,7 +337,7 @@ static int fdreg_compare_fd(const void* item1, const void* item2)
 }
 
 /**
- * Stores file descriptor into resgitry.
+ * Stores file descriptor into registry.
  *
  * Existing file descriptor data in registry is overwritten.
  * @param[in] fd     the file descriptor value.
@@ -347,7 +350,7 @@ static void fdreg_store_fd(int fd, const char* name, unsigned int type, int mode
 	fdreg_node_t node = {.fd = fd};
 	fdreg_node_t** ppnode = tfind(&node, &fdreg_root, fdreg_compare_fd);
 	if (ppnode) {
-		/* file descriptor was already registered, update it's data */
+		/* file descriptor was already registered, update its data */
 		fdreg_node_t* pnode = *ppnode;
 		if (pnode->name) free(pnode->name);
 		pnode->name = strdup(name);
@@ -378,7 +381,7 @@ static fdreg_node_t* fdreg_get_fd(int fd)
 	return NULL;
 }
 
-#ifdef UNUSED_INTERNAL_API_FUNCTION
+#ifdef DO_INTERNAL_CLEANUP
 /**
  * Removes file descriptor data from the registry.
  *
@@ -395,7 +398,7 @@ static void fdreg_remove(int fd)
 }
 #endif
 
-#ifdef UNUSED_INTERNAL_API_FUNCTION
+#ifdef DO_INTERNAL_CLEANUP
 /**
  * Releases resources allocated by file descriptor registry.
  */
@@ -479,7 +482,7 @@ static addr_node_t* addr_get(addr_t addr)
 	return NULL;
 }
 
-#ifdef UNUSED_INTERNAL_API_FUNCTION
+#ifdef DO_INTERNAL_CLEANUP
 /**
  * Releases resources allocated by adress mapping registry.
  *
@@ -716,7 +719,7 @@ static struct plg_symbol symbols[] = {
 		{.name = "open64", .hit = 0},
 		{.name = "creat", .hit = 0},
 		{.name = "mmap", .hit = 0},
-//		{.name = "mmap2", .hit = 0},
+//		{.name = "mmap2", .hit = 0}, /* syscall, not a glibc exported function */
 		{.name = "mmap64", .hit = 0},
 		{.name = "munmap", .hit = 0},
 		{.name = "close", .hit = 0},
