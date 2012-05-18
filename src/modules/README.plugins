@@ -1,6 +1,6 @@
-                        README for functracer plugins
+                   README for functracer plugins
 
-                  Copyright (C) 2008-2010 by Nokia Corporation
+            Copyright (C) 2008-2012 by Nokia Corporation
 
 Contents
 --------
@@ -15,6 +15,7 @@ Contents
 
 1. Introduction
 ---------------
+
 Functracer supports plugins. The plugins tell to functracer which set of
 functions will be tracked. Only one plugin can be used at each functracer
 execution.
@@ -29,18 +30,21 @@ track:
     strndupa, wmemcpy, wmempcpy, wmemmove, wmemset, wcscpy, wcsncpy, wcpcpy, 
     wcpncpy, wcscat, wcsncat, wcsdup.
 - gobject: g_object_newv, g_object_ref, g_object_unref.
-- thread-resource: pthread_create, pthread_join, pthread_detach.  
+- thread: pthread_create, pthread_join, pthread_detach.  
 - shmsysv: shmget, shmctl, shmat, shmdt.
 - shmposix: shm_open, shm_unlink, mmap, mmap2, mmap64, munmap
 - audit: custom functions, specified with -a option
 
 Plugins are usually installed in /usr/lib/functracer. Memory is the default
-plugin, and to switch to the "file" plugin you must use the "-e" option (e.g.
-"-e file"). A user-defined plugin can be used by specifying a path to the "-e"
-option (e.g. "-e /home/user/plg/foo.so").
+plugin, and to switch e.g. to the "file" plugin you must use the "-e" option
+("-e file"). A user-defined plugin can be used by specifying a path to
+the "-e" option (e.g. "-e /home/user/plg/foo.so"), this is used by the
+testsuite.
+
 
 2. Plugin infrastructure
 ------------------------
+
 The basic plugin infrastructure consists of three functions:
 
 - char* api_version: tells to functracer what API version is supported by the plugin.
@@ -63,15 +67,15 @@ The basic plugin infrastructure consists of three functions:
   resources (for example file plugin which tracks file pointers and descriptors).
   Every resource must be reported with sp_rtrace_print_resource function.
 
-The functracer API must be used for retrieving or logging any data (just add
+The functracer API must be used for retrieving and logging of any data (just add
 the correct header in user-defined plugin). See functracer source code for more
 details on how to use each function, for example:
 
 - fn_return_value(): get the function return value.
-- fn_argument(): get the function argument (numbered starting from zero).
+- fn_argument(): get the function argument (numbers start from zero).
 - rp_write_backtraces(): generate backtraces for function call site.
 - rp_alloc(): log resource allocation.
-- rp_alloc_details: log resoruce allocation with additional description.
+- rp_alloc_details: log resource allocation with additional description.
 - rp_free(): log resource destruction.
 
 - trace_mem_readstr(): get C style string located at the specified address.
@@ -84,7 +88,7 @@ mandatory.
 
 First, we need to add some header files. See functracer API to know the
 functions available and the respective header file. In general, we will use
-report functions (report.h), debug messages (debug.h), definitions to processes
+report functions (report.h), debug messages (debug.h), definitions of processes
 (process.h), read function arguments (function.h) and the plugin manager
 definitions (plugins.h).
 
@@ -218,11 +222,15 @@ To add the new plugin to functracer sources:
    $ ./configure && make
    # make install
 
-The plugin is ready to use! See functracer-x.y.z/src/modules/ for complete
+The plugin is ready to use! See src/modules/ for complete
 sources of other plugins.
+
+testsuite/README tells how to add tests for the new module.
+
 
 4. How to use
 -------------
+
 There are two ways for using plugins:
 - Add it to functracer sources (shown in previous section) and install it.
 - Give the complete plugin path to functracer.
@@ -240,6 +248,7 @@ Plugins specified by the "-e" option are located using the following logic:
 1) Check if a file by that name exists; otherwise
 2) Prefix the name with the plugin directory path and append ".so" to it.
 
+
 5. Plugin details
 -----------------
 
@@ -249,13 +258,13 @@ memory
   posix_memalign, realloc, valloc functions.
   
 memtransfer
-  Memory transfer plugin is used to analyse memory transfer operations.
+  Memory transfer plugin is used to analyse memory read/write/copy operations.
   It reports 'memtransfer' resource usage by tracking memcpy, mempcpy,
   memmove, memccpy, memset, strcpy, strncpy, stpcpy, stpncpy, strcat,
   strncat, bcopy, bzero, strdup, strndup, strdupa, strndupa, wmemcpy,
   wmempcpy, wmemmove, wmemset, wcscpy, wcsncpy, wcpcpy, wcpncpy, wcscat,
   wcsncat, wcsdup functions.
-  
+
 file
   File plugin is used to analyse file usage. It reports the following
   resource usage:
@@ -270,7 +279,7 @@ gobject
   and dereferences. It reports 'gobject' resource usage by tracking
   g_object_newv, g_object_ref, g_object_unref functions.
 
-thread-resource
+thread
   Thread resource plugin is used to analyse thread creation/destruction.
   It reports 'pthread_t' resource usage by tracking pthread_create, 
   pthread_join, pthread_detach functions.
@@ -299,7 +308,7 @@ shmposix
   'shmmap' -  generic shared memory object mapping/unmapping, tracked by 
               mmap, mmap2, mmap64, munmap functions.
 
-   This plugin keeps track on opened file descriptors to determine the
+   This plugin keeps track of opened file descriptors to determine the
    descriptor 'type' for mapping functions. If the descriptor was opened
    with shm_open, then 'pshmmap' resource type is reported by mapping
    functions. If the descriptor was opened by open, open64, creat functions,
@@ -310,15 +319,15 @@ shmposix
 audit
   Audit plugin is used to analyse calls of custom defined functions. Those
   functions are specified with -a command line option:
-    -a <symbol>[;<symbol>[;<symbool>...]]
+    -a <symbol>[;<symbol>[;<symbol>...]]
   where <symbol> contains either a custom symbol to track or @<filename>
   specifying file containing a list of custom symbols to track. It uses 
   'virtual'  resource type to report such functions.
-  
-  
+
 
 6. Issues and Limitations
 -------------------------
+
 Not all functions can be currently tracked by plugins. This happens for two
 reasons:
 
@@ -331,15 +340,18 @@ reasons:
 
 - The instruction rewriting support on ARM is currently limited to a set of
   instructions used by current plugins. This means that some new functions may
-  not be allowed to be tracked until the instruction located
-  on the function entry is added to the rewrite rules. For such cases, a "SSOL
-  unsafe" warning will be print, and the breakpoint will be disabled.
+  not be allowed to be tracked until the instruction located on the function
+  entry is added to the rewrite rules. For such cases, a "SSOL unsafe" warning
+  will be print, and the breakpoint will be disabled.
+
   This is important so that plugins tracking arbitrary functions do not crash
   the target application. For more details, see the source for the
   ssol_prepare_bkpt() function in src/breakpoint-arm.c.
 
+
 7. License
 ----------
+
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
 Foundation; either version 2 of the License, or (at your option) any later

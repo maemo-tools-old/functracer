@@ -2,11 +2,14 @@
 functracer - list backtraces to tracked functions.
 
 [DESCRIPTION]
-\fBfunctracer\fR is a specialized, tracing-based debugging tool. It collects backtraces, arguments and return value of functions specified in a plugin. It works with optimized (-O2) code, where debugging symbols are available either in the application binaries themselves, or in separate debug files.
+\fBfunctracer\fR is a specialized, tracing-based debugging tool. It collects
+backtraces, arguments and return value of functions specified in a plugin.
+It works with optimized (-O2) code, where debugging symbols are available
+either in the application binaries themselves, or in separate debug files.
 
 Currently, functracer has the following plugins implemented:
 "memory" (used by default, when no plugin is specified), "file",
-"memtransfer", "gobject", "thread-resource", "shmsysv", "shmposix" and
+"memtransfer", "gobject", "thread", "shmsysv", "shmposix" and
 "audit".
 They are installed in /usr/lib/functracer.
 
@@ -26,7 +29,7 @@ wcsdup).
 The \fIgobject\fP plugin is used to track GObject allocation and release
 (g_object_newv, g_object_ref, g_object_unref).
 
-The \fIthread-resource\fP plugin is used to track resource allocation/release
+The \fIthread\fP plugin is used to track resource allocation/release
 by creating/joining threads (pthread_create, pthread_join, pthread_detatch).
 
 The \fIshmsysv\fP plugin is used to track System V shared memory segment creation
@@ -71,7 +74,9 @@ in detail by the sp-rtrace package.  Basically it looks like this:
  [backtrace functions]
 .RE
 
-For examble, on the memory plugin the resource allocation functions (e.g. calloc, malloc, memalign, realloc) are tracked and functracer reports the following:
+For examble, on the memory plugin the resource allocation functions
+(e.g. calloc, malloc, memalign, realloc) are tracked and functracer
+reports the following:
 
  function size   resource
    name    |      address
@@ -83,7 +88,10 @@ For examble, on the memory plugin the resource allocation functions (e.g. calloc
    0xb7e87118              |-> backtrace lines
    0xb7d94e6d            ---
 
-For functions that perform both resource allocation and destruction (e.g. realloc), it will be produced two separate events, first the destruction event, then the allocation one. For example, if source code does:
+For functions that perform both resource allocation and destruction
+(e.g. realloc), it will be produced two separate events, first
+the destruction event, then the allocation one. For example, if
+source code does:
 
 realloc(0x001ae840, 16) = 0x001ae858
 
@@ -190,6 +198,9 @@ Ricardo Guimaraes <ricardo.guimaraes@indt.org.br>
 Thiago Santos <thiago.santos@indt.org.br>
 .br
 Andris Zeila <andris.zeila@accenture.com>
+.br
+Eero Tamminen <eero.tamminen@nokia.com>
+
 
 [COPYRIGHT]
 Copyright (C) 2008-2012 Nokia Corporation.

@@ -22,6 +22,7 @@ Contents
 
 0. Authors
 ----------
+
 Functracer has been developed by:
 
 Anderson Lizardo <anderson.lizardo@indt.org.br>
@@ -30,9 +31,13 @@ Bruna Moreira <bruna.moreira@indt.org.br>
 Bruno Abinader <bruno.abinader@indt.org.br>
 Ricardo Guimaraes <ricardo.guimaraes@indt.org.br>
 Thiago Santos <thiago.santos@indt.org.br>
+Andris Zeila <andris.zeila@accenture.com>
+Eero Tamminen <eero.tamminen@nokia.com>
+
 
 1. Introduction
 ---------------
+
 Functracer is a specialized, tracing-based debugging tool. It collects
 backtraces, arguments and return value of functions specified in a plugin. It
 works with optimized (-O2) code, where debugging symbols are available either
@@ -43,17 +48,22 @@ Currently, functracer has the following plugins implemented:
  "file",
  "memtransfer",
  "gobject",
- "thread-resource",
+ "thread",
  "shmsysv".
-For more details see the README.plugins document located in src/modules (inside sources) or
-/usr/share/doc/functracer (when installed).
+
+For more details see the README.plugins document located in src/modules
+(inside sources) or /usr/share/doc/functracer (when installed).
+
 
 2. Where can I find it
 ----------------------
+
 http://maemo.gitorious.org/maemo-tools/functracer
+
 
 3. How does it work
 -------------------
+
 Using software breakpoints, just like GDB and ltrace. A breakpoint is inserted
 on the entrypoint of selected functions specified in the plugins. When one of
 them is called, the breakpoint is hit and the resource address, size and
@@ -119,8 +129,10 @@ Functracer will produce the following trace events:
 1. realloc(16) = 0x001ae858  <- allocation event
    [backtrace lines]
 
+
 4. How to use
 --------------
+
 Output from "functracer --help":
 
 Usage: functracer [OPTION...] PROGRAM [ARGS...]
@@ -173,14 +185,18 @@ Note that messages in allocs*.trace about processes use "process/thread"
 instead of just "process". This is a ptrace limitation, because it does not
 distinguish between threads and process IDs.
 
+
 5. Where does it work
 ---------------------
-It works with ELF based Linux systems running on x86 or ARM architecture. Other
-architectures might be added in future if the required architecture specific
+
+It works with ELF based Linux systems running on 32-bit x86 or ARM architecture.
+Other architectures might be added in future if the required architecture specific
 code is written for them.
+
 
 6. Performance impact
 ---------------------
+
 Functracer sets breakpoints to selected functions to be able to trace their
 use. This can have quite noticeable impact on the traced program performance,
 even when the Functracer reporting and backtracing is not enabled.
@@ -189,16 +205,20 @@ Unless one wants to trace the whole program life-cycle, one should (re-)attach
 to a program only during the use-cases that one is interested about and
 terminate functracer with CTRL-C when the use-case ends.
 
+
 7. Other effects
 ----------------
+
 Program being slowed down may also effect its behavior slightly (timers, thread
 synchronization etc.), but if the program is robust (e.g. checks for error
 codes returned by system calls, accounts for timeout conditions etc.), it
 should still function normally. Additionally, ptrace() changes unix signaling
 semantics slightly, but in most cases this should not affect anything either.
 
+
 8. Documentation
 -----------------
+
 Functracer is documented by means of a manpage, an internals document,
 and several READMEs:
 
@@ -217,6 +237,7 @@ and several READMEs:
 
 9. Issues and Limitations
 -------------------------
+
 Not all functions can be tracked by plugins. This happens for two reasons:
 - Currently the function names are matched against the library export table.
   This means that only functions exported by libraries are visible, and that
@@ -227,6 +248,7 @@ Not all functions can be tracked by plugins. This happens for two reasons:
   breakpoint can be inserted. In later releases, it was implemented a
   instruction rewriting mechanism that covers all functions tracked by current
   plugins. 
+
   Some instructions do not work well when single-stepped out of place, because
   their behavior is location dependent (e.g. they use the PC register value for
   calculations, or write to it). Therefore, it is necessary to rewrite these
@@ -234,34 +256,43 @@ Not all functions can be tracked by plugins. This happens for two reasons:
   location dependent register operand (PC, for instance), with other with no
   side-effects (e.g. R0). After the instruction is safely single-stepped, the
   result is written back to the correct register before the process continues.
+
   In functracer, for sake of simplicity, it only rewrites those instructions
   that occur in breakpoints inserted by current functracer plugins. Functracer
   only inserts breakpoints on the beggining of functions, therefore there are
-  only a few instructions that appear there.
-  Ideally, all (or most) instructions should be supported. For this one has to
-  write code to recognize and rewrite other instructions.
+  only a few instructions that appear there.  Ideally, all (or most) instructions
+  should be supported. For this one has to write code to recognize and rewrite
+  other instructions.
+
   The concept and the branch displacement macro were based on kprobes code from
   the Linux kernel. The kernel code, on the other hand, has support for
   rewriting almost all instructions on ARM.
+
   Also note that for x86, no instruction rewriting rules were implemented (yet),
   because so far none of the current plugins inserted breakpoints at "SSOL
   unsafe" instructions.
 
+
 10. To Do
 ----------
+
 - Add a new option "trace-children" for optional tracking to children
   processes. Functracer slows down the process(es) quite a bit so it may be
   nice to have that as optional similarly to ltrace/strace/valgrind.
+
   To implement this, it is need to verify if the event is creating a new
   process or a thread by reading the file /proc/pid/status. There is a existent
   code on process.c that read the process Tgid: get_tgid(). If tgid is 
-  different of current pid, so we have a thread otherwise is a new process. See
-  details in add_process() in process.c file.
+  different of current pid, so we have a thread otherwise is a new process.
+  See details in add_process() in process.c file.
+
 - Add support for reading complex data of functions parameters like strings,
   arrays, etc. (for more details, see TODO.plugins).
 
+
 11. License
 -----------
+
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Freea Software
 Foundation; either version 2 of the License, or (at your option) any later
