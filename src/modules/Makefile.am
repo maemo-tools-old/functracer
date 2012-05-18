@@ -18,9 +18,9 @@ pkglib_LTLIBRARIES += memtransfer.la
 memtransfer_la_SOURCES = memtransfer.c
 memtransfer_la_LDFLAGS = -no-undefined -module -avoid-version
 
-pkglib_LTLIBRARIES += thread-resource.la
-thread_resource_la_SOURCES = thread-resource.c
-thread_resource_la_LDFLAGS = -no-undefined -module -avoid-version -lpthread
+pkglib_LTLIBRARIES += thread.la
+thread_la_SOURCES = thread.c
+thread_la_LDFLAGS = -no-undefined -module -avoid-version -lpthread
 
 pkglib_LTLIBRARIES += shmsysv.la
 shmsysv_la_SOURCES = shmsysv.c
