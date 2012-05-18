@@ -8,37 +8,10 @@ It works with optimized (-O2) code, where debugging symbols are available
 either in the application binaries themselves, or in separate debug files.
 
 Currently, functracer has the following plugins implemented:
-"memory" (used by default, when no plugin is specified), "file",
-"memtransfer", "gobject", "thread", "shmsysv", "shmposix" and
-"audit".
+"audit", "file", "gobject", "memory" (used by default, when no plugin is
+specified), "memtransfer", "thread", "shmsysv", "shmposix".
+
 They are installed in /usr/lib/functracer.
-
-The \fImemory\fP plugin is used to track memory allocation usage (calloc,
-malloc, realloc, free, memalign, posix_memalign and valloc).
-
-The \fIfile\fP plugin is used to track file descriptor/pointer usage (open,
-fclose, open, close, fcloseall, creat, freopen, fdopen, accept, dup, dup2,
-socket, socketpair, fcntl, pipe and inotify_init).
-
-The \fImemtransfer\fP plugin is used to track memory transfer operations
-(memcpy, mempcpy, memmove, memccpy, memset, strcpy, strncpy, stpcpy, stpncpy,
-strcat, strncat, bcopy, bzero, strdup, strndup, strdupa, strndupa, wmemcpy,
-wmempcpy, wmemmove, wmemset, wcscpy, wcsncpy, wcpcpy, wcpncpy, wcscat, wcsncat,
-wcsdup).
-
-The \fIgobject\fP plugin is used to track GObject allocation and release
-(g_object_newv, g_object_ref, g_object_unref).
-
-The \fIthread\fP plugin is used to track resource allocation/release
-by creating/joining threads (pthread_create, pthread_join, pthread_detatch).
-
-The \fIshmsysv\fP plugin is used to track System V shared memory segment creation
-and destruction by the target process and the address attaching and detaching
-operations (shmget, shmctl, shmat, shmdt).
-
-The \fIshmsposix\fP plugin is used to track posix shared memory segment creation
-and destruction by the target process and the address attaching and detaching
-operations (shm_open, shm_unlink, mmap, munmap).
 
 The \fIaudit\fP plugin is invoked automatically when -a option is used and
 it allows to track custom list of symbols specified by the -a option in format
@@ -53,6 +26,29 @@ target symbols instead of scanning elf symbol table as the rest of modules do.
 While this allows to track e.g. static functions that are not exported,
 it slows down library loading performance. To reduce performance impact use
 -L option to limit the set of the libraries that should be scanned.
+
+The \fImemory\fP plugin is used to track memory allocation usage (calloc,
+malloc, realloc, free, memalign, posix_memalign and valloc).
+
+The \fIfile\fP plugin is used to track file descriptor/FILE pointer usage
+(open, fclose, dup, socket etc).
+
+The \fImemtransfer\fP plugin is used to track memory transfer operations
+(memcpy, strcpy, strncpy, wcscat etc).
+
+The \fIgobject\fP plugin is used to track GObject allocation and release
+(g_object_newv, g_object_ref, g_object_unref).
+
+The \fIthread\fP plugin is used to track resource allocation/release
+by creating/joining threads (pthread_create, pthread_join, pthread_detatch).
+
+The \fIshmsysv\fP plugin is used to track System V shared memory segment creation
+and destruction by the target process and the address attaching and detaching
+operations (shmget, shmctl, shmat, shmdt).
+
+The \fIshmsposix\fP plugin is used to track posix shared memory segment creation
+and destruction by the target process and the address attaching and detaching
+operations (shm_open, shm_unlink, mmap, mmap64, munmap).
 
 
 The trace output format is defined by the libsp-rtrace library and documented

@@ -44,14 +44,16 @@ works with optimized (-O2) code, where debugging symbols are available either
 in the application binaries themselves, or in separate debug files.
 
 Currently, functracer has the following plugins implemented:
- "memory" (used by default, when no plugin is specified),
+ "audit"
  "file",
- "memtransfer",
  "gobject",
- "thread",
- "shmsysv".
+ "memory" (used by default, when no plugin is specified),
+ "memtransfer",
+ "shmsysv",
+ "shmposix",
+ "thread".
 
-For more details see the README.plugins document located in src/modules
+For more details, see the README.plugins document located in src/modules
 (inside sources) or /usr/share/doc/functracer (when installed).
 
 
@@ -165,25 +167,27 @@ used. The control logic is:
     - SIGUSR1 stops tracing and dumps backtraces
 
 The output file is created by default in the current user home directory. This
-can be changed using the -l option. The file is named "allocs-<PID>.<n>.trace",
+can be changed using the -l option. The file is named "<PID>-<n>.rtrace.txt",
 where <PID> is the process ID (for multithreaded applications it is the TGID of
 the thread group, and events for all threads are reported on the same file) and
 <n> is the "step number" used for numbering and not overwriting trace files
 created for the same PID. 
 
-The built-in symbol resolving in functracer (option "-r") has some limitations
+The built-in symbol resolving in functracer (option "-r") has severe limitations
 compared to the postprocessor symbol resolving (functracer-postproc):
+- it doesn't resolve static or inline function names.
 - it does not resolve source file name and line number.
-- it does not do demangling for C++ symbol names (low-level symbol names into
-  human readable names).
+- it does not do demangling for C++ symbol names
+  (low-level symbol names into human readable names).
+- it can sometimes crash the traced process.
 
 To see the list of process invocations, just type the following where the trace
 files were saved:
-# grep ^Process allocs*.trace
+$ grep ^Process *.rtrace.txt
 
-Note that messages in allocs*.trace about processes use "process/thread"
+Note that messages in *.rtrace.txt file about processes use "process/thread"
 instead of just "process". This is a ptrace limitation, because it does not
-distinguish between threads and process IDs.
+distinguish between thread and process IDs.
 
 
 5. Where does it work
@@ -232,7 +236,8 @@ and several READMEs:
   new plugins.
 - src/modules/TODO.plugins, describes missing plugin features and
   contains some hints on how they could be implemented.
-- testsuite/README, describes how to run the test-suite.
+- testsuite/README, describes how to run the test-suite and add more
+  tests to it.
 
 
 9. Issues and Limitations
@@ -241,28 +246,28 @@ and several READMEs:
 Not all functions can be tracked by plugins. This happens for two reasons:
 - Currently the function names are matched against the library export table.
   This means that only functions exported by libraries are visible, and that
-  one should use the global name, that can be "mangled" by the compiler (e.g.
-  "__open" instead of just "open").
+  one should use the global name, that may have been "mangled" by toolchain
+  headers etc (e.g. "__open" instead of just "open").
 
-- The SSOL approach has some restrictions regarding at which instructions a
-  breakpoint can be inserted. In later releases, it was implemented a
+- The SSOL approach has some restrictions regarding at which instructions
+  a breakpoint can be inserted. In later releases, it was implemented a
   instruction rewriting mechanism that covers all functions tracked by current
   plugins. 
 
   Some instructions do not work well when single-stepped out of place, because
   their behavior is location dependent (e.g. they use the PC register value for
   calculations, or write to it). Therefore, it is necessary to rewrite these
-  instructions so that they become "SSOL safe". This consists on replacing the
-  location dependent register operand (PC, for instance), with other with no
+  instructions so that they become "SSOL safe". This consists of replacing the
+  location dependent register operand (PC, for instance), with a one having no
   side-effects (e.g. R0). After the instruction is safely single-stepped, the
   result is written back to the correct register before the process continues.
 
   In functracer, for sake of simplicity, it only rewrites those instructions
   that occur in breakpoints inserted by current functracer plugins. Functracer
-  only inserts breakpoints on the beggining of functions, therefore there are
-  only a few instructions that appear there.  Ideally, all (or most) instructions
-  should be supported. For this one has to write code to recognize and rewrite
-  other instructions.
+  only inserts breakpoints on the beginning of functions, therefore there are
+  only a few instructions that appear there.  Ideally, for the -a option, all
+  (or most) instructions should be supported. For this one has to write code
+  to recognize and rewrite other instructions.
 
   The concept and the branch displacement macro were based on kprobes code from
   the Linux kernel. The kernel code, on the other hand, has support for
@@ -274,7 +279,7 @@ Not all functions can be tracked by plugins. This happens for two reasons:
 
 
 10. To Do
-----------
+---------
 
 - Add a new option "trace-children" for optional tracking to children
   processes. Functracer slows down the process(es) quite a bit so it may be
@@ -288,6 +293,15 @@ Not all functions can be tracked by plugins. This happens for two reasons:
 
 - Add support for reading complex data of functions parameters like strings,
   arrays, etc. (for more details, see TODO.plugins).
+
+- Add support for tracing syscalls instead of library function calls
+  to avoid issues raising from "mangled" library function names and
+  accidentally missing some of them.  This would be mainly useful for
+  file descriptor and shared memory tracking.
+
+- Add support for resolving STT_GNU_IFUNC / IRESOLVE functions
+  (e.g. strlen in Glibc) to be able to track all Glibc functions. See:
+	http://www.airs.com/blog/archives/403
 
 
 11. License

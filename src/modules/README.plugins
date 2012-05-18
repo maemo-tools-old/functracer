@@ -20,20 +20,17 @@ Functracer supports plugins. The plugins tell to functracer which set of
 functions will be tracked. Only one plugin can be used at each functracer
 execution.
 
-Currently, the following plugins are available, including the functions they
-track:
-- memory: calloc, free, malloc, memalign, posix_memalign, realloc, valloc.
-- file: fopen, fclose, open, close, fcloseall, creat, freopen, fdopen,
-    accept, dup, dup2, socket, socketpair, fcntl, pipe, inotify_init.
-- memtransfer: memcpy, mempcpy, memmove, memccpy, memset, strcpy, strncpy,
-    stpcpy, stpncpy, strcat, strncat, bcopy, bzero, strdup, strndup, strdupa, 
-    strndupa, wmemcpy, wmempcpy, wmemmove, wmemset, wcscpy, wcsncpy, wcpcpy, 
-    wcpncpy, wcscat, wcsncat, wcsdup.
-- gobject: g_object_newv, g_object_ref, g_object_unref.
-- thread: pthread_create, pthread_join, pthread_detach.  
-- shmsysv: shmget, shmctl, shmat, shmdt.
-- shmposix: shm_open, shm_unlink, mmap, mmap2, mmap64, munmap
+Currently, the following plugins are available:
 - audit: custom functions, specified with -a option
+- file: file descriptor and FILE* pointer tracking
+- gobject: GObject ref/unref tracking
+- memory: memory allocation tracking
+- memtransfer: memory read/write/copy functions tracking
+- shmsysv: SYSV shared memory resource tracking
+- shmposix: POSIX shared memory and memory map tracking
+- thread: thread create/join/detach/exit tracking
+
+See the "Plugin details" section on what functions they track.
 
 Plugins are usually installed in /usr/lib/functracer. Memory is the default
 plugin, and to switch e.g. to the "file" plugin you must use the "-e" option
@@ -81,8 +78,10 @@ details on how to use each function, for example:
 - trace_mem_readstr(): get C style string located at the specified address.
 - trace_mem_readwstr(): get C style wide string located at the specified address.
 
+
 3. Plugin extension
 -------------------
+
 This section will show step-by-step how to create a new plugin and what is
 mandatory.
 
@@ -252,25 +251,20 @@ Plugins specified by the "-e" option are located using the following logic:
 5. Plugin details
 -----------------
 
-memory
-  Memory plugin is used to analyse memory allocations/frees. It reports 
-  'memory' resource usage by tracking  calloc, free, malloc, memalign, 
-  posix_memalign, realloc, valloc functions.
-  
-memtransfer
-  Memory transfer plugin is used to analyse memory read/write/copy operations.
-  It reports 'memtransfer' resource usage by tracking memcpy, mempcpy,
-  memmove, memccpy, memset, strcpy, strncpy, stpcpy, stpncpy, strcat,
-  strncat, bcopy, bzero, strdup, strndup, strdupa, strndupa, wmemcpy,
-  wmempcpy, wmemmove, wmemset, wcscpy, wcsncpy, wcpcpy, wcpncpy, wcscat,
-  wcsncat, wcsdup functions.
+audit
+  Audit plugin is used to analyse calls of custom defined functions. Those
+  functions are specified with -a command line option:
+    -a <symbol>[;<symbol>[;<symbol>...]]
+  where <symbol> contains either a custom symbol to track or @<filename>
+  specifying file containing a list of custom symbols to track. It uses 
+  'virtual'  resource type to report such functions.
 
 file
-  File plugin is used to analyse file usage. It reports the following
-  resource usage:
-  'fd' - file descriptor usage, tracked by open, open64, close, creat,
-         fdopen, accept, dup, dup2, socket, socketpair, fcntl, pipe,
-         pipe2, inotify_init functions.
+  File plugin is used to analyse file descriptor and FILE* usage.
+  It reports the following resource usage:
+  'fd' - file descriptor usage, tracked by function like open,
+         socket, eventfd etc.  See file.c for exact list of
+	 functions.
   'fp' - file pointer usage, tracked by fopen, fclose, fcloseall, 
          freopen functions.
 
@@ -279,14 +273,19 @@ gobject
   and dereferences. It reports 'gobject' resource usage by tracking
   g_object_newv, g_object_ref, g_object_unref functions.
 
-thread
-  Thread resource plugin is used to analyse thread creation/destruction.
-  It reports 'pthread_t' resource usage by tracking pthread_create, 
-  pthread_join, pthread_detach functions.
+memory
+  Memory plugin is used to analyse memory allocations/frees. It reports 
+  'memory' resource usage by tracking calloc, free, malloc, memalign, 
+  posix_memalign, realloc, valloc functions.
+
+memtransfer
+  Memory transfer plugin is used to analyse memory read/write/copy
+  operations like memcpy, strcat, wcsdup etc.  See memtransfer.c
+  for exact list of functions.
 
 shmsysv
   Shared memory plugin is used to analyse shared memory creation/
-  desctruction and memory attachments/detachments: shmget, shmctl, shmat, 
+  destruction and memory attachments/detachments: shmget, shmctl, shmat, 
   shmdt. It resports the following resource usage:
   'segment' - shared memory segment creation/destruction, tracked by
               shmget, shmctl, shmdt functions.
@@ -316,13 +315,10 @@ shmposix
    (when the descriptor source was not determined) 'shmmap' resource type
    is reported by mapping functions.
 
-audit
-  Audit plugin is used to analyse calls of custom defined functions. Those
-  functions are specified with -a command line option:
-    -a <symbol>[;<symbol>[;<symbol>...]]
-  where <symbol> contains either a custom symbol to track or @<filename>
-  specifying file containing a list of custom symbols to track. It uses 
-  'virtual'  resource type to report such functions.
+thread
+  Thread resource plugin is used to analyse thread creation/destruction.
+  It reports 'pthread_t' resource usage by tracking pthread_create, 
+  pthread_join, pthread_detach functions.
 
 
 6. Issues and Limitations
@@ -333,10 +329,10 @@ reasons:
 
 -  Functions should be tracked by using their "public" name as found in the
    library export table. This means that any existing name mangling added by
-   the compiler/linker should be used too, otherwise the function is not found
-   by BFD. Examples: __close, _IO_fopen, _IO_fclose etc. See the current
-   plugins sources for details.
-   However C++ names are demangled before checking.
+   the C-library includes and symbol handling should be used too, otherwise
+   the function is not found by BFD, or it's resolved to wrong one.
+   Examples: __close, _IO_fopen, _IO_fclose etc. See the current plugins
+   sources for details.  However C++ names are demangled before checking.
 
 - The instruction rewriting support on ARM is currently limited to a set of
   instructions used by current plugins. This means that some new functions may
