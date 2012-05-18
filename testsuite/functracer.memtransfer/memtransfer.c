@@ -1,7 +1,7 @@
 /*
  * This file is part of Functracer.
  *
- * Copyright (C) 2011 by Nokia Corporation
+ * Copyright (C) 2011-2012 by Nokia Corporation
  *
  * Contact: Eero Tamminen <eero.tamminen@nokia.com>
  *
@@ -29,14 +29,15 @@
 #include <string.h>
 #include <wchar.h>
 
-void test_char()
+void test_char(void)
 {
 	char src[1024] = "source string", dst[1024], *ptr;
-	int len = strlen(src);
+	int len = strlen(src) + 1; /* copy also terminator */
 
 	strcpy(dst, src);
 	memcpy(dst, src, len);
 	memmove(dst, src, len);
+	ptr = memccpy(dst, src, '\0', len);
 	mempcpy(dst, src, len);
 	memset(dst, 0, 100);
 	strncpy(dst, src, 5);
@@ -51,10 +52,10 @@ void test_char()
 	free(ptr);
 }
 
-void test_wchar()
+void test_wchar(void)
 {
 	wchar_t src[1024] = L"source string", dst[1024], *ptr;
-	int len = wcslen(src);
+	int len = wcslen(src) + 1; /* copy also terminator */
 	wmemcpy(dst, src, len);
 	wmempcpy(dst, src, len);
 	wmemmove(dst, src, len);
@@ -65,9 +66,11 @@ void test_wchar()
 	wcpncpy(dst, src, 5);
 	wcscat(dst, src);
 	wcsncat(dst, src, 5);
+	len = wcsnlen(src, 5);
 	ptr = wcsdup(src);
 	free(ptr);
 }
+
 int main(void)
 {
 	test_char();

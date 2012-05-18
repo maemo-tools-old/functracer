@@ -23,6 +23,7 @@
  */
 
 #include <stdio.h>
+#include <wchar.h>
 #include <sys/ptrace.h>
 
 #include "process.h"
@@ -117,23 +118,26 @@ size_t trace_mem_readstr(struct process* proc, size_t addr, char* buffer, size_t
 		}
 	}
 	if (size) *buffer = '\0';
-	return bytes;
+	return bytes+1;
 }
 
-
-size_t trace_mem_readwstr(struct process* proc, size_t addr, int* buffer, size_t size)
+/* copies wide string if buffer given, buffer size is in wide chars.
+ * returns number of read wide chars, _including_ terminator.
+ * If string was copied, it will be terminated, clipped if necessary.
+ */
+size_t trace_mem_readwstr(struct process* proc, size_t addr, wchar_t* buffer, size_t size)
 {
 	int bytes = 0;
 	int c = 0xff;
 	int limit = size - 1;
 
 	while ( (c = trace_mem_readw(proc, addr)) ) {
-		addr += sizeof(int*);
+		addr += sizeof(wchar_t*);
 		if (limit > bytes++) {
 			*buffer++ = c;
 		}
 	}
 	if (size) *buffer = L'\0';
-	return bytes;
+	return bytes+1;
 }
 

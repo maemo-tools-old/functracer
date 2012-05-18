@@ -1,6 +1,6 @@
 # This file is part of Functracer.
 #
-# Copyright (C) 2011 by Nokia Corporation
+# Copyright (C) 2011-2012 by Nokia Corporation
 #
 # Contact: Eero Tamminen <eero.tamminen@nokia.com>
 #
@@ -42,23 +42,33 @@ set exec_output [ft_runtest $srcdir/$subdir $srcdir/$subdir/$binfile]
 # Check the output of this program.
 verbose "ft runtest output: $exec_output\n"
 
-ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " strcpy\(13\) " 1
+# functracer matches these (WEAK symbols), but doesn't register breakpoint?
+#ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " memccpy\(14\) " 1
+#ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " stpcpy\(5\) " 1
+#ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " mempcpy\(14\) " 1
+
+ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " strcpy\(14\) " 1
+ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " memcpy\(14\) " 1
+ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " memmove\(14\) " 1
+ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " memset\(100\) " 1
 ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " strncpy\(5\) " 1
-ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " strcat\(26\) " 1
+ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " strcat\(27\) " 1
 ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " strncat\(5\) " 1
-ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " strdup\(13\) " 1
+ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " bcopy\(14\) " 1
+ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " bzero\(100\) " 1
+ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " strdup\(14\) " 1
 ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " strndup\(5\) " 1
 
-ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " wmemcpy\(52\) " 1
-ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " wmempcpy\(52\) " 1
+ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " wcslen\(56\) " 1
+ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " wmemcpy\(56\) " 1
+ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " wmempcpy\(56\) " 1
+ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " wmemmove\(56\) " 1
 ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " wmemset\(400\) " 1
-ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " wcscpy\(52\) " 1
+ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " wcscpy\(56\) " 1
 ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " wcsncpy\(20\) " 1
-ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " wcpcpy\(52\) " 1
+ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " wcpcpy\(56\) " 1
 ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " wcpncpy\(20\) " 1
-ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " wcscat\(104\) " 1
+ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " wcscat\(108\) " 1
 ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " wcsncat\(20\) " 1
-ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " wcsdup\(52\) " 1
-
-
-
+ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " wcsnlen\(24\) " 1
+ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " wcsdup\(56\) " 1

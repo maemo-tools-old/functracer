@@ -40,8 +40,17 @@
 #include "context.h"
 #include "util.h"
 
-#define WSIZE 4
-#define POINTER 4
+/* TODO:
+ * - handle/resolve STT_GNU_IFUNC/IRELATIVE functions in Glibc properly in
+ *   Functracer, then add here support for such functions, like strlen(),
+ *   strstr() etc.  For more info, see:
+ *	http://www.airs.com/blog/archives/403
+ * - add strcmp etc
+ * - have separate values for reads and writes or use different multipliers
+ *   for memory writes (memcpy = N * M_read + N x M_write)?
+ */
+
+#define WSIZE sizeof(wchar_t)
 #define MEMTRANSFER_API_VERSION "2.0"
 #define MEMTRANSFER_ERROR "ERROR: unexpected functracer memtransfer function '%s'!\n"
 
@@ -95,7 +104,7 @@ static void memtransfer_function_exit(struct process *proc, const char *name)
 		} else if (strcmp(name, "memset") == 0) {
 			write_function(proc, name, fn_argument(proc, 2), retval);
 		} else {
-			msg_error(MEMTRANSFER_ERROR, name);
+			msg_warn(MEMTRANSFER_ERROR, name);
 		}
 	} else if (*name == 's') {
 		if (strcmp(name, "stpcpy") == 0) {
@@ -124,7 +133,7 @@ static void memtransfer_function_exit(struct process *proc, const char *name)
 		} else if (strcmp(name, "strndupa") == 0) {
 			write_function(proc, name, fn_argument(proc, 1), retval);
 		} else {
-			msg_error(MEMTRANSFER_ERROR, name);
+			msg_warn(MEMTRANSFER_ERROR, name);
 		}
 	} else if (*name == 'w') {
 		/* wide character functions */
@@ -143,53 +152,60 @@ static void memtransfer_function_exit(struct process *proc, const char *name)
 		} else if (strcmp(name, "wcsdup") == 0) {
 			len = trace_mem_readwstr(proc, retval, NULL, 0);
 			write_function(proc, name, WSIZE * len, retval);
+		} else if (strcmp(name, "wcslen") == 0) {
+			write_function(proc, name, WSIZE * (retval+1), fn_argument(proc, 0));
 		} else if (strcmp(name, "wcsncat") == 0) {
 			write_function(proc, name, WSIZE * fn_argument(proc, 2), retval);
 		} else if (strcmp(name, "wcsncpy") == 0) {
 			write_function(proc, name, WSIZE * fn_argument(proc, 2), retval);
+		} else if (strcmp(name, "wcsnlen") == 0) {
+			write_function(proc, name, WSIZE * (retval+1), fn_argument(proc, 0));
 		} else if (strcmp(name, "wmemcpy") == 0) {
 			write_function(proc, name, WSIZE * fn_argument(proc, 2), retval);
 		} else if (strcmp(name, "wmemmove") == 0) {
-			write_function(proc, name, WSIZE * fn_argument(proc, 2), retval);
+			/* for some reason, when this is entered, the size is already multiplied by WSIZE */
+			write_function(proc, name, fn_argument(proc, 2), retval);
 		} else if (strcmp(name, "wmempcpy") == 0) {
 			write_function(proc, name, WSIZE * fn_argument(proc, 2), fn_argument(proc, 0));
 		} else if (strcmp(name, "wmemset") == 0) {
 			write_function(proc, name, WSIZE * fn_argument(proc, 2), retval);
 		} else {
-			msg_error(MEMTRANSFER_ERROR, name);
+			msg_warn(MEMTRANSFER_ERROR, name);
 		}
 	}
 }
 
 static struct plg_symbol symbols[] = {
-		{.name = "bcopy", .hit = 0},
-		{.name = "bzero", .hit = 0},
-		{.name = "memccpy", .hit = 0},
-		{.name = "memcpy", .hit = 0},
-		{.name = "memmove", .hit = 0},
-		{.name = "mempcpy", .hit = 0},
-		{.name = "memset", .hit = 0},
-		{.name = "stpcpy", .hit = 0},
-		{.name = "stpncpy", .hit = 0},
-		{.name = "strcat", .hit = 0},
-		{.name = "strcpy", .hit = 0},
-		{.name = "strdup", .hit = 0},
-//		{.name = "strdupa", .hit = 0},
-		{.name = "strncat", .hit = 0},
-		{.name = "strncpy", .hit = 0},
-		{.name = "strndup", .hit = 0},
-//		{.name = "strndupa", .hit = 0},
-		{.name = "wcpcpy", .hit = 0},
-		{.name = "wcpncpy", .hit = 0},
-		{.name = "wcscat", .hit = 0},
-		{.name = "wcscpy", .hit = 0},
-		{.name = "wcsdup", .hit = 0},
-		{.name = "wcsncat", .hit = 0},
-		{.name = "wcsncpy", .hit = 0},
-		{.name = "wmemcpy", .hit = 0},
-		{.name = "wmemmove", .hit = 0},
-		{.name = "wmempcpy", .hit = 0},
-		{.name = "wmemset", .hit = 0},
+	{.name = "bcopy", .hit = 0},
+	{.name = "bzero", .hit = 0},
+	{.name = "memccpy", .hit = 0},
+	{.name = "memcpy", .hit = 0},
+	{.name = "memmove", .hit = 0},
+	{.name = "mempcpy", .hit = 0},
+	{.name = "memset", .hit = 0},
+	{.name = "stpcpy", .hit = 0},
+	{.name = "stpncpy", .hit = 0},
+	{.name = "strcat", .hit = 0},
+	{.name = "strcpy", .hit = 0},
+	{.name = "strdup", .hit = 0},
+//	{.name = "strdupa", .hit = 0}, /* macro in glibc */
+	{.name = "strncat", .hit = 0},
+	{.name = "strncpy", .hit = 0},
+	{.name = "strndup", .hit = 0},
+//	{.name = "strndupa", .hit = 0}, /* macro in glibc */
+	{.name = "wcpcpy", .hit = 0},
+	{.name = "wcpncpy", .hit = 0},
+	{.name = "wcscat", .hit = 0},
+	{.name = "wcscpy", .hit = 0},
+	{.name = "wcsdup", .hit = 0},
+	{.name = "wcslen", .hit = 0},
+	{.name = "wcsncat", .hit = 0},
+	{.name = "wcsncpy", .hit = 0},
+	{.name = "wcsnlen", .hit = 0},
+	{.name = "wmemcpy", .hit = 0},
+	{.name = "wmemmove", .hit = 0},
+	{.name = "wmempcpy", .hit = 0},
+	{.name = "wmemset", .hit = 0}
 };
 
 static int get_symbols(struct plg_symbol **syms)
