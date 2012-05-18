@@ -118,6 +118,8 @@ functracer.memory/
 
    (5) 'realloc.exp' tests tracing the realloc() function.
 
+   (6) 'valloc.exp' tests tracing the valloc() function.
+
 functracer.gobject/
 
    (1) 'gobject.exp' tests tracing gobject references and unrefs.
