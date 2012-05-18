@@ -303,6 +303,8 @@ Not all functions can be tracked by plugins. This happens for two reasons:
   (e.g. strlen in Glibc) to be able to track all Glibc functions. See:
 	http://www.airs.com/blog/archives/403
 
+- Handle items listed by: fgrep -e FIXME -e TODO $(find -type f)
+
 
 11. License
 -----------
