@@ -1,6 +1,5 @@
 /*
- * thread-resource is functracer module used to keep track on memory
- * allocation/release caused by creating/joining/detaching threads.
+ * thread.c is functracer module used to keep track of threads.
  *
  * Warning, the code used to determine thread attributes passed to
  * pthread_create relies on the pthread_attr_t structure internal
@@ -8,7 +7,7 @@
  *
  * This file is part of Functracer.
  *
- * Copyright (C) 2009-2010 by Nokia Corporation
+ * Copyright (C) 2009-2012 by Nokia Corporation
  *
  * Contact: Eero Tamminen <eero.tamminen@nokia.com>
  *
@@ -126,7 +125,7 @@ static void thread_function_exit(struct process *proc, const char *name)
 	*/
 	if (strcmp(name, "pthread_join") == 0) {
 		if (retval != 0) {
-			/* failures doesn't allocate resources - skip */
+			/* failures don't free resources - skip */
 			return;
 		}
 
@@ -146,7 +145,7 @@ static void thread_function_exit(struct process *proc, const char *name)
 
 	} else if (strcmp(name, "pthread_create") == 0) {
 		if (retval != 0) {
-			/* failures doesn't allocate resources - skip */
+			/* failures don't allocate resources - skip */
 			return;
 		}
 		int attr_addr = fn_argument(proc, 1);
@@ -169,7 +168,7 @@ static void thread_function_exit(struct process *proc, const char *name)
 				.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
 		};
 
-		/* threads created as detached have own resource type */
+		/* threads created as detached have their own resource type */
 		if (state == PTHREAD_CREATE_DETACHED) {
 			call.res_type = (void*)res_thread_detached.type;
 		}
@@ -179,7 +178,7 @@ static void thread_function_exit(struct process *proc, const char *name)
 
 	} else if (strcmp(name, "pthread_detach") == 0) {
 		if (retval != 0) {
-			/* failures doesn't allocate resources - skip */
+			/* failures don't free resources - skip */
 			return;
 		}
 		sp_rtrace_fcall_t call = {
