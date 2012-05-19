@@ -1,22 +1,71 @@
-                         TODO for functracer plugins
-                   Copyright (C) 2008, 2009 by Nokia Corporation
+
+Potential TODOs for functracer plugins
+======================================
+
+Audit plugin
+------------
+
+Allow specifying which of the functions in the symbols file do
+allocations and which do frees, and how to identify what (return
+value, argument...) is used as resource identifier.
 
 
-File plugin TODOs
-=================
+File plugin
+-----------
 
-* List all open files at the beginning of trace.
+- List all open files at the beginning of trace.
+- Add all the missing FD creation functions (eventfd, signalfd,
+  CLOEXEC versions of calls etc).
+- Add more args (e.g. accept unix file name and oldfd for dup(oldfd))
+  to better be able to track what the FDs represent.
+- Add handling of some extra functions bind() to get better names
+  e.g. for sockets.
 
-* file.c plugin catches fopen()/fclose() which are C-library
-  calls and do not handle FDs directly (but call open/close?).
-
-* Add some missing functions to the file plugin that also create or
-  close file descriptors (some may require parsing more complex
-  arguments, such as structs):
-  - IPC stuff creating FDs:
-    - bind(), doesn't create FDs, but is needed to get the socket address
-      (AF_INET protocol) or file name (AF_UNIX protocol).
-    - mkfifo(), a C-library call, maybe this needs to be catched to get the
-      filename (I assume it uses pipe() syscall which is unnamed)
+Note: it would be better if Functracer would support syscall tracing
+as those are added less frequently, and their symbolic names aren't
+mangled or change like happens with C-library functions.  (Their
+downside is that syscall numbers differ at least between architectures)
 
 
+Memory plugin
+-------------
+
+-
+
+
+Memtransfer plugin
+------------------
+
+- handle/resolve STT_GNU_IFUNC/IRELATIVE functions in Glibc properly in
+  Functracer, then add here support for such functions, like strlen(),
+  strstr() etc which select alternative implementations with that.
+  For more info, see:
+	http://www.airs.com/blog/archives/403
+- add strcmp etc comparison functions.
+- have separate resource types for reads and writes or use different
+  multipliers for memory writes (memcpy = N * M_read + N x M_write)?
+
+Note: This may actually be better just as sp-rtrace LD_PRELOAD because
+with the huge number of tracked functions it may be counting things
+twice, there are issues with symbol names due to Glibc header function
+name mangling, WEAK symbols, above IFUNC issue etc.
+
+LD_PRELOAD doesn't of catch library internal calls, but in this
+particular case it's probably better that way.
+
+
+Shmposix plugin
+---------------
+
+-
+
+Shmsysv plugin
+--------------
+
+Track also other SYSV IPC resources than memory segments.
+
+
+Thread plugin
+-------------
+
+Track also processes, not just (p)threads.
