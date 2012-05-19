@@ -56,9 +56,8 @@ The basic plugin infrastructure consists of three functions:
 - function_exit: this is the place where the data is collected. In this
   function, the user tells to functracer what to report about the tracked
   function. Usually, function_exit identifies the function name, the resource
-  ID and the return value, and events are reported to the trace files using
-  the rp_alloc() function for resource allocation and rp_free() for resource
-  destruction.
+  ID and the return value, and resource allocation/free events are reported to
+  the trace files using libsp-rtrace functions.
   
 - report_init: initializes tracked resources. Plugin can track one or more
   resources (for example file plugin which tracks file pointers and descriptors).
@@ -71,12 +70,12 @@ details on how to use each function, for example:
 - fn_return_value(): get the function return value.
 - fn_argument(): get the function argument (numbers start from zero).
 - rp_write_backtraces(): generate backtraces for function call site.
-- rp_alloc(): log resource allocation.
-- rp_alloc_details: log resource allocation with additional description.
-- rp_free(): log resource destruction.
-
 - trace_mem_readstr(): get C style string located at the specified address.
 - trace_mem_readwstr(): get C style wide string located at the specified address.
+
+Sp-rtrace functions used for trace output are:
+- sp_rtrace_print_call(): print function call resource information
+- sp_rtrace_print_args(rd->fp, args): print function call arguments
 
 
 3. Plugin extension
@@ -263,7 +262,7 @@ file
   File plugin is used to analyse file descriptor and FILE* usage.
   It reports the following resource usage:
   'fd' - file descriptor usage, tracked by function like open,
-         socket, eventfd etc.  See file.c for exact list of
+         socket, eventfd etc.  See file.c for the exact list of
 	 functions.
   'fp' - file pointer usage, tracked by fopen, fclose, fcloseall, 
          freopen functions.
@@ -281,7 +280,7 @@ memory
 memtransfer
   Memory transfer plugin is used to analyse memory read/write/copy
   operations like memcpy, strcat, wcsdup etc.  See memtransfer.c
-  for exact list of functions.
+  for the exact list of functions.
 
 shmsysv
   Shared memory plugin is used to analyse shared memory creation/
