@@ -40,16 +40,6 @@
 #include "context.h"
 #include "util.h"
 
-/* TODO:
- * - handle/resolve STT_GNU_IFUNC/IRELATIVE functions in Glibc properly in
- *   Functracer, then add here support for such functions, like strlen(),
- *   strstr() etc.  For more info, see:
- *	http://www.airs.com/blog/archives/403
- * - add strcmp etc
- * - have separate values for reads and writes or use different multipliers
- *   for memory writes (memcpy = N * M_read + N x M_write)?
- */
-
 #define WSIZE sizeof(wchar_t)
 #define MEMTRANSFER_API_VERSION "2.0"
 #define MEMTRANSFER_ERROR "ERROR: unexpected functracer memtransfer function '%s'!\n"
