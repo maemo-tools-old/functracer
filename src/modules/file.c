@@ -3,7 +3,7 @@
  *
  * This file is part of Functracer.
  *
- * Copyright (C) 2008,2010 by Nokia Corporation
+ * Copyright (C) 2008-2012 by Nokia Corporation
  *
  * Contact: Eero Tamminen <eero.tamminen@nokia.com>
  *
@@ -67,353 +67,164 @@ static sp_rtrace_resource_t res_fp = {
 static char file_api_version[] = FILE_API_VERSION;
 
 
-static void file_function_exit(struct process *proc, const char *name)
+static void write_function(struct process *proc, const char *name, unsigned int type, sp_rtrace_farg_t *args, void *res_type, size_t size, pointer_t id)
 {
 	struct rp_data *rd = proc->rp_data;
+	sp_rtrace_fcall_t call = {
+		.type = type,
+		.index = rd->rp_number,
+		.context = context_mask,
+		.timestamp = RP_TIMESTAMP,
+		.name = name,
+		.res_size = size,
+		.res_id = id,
+		.res_type = res_type,
+		.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
+	};
+	sp_rtrace_print_call(rd->fp, &call);
+	if (args) {
+		sp_rtrace_print_args(rd->fp, args);
+	}
+	rp_write_backtraces(proc, &call);
+	(rd->rp_number)++;
+}
+
+static void file_function_exit(struct process *proc, const char *name)
+{
+	char path[PATH_MAX], mode[16];
 
 	addr_t retval = fn_return_value(proc);
 	assert(proc->rp_data != NULL);
-	if (strcmp(name, "_IO_fopen") == 0) {
-		if (retval == 0) return;
-		else {
-			sp_rtrace_fcall_t call = {
-					.type = SP_RTRACE_FTYPE_ALLOC,
-					.index = rd->rp_number,
-					.context = context_mask,
-					.timestamp = RP_TIMESTAMP,
-					.name = "fopen",
-					.res_size = RES_SIZE,
-					.res_id = (pointer_t)retval,
-					.res_type = (void*)res_fp.type,
-					.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
-			};
-			sp_rtrace_print_call(rd->fp, &call);
 
-			char path[PATH_MAX], mode[16];
+	if (strcmp(name, "_IO_fopen") == 0) {
+		if (retval) {
 			trace_mem_readstr(proc, fn_argument(proc, 0), path, sizeof(path));
 			trace_mem_readstr(proc, fn_argument(proc, 1), mode, sizeof(mode));
 			sp_rtrace_farg_t args[] = {
-					{.name = "path", .value = path},
-					{.name = "mode", .value = mode},
-					{.name = NULL}
-			};
-			sp_rtrace_print_args(rd->fp, args);
-			rp_write_backtraces(proc, &call);
-		}
-	} else if (strcmp(name, "_IO_fclose") == 0) {
-		size_t arg0 = fn_argument(proc, 0);
-
-		sp_rtrace_fcall_t call = {
-				.type = SP_RTRACE_FTYPE_FREE,
-				.index = rd->rp_number,
-				.context = context_mask,
-				.timestamp = RP_TIMESTAMP,
-				.name = "fclose",
-				.res_size = 0,
-				.res_id = (pointer_t)arg0,
-				.res_type = (void*)res_fp.type,
-				.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
-		};
-		sp_rtrace_print_call(rd->fp, &call);
-		rp_write_backtraces(proc, &call);
-
-	} else if (strcmp(name, "__open") == 0) {
-		if (retval == (addr_t)-1) return;
-		else {
-			sp_rtrace_fcall_t call = {
-					.type = SP_RTRACE_FTYPE_ALLOC,
-					.index = rd->rp_number,
-					.context = context_mask,
-					.timestamp = RP_TIMESTAMP,
-					.name = "open",
-					.res_size = RES_SIZE,
-					.res_id = (pointer_t)retval,
-					.res_type = (void*)res_fd.type,
-					.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
-			};
-			sp_rtrace_print_call(rd->fp, &call);
-
-			char pathname[PATH_MAX], flags[16];
-			trace_mem_readstr(proc, fn_argument(proc, 0), pathname, sizeof(pathname));
-			snprintf(flags, sizeof(flags), "%ld", fn_argument(proc, 1));
-			sp_rtrace_farg_t args[] = {
-					{.name = "pathname", .value = pathname},
-					{.name = "flags", .value = flags},
-					{.name = NULL}
-			};
-			sp_rtrace_print_args(rd->fp, args);
-			rp_write_backtraces(proc, &call);
-		}
-
-	} else if (strcmp(name, "__open64") == 0) {
-		if (retval == (addr_t)-1) return;
-		else {
-			sp_rtrace_fcall_t call = {
-					.type = SP_RTRACE_FTYPE_ALLOC,
-					.index = rd->rp_number,
-					.context = context_mask,
-					.timestamp = RP_TIMESTAMP,
-					.name = "open64",
-					.res_size = RES_SIZE,
-					.res_id = (pointer_t)retval,
-					.res_type = (void*)res_fd.type,
-					.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
-			};
-			sp_rtrace_print_call(rd->fp, &call);
-
-			char pathname[PATH_MAX], flags[16];
-			trace_mem_readstr(proc, fn_argument(proc, 0), pathname, sizeof(pathname));
-			snprintf(flags, sizeof(flags), "%ld", fn_argument(proc, 1));
-			sp_rtrace_farg_t args[] = {
-					{.name = "pathname", .value = pathname},
-					{.name = "flags", .value = flags},
-					{.name = NULL}
-			};
-			sp_rtrace_print_args(rd->fp, args);
-			rp_write_backtraces(proc, &call);
-		}
-
-	} else if (strcmp(name, "creat") == 0) {
-		if (retval == (addr_t)-1) return;
-		else {
-			sp_rtrace_fcall_t call = {
-					.type = SP_RTRACE_FTYPE_ALLOC,
-					.index = rd->rp_number,
-					.context = context_mask,
-					.timestamp = RP_TIMESTAMP,
-					.name = "creat",
-					.res_size = RES_SIZE,
-					.res_id = (pointer_t)retval,
-					.res_type = (void*)res_fd.type,
-					.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
-			};
-			sp_rtrace_print_call(rd->fp, &call);
-
-			char pathname[PATH_MAX], mode[16];
-			trace_mem_readstr(proc, fn_argument(proc, 0), pathname, sizeof(pathname));
-			snprintf(mode, sizeof(mode), "0x%lx", fn_argument(proc, 1));
-			sp_rtrace_farg_t args[] = {
-					{.name = "pathname", .value = pathname},
-					{.name = "mode", .value = mode},
-					{.name = NULL}
-			};
-			sp_rtrace_print_args(rd->fp, args);
-			rp_write_backtraces(proc, &call);
-		}
-
-	} else if (strcmp(name, "__close") == 0) {
-		size_t arg0 = fn_argument(proc, 0);
-		sp_rtrace_fcall_t call = {
-				.type = SP_RTRACE_FTYPE_FREE,
-				.index = rd->rp_number,
-				.context = context_mask,
-				.timestamp = RP_TIMESTAMP,
-				.name = "close",
-				.res_size = 0,
-				.res_id = (pointer_t)arg0,
-				.res_type = (void*)res_fd.type,
-				.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
-		};
-		sp_rtrace_print_call(rd->fp, &call);
-		rp_write_backtraces(proc, &call);
-
-	} else if (strcmp(name, "fcloseall") == 0) {
-		sp_rtrace_fcall_t call = {
-				.type = SP_RTRACE_FTYPE_FREE,
-				.index = rd->rp_number,
-				.context = context_mask,
-				.timestamp = RP_TIMESTAMP,
-				.name = "fcloseall",
-				.res_size = 0,
-				.res_id = (pointer_t)(-1),
-				.res_type = (void*)res_fp.type,
-				.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
-		};
-		sp_rtrace_print_call(rd->fp, &call);
-		rp_write_backtraces(proc, &call);
-
-	} else if (strcmp(name, "freopen") == 0) {
-		sp_rtrace_fcall_t call1 = {
-				.type = SP_RTRACE_FTYPE_FREE,
-				.index = rd->rp_number++,
-				.context = context_mask,
-				.timestamp = RP_TIMESTAMP,
-				.name = "freopen",
-				.res_size = 0,
-				.res_id = (pointer_t)fn_argument(proc, 2),
-				.res_type = (void*)res_fp.type,
-				.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
-		};
-		sp_rtrace_print_call(rd->fp, &call1);
-		rp_write_backtraces(proc, &call1);
-
-		if (retval == 0) return;
-
-		sp_rtrace_fcall_t call2 = {
-				.type = SP_RTRACE_FTYPE_ALLOC,
-				.index = rd->rp_number,
-				.context = context_mask,
-				.timestamp = RP_TIMESTAMP,
-				.name = "freopen",
-				.res_size = RES_SIZE,
-				.res_id = (pointer_t)retval,
-				.res_type = (void*)res_fp.type,
-				.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
-		};
-		sp_rtrace_print_call(rd->fp, &call2);
-
-		char path[PATH_MAX], mode[16];
-		trace_mem_readstr(proc, fn_argument(proc, 0), path, sizeof(path));
-		trace_mem_readstr(proc, fn_argument(proc, 1), mode, sizeof(mode));
-		sp_rtrace_farg_t args[] = {
 				{.name = "path", .value = path},
 				{.name = "mode", .value = mode},
 				{.name = NULL}
-		};
-		sp_rtrace_print_args(rd->fp, args);
-		rp_write_backtraces(proc, &call2);
+			};
+			write_function(proc, "fopen", SP_RTRACE_FTYPE_ALLOC, args, res_fp.type, RES_SIZE, retval);
+		}
 
-	} else if (strcmp(name, "_IO_fdopen") == 0) {
-		size_t filedes = fn_argument(proc, 0);
-		sp_rtrace_fcall_t call1 = {
-				.type = SP_RTRACE_FTYPE_FREE,
-				.index = rd->rp_number++,
-				.context = context_mask,
-				.timestamp = RP_TIMESTAMP,
-				.name = "fdopen",
-				.res_size = 0,
-				.res_id = (pointer_t)filedes,
-				.res_type = (void*)res_fd.type,
-				.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
-		};
-		sp_rtrace_print_call(rd->fp, &call1);
-		rp_write_backtraces(proc, &call1);
+	} else if (strcmp(name, "_IO_fclose") == 0) {
+		if (retval == 0) {
+			size_t arg0 = fn_argument(proc, 0);
+			write_function(proc, "fclose", SP_RTRACE_FTYPE_FREE, NULL, res_fp.type, 0, arg0);
+		}
 
-		if (retval == 0) return;
-
-		sp_rtrace_fcall_t call2 = {
-				.type = SP_RTRACE_FTYPE_ALLOC,
-				.index = rd->rp_number,
-				.context = context_mask,
-				.timestamp = RP_TIMESTAMP,
-				.name = "fdopen",
-				.res_size = RES_SIZE,
-				.res_id = (pointer_t)retval,
-				.res_type = (void*)res_fp.type,
-				.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
-		};
-		sp_rtrace_print_call(rd->fp, &call2);
-
-		char fd[16], mode[16];
-		snprintf(fd, sizeof(fd), "%d", filedes);
-		trace_mem_readstr(proc, fn_argument(proc, 1), mode, sizeof(mode));
-		sp_rtrace_farg_t args[] = {
-				{.name = "fd", .value = fd},
+	} else if (strcmp(name, "__open") == 0) {
+		if (retval != (addr_t)-1) {
+			trace_mem_readstr(proc, fn_argument(proc, 0), path, sizeof(path));
+			snprintf(mode, sizeof(mode), "%ld", fn_argument(proc, 1));
+			sp_rtrace_farg_t args[] = {
+				{.name = "path", .value = path},
 				{.name = "flags", .value = mode},
 				{.name = NULL}
-		};
-		sp_rtrace_print_args(rd->fp, args);
-		rp_write_backtraces(proc, &call2);
+			};
+			write_function(proc, "open", SP_RTRACE_FTYPE_ALLOC, args, res_fd.type, RES_SIZE, retval);
+		}
+
+	} else if (strcmp(name, "__open64") == 0) {
+		if (retval != (addr_t)-1) {
+			trace_mem_readstr(proc, fn_argument(proc, 0), path, sizeof(path));
+			snprintf(mode, sizeof(mode), "%ld", fn_argument(proc, 1));
+			sp_rtrace_farg_t args[] = {
+				{.name = "path", .value = path},
+				{.name = "flags", .value = mode},
+				{.name = NULL}
+			};
+			write_function(proc, "open64", SP_RTRACE_FTYPE_ALLOC, args, res_fd.type, RES_SIZE, retval);
+		}
+
+	} else if (strcmp(name, "creat") == 0) {
+		if (retval != (addr_t)-1) {
+			trace_mem_readstr(proc, fn_argument(proc, 0), path, sizeof(path));
+			snprintf(mode, sizeof(mode), "%ld", fn_argument(proc, 1));
+			sp_rtrace_farg_t args[] = {
+				{.name = "path", .value = path},
+				{.name = "mode", .value = mode},
+				{.name = NULL}
+			};
+			write_function(proc, "creat", SP_RTRACE_FTYPE_ALLOC, args, res_fd.type, RES_SIZE, retval);
+		}
+
+	} else if (strcmp(name, "__close") == 0) {
+		if (retval == 0) {
+			size_t arg0 = fn_argument(proc, 0);
+			write_function(proc, "close", SP_RTRACE_FTYPE_FREE, NULL, res_fd.type, 0, arg0);
+		}
+
+	} else if (strcmp(name, "fcloseall") == 0) {
+		if (retval == 0) {
+			write_function(proc, "fcloseall", SP_RTRACE_FTYPE_FREE, NULL, res_fp.type, 0, -1);
+		}
+
+	} else if (strcmp(name, "freopen") == 0) {
+		size_t arg2 = fn_argument(proc, 2);
+		write_function(proc, "freopen", SP_RTRACE_FTYPE_FREE, NULL, res_fp.type, 0, arg2);
+		if (retval) {
+			trace_mem_readstr(proc, fn_argument(proc, 0), path, sizeof(path));
+			trace_mem_readstr(proc, fn_argument(proc, 1), mode, sizeof(mode));
+			sp_rtrace_farg_t args[] = {
+				{.name = "path", .value = path},
+				{.name = "mode", .value = mode},
+				{.name = NULL}
+			};
+			write_function(proc, "freopen", SP_RTRACE_FTYPE_ALLOC, args, res_fp.type, RES_SIZE, retval);
+		}
+
+	} else if (strcmp(name, "_IO_fdopen") == 0) {
+		if (retval) {
+			size_t arg0 = fn_argument(proc, 0);
+			write_function(proc, "fdopen", SP_RTRACE_FTYPE_FREE, NULL, res_fd.type, 0, arg0);
+
+			char fd[16];
+			snprintf(fd, sizeof(fd), "%d", arg0);
+			trace_mem_readstr(proc, fn_argument(proc, 1), mode, sizeof(mode));
+			sp_rtrace_farg_t args[] = {
+				{.name = "fd", .value = fd},
+				{.name = "mode", .value = mode},
+				{.name = NULL}
+			};
+			write_function(proc, "fdopen", SP_RTRACE_FTYPE_ALLOC, args, res_fp.type, RES_SIZE, retval);
+		}
 
 	} else if (strcmp(name, "socket") == 0) {
-		if (retval == (addr_t)-1) return;
-		else {
-			sp_rtrace_fcall_t call = {
-					.type = SP_RTRACE_FTYPE_ALLOC,
-					.index = rd->rp_number,
-					.context = context_mask,
-					.timestamp = RP_TIMESTAMP,
-					.name = "socket",
-					.res_size = RES_SIZE,
-					.res_id = (pointer_t)retval,
-					.res_type = (void*)res_fd.type,
-					.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
-			};
-			sp_rtrace_print_call(rd->fp, &call);
-
+		if (retval != (addr_t)-1) {
 			char domain_s[64], type_s[64], protocol_s[64];
 			snprintf(domain_s, sizeof(domain_s), "0x%lx", fn_argument(proc, 0));
 			snprintf(type_s, sizeof(type_s), "0x%lx", fn_argument(proc, 1));
 			snprintf(protocol_s, sizeof(protocol_s), "0x%lx", fn_argument(proc, 2));
 			sp_rtrace_farg_t args[] = {
-					{.name = "domain", .value = domain_s},
-					{.name = "type", .value = type_s},
-					{.name = "protocol", .value = protocol_s},
-					{.name = NULL}
+				{.name = "domain", .value = domain_s},
+				{.name = "type", .value = type_s},
+				{.name = "protocol", .value = protocol_s},
+				{.name = NULL}
 			};
-			sp_rtrace_print_args(rd->fp, args);
-			rp_write_backtraces(proc, &call);
+			write_function(proc, "socket", SP_RTRACE_FTYPE_ALLOC, args, res_fd.type, RES_SIZE, retval);
 		}
 
 	} else if (strcmp(name, "accept") == 0) {
-		if (retval == (addr_t)-1) return;
-		else {
-			sp_rtrace_fcall_t call = {
-					.type = SP_RTRACE_FTYPE_ALLOC,
-					.index = rd->rp_number,
-					.context = context_mask,
-					.timestamp = RP_TIMESTAMP,
-					.name = "accept",
-					.res_size = RES_SIZE,
-					.res_id = (pointer_t)retval,
-					.res_type = (void*)res_fd.type,
-					.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
-			};
-			sp_rtrace_print_call(rd->fp, &call);
-			rp_write_backtraces(proc, &call);
+		if (retval != (addr_t)-1) {
+			write_function(proc, "accept", SP_RTRACE_FTYPE_ALLOC, NULL, res_fd.type, RES_SIZE, retval);
 		}
 
 	} else if (strcmp(name, "__dup2") == 0) {
-		if (retval == (addr_t)-1) return;
-		else {
-			sp_rtrace_fcall_t call1 = {
-					.type = SP_RTRACE_FTYPE_FREE,
-					.index = rd->rp_number++,
-					.context = context_mask,
-					.timestamp = RP_TIMESTAMP,
-					.name = "dup2",
-					.res_size = 0,
-					.res_id = (pointer_t)fn_argument(proc, 1),
-					.res_type = (void*)res_fd.type,
-					.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
-			};
-			sp_rtrace_print_call(rd->fp, &call1);
-			rp_write_backtraces(proc, &call1);
-			
-			sp_rtrace_fcall_t call2 = {
-					.type = SP_RTRACE_FTYPE_ALLOC,
-					.index = rd->rp_number,
-					.context = context_mask,
-					.timestamp = RP_TIMESTAMP,
-					.name = "dup2",
-					.res_size = RES_SIZE,
-					.res_id = (pointer_t)retval,
-					.res_type = (void*)res_fd.type,
-					.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
-			};
-			sp_rtrace_print_call(rd->fp, &call2);
-			rp_write_backtraces(proc, &call2);
+		if (retval != (addr_t)-1) {
+			size_t arg1 = fn_argument(proc, 1);
+			write_function(proc, "dup2", SP_RTRACE_FTYPE_FREE, NULL, res_fd.type, 0, arg1);
+			write_function(proc, "dup2", SP_RTRACE_FTYPE_ALLOC, NULL, res_fd.type, RES_SIZE, retval);
 		}
 
 	} else if (strcmp(name, "dup") == 0) {
-		if (retval == (addr_t)-1) return;
-		sp_rtrace_fcall_t call = {
-				.type = SP_RTRACE_FTYPE_ALLOC,
-				.index = rd->rp_number,
-				.context = context_mask,
-				.timestamp = RP_TIMESTAMP,
-				.name = "dup",
-				.res_size = RES_SIZE,
-				.res_id = (pointer_t)retval,
-				.res_type = (void*)res_fd.type,
-				.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
-		};
-		sp_rtrace_print_call(rd->fp, &call);
-		rp_write_backtraces(proc, &call);
+		if (retval != (addr_t)-1) {
+			write_function(proc, "dup", SP_RTRACE_FTYPE_ALLOC, NULL, res_fd.type, RES_SIZE, retval);
+		}
 
 	} else if (strcmp(name, "socketpair") == 0){
-		if (retval == (addr_t)-1) return;
-		else {
+		if (retval != (addr_t)-1) {
 			char domain_s[64], type_s[64], protocol_s[64];
 			snprintf(domain_s, sizeof(domain_s), "0x%lx", fn_argument(proc, 0));
 			snprintf(type_s, sizeof(type_s), "0x%lx", fn_argument(proc, 1));
@@ -424,180 +235,73 @@ static void file_function_exit(struct process *proc, const char *name)
 					{.name = "protocol", .value = protocol_s},
 					{.name = NULL}
 			};
-
-			size_t filedes[2];
-			size_t filedes_addr = fn_argument(proc, 3);
-			filedes[0] = trace_mem_readw(proc, filedes_addr);
-			filedes[1] = trace_mem_readw(proc, filedes_addr+4);
-
-			sp_rtrace_fcall_t call1 = {
-					.type = SP_RTRACE_FTYPE_ALLOC,
-					.index = rd->rp_number++,
-					.context = context_mask,
-					.timestamp = RP_TIMESTAMP,
-					.name = "socketpair",
-					.res_size = RES_SIZE,
-					.res_id = (pointer_t)filedes[0],
-					.res_type = (void*)res_fd.type,
-					.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
-			};
-			sp_rtrace_print_call(rd->fp, &call1);
-			sp_rtrace_print_args(rd->fp, args);
-			rp_write_backtraces(proc, &call1);
-
-			sp_rtrace_fcall_t call2 = {
-					.type = SP_RTRACE_FTYPE_ALLOC,
-					.index = rd->rp_number,
-					.context = context_mask,
-					.timestamp = RP_TIMESTAMP,
-					.name = "socketpair",
-					.res_size = RES_SIZE,
-					.res_id = (pointer_t)filedes[1],
-					.res_type = (void*)res_fd.type,
-					.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
-			};
-			sp_rtrace_print_call(rd->fp, &call2);
-			sp_rtrace_print_args(rd->fp, args);
-			rp_write_backtraces(proc, &call2);
+			size_t fds[2];
+			size_t arg3 = fn_argument(proc, 3);
+			fds[0] = trace_mem_readw(proc, arg3);
+			fds[1] = trace_mem_readw(proc, arg3+4);
+			write_function(proc, "socketpair", SP_RTRACE_FTYPE_ALLOC, args, res_fd.type, RES_SIZE, fds[0]);
+			write_function(proc, "socketpair", SP_RTRACE_FTYPE_ALLOC, args, res_fd.type, RES_SIZE, fds[1]);
 		}
 
 	} else if (strcmp(name, "pipe") == 0) {
-		if (retval == (addr_t)-1) return;
-		else {
+		if (retval != (addr_t)-1) {
+			size_t fds[2];
 			size_t arg0 = fn_argument(proc, 0);
-			int fd1 = trace_mem_readw(proc, arg0);
-			int fd2 = trace_mem_readw(proc, arg0 + 4);
-
-			sp_rtrace_fcall_t call1 = {
-					.type = SP_RTRACE_FTYPE_ALLOC,
-					.index = rd->rp_number++,
-					.context = context_mask,
-					.timestamp = RP_TIMESTAMP,
-					.name = "pipe",
-					.res_size = RES_SIZE,
-					.res_id = (pointer_t)fd1,
-					.res_type = (void*)res_fd.type,
-					.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
-			};
-			sp_rtrace_print_call(rd->fp, &call1);
-			rp_write_backtraces(proc, &call1);
-
-			sp_rtrace_fcall_t call2 = {
-					.type = SP_RTRACE_FTYPE_ALLOC,
-					.index = rd->rp_number,
-					.context = context_mask,
-					.timestamp = RP_TIMESTAMP,
-					.name = "pipe",
-					.res_size = RES_SIZE,
-					.res_id = (pointer_t)fd2,
-					.res_type = (void*)res_fd.type,
-					.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
-			};
-			sp_rtrace_print_call(rd->fp, &call2);
-			rp_write_backtraces(proc, &call2);
+			fds[0] = trace_mem_readw(proc, arg0);
+			fds[1] = trace_mem_readw(proc, arg0 + 4);
+			write_function(proc, "pipe", SP_RTRACE_FTYPE_ALLOC, NULL, res_fd.type, RES_SIZE, fds[0]);
+			write_function(proc, "pipe", SP_RTRACE_FTYPE_ALLOC, NULL, res_fd.type, RES_SIZE, fds[1]);
 		}
 
 	} else if (strcmp(name, "pipe2") == 0) {
-		if (retval == (addr_t)-1) return;
-		else {
+		if (retval != (addr_t)-1) {
+			size_t fds[2];
 			size_t arg0 = fn_argument(proc, 0);
-			int fd1 = trace_mem_readw(proc, arg0);
-			int fd2 = trace_mem_readw(proc, arg0 + 4);
-
-			sp_rtrace_fcall_t call1 = {
-					.type = SP_RTRACE_FTYPE_ALLOC,
-					.index = rd->rp_number++,
-					.context = context_mask,
-					.timestamp = RP_TIMESTAMP,
-					.name = "pipe2",
-					.res_size = RES_SIZE,
-					.res_id = (pointer_t)fd1,
-					.res_type = (void*)res_fd.type,
-					.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
-			};
-			sp_rtrace_print_call(rd->fp, &call1);
-			rp_write_backtraces(proc, &call1);
-
-			sp_rtrace_fcall_t call2 = {
-					.type = SP_RTRACE_FTYPE_ALLOC,
-					.index = rd->rp_number,
-					.context = context_mask,
-					.timestamp = RP_TIMESTAMP,
-					.name = "pipe2",
-					.res_size = RES_SIZE,
-					.res_id = (pointer_t)fd2,
-					.res_type = (void*)res_fd.type,
-					.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
-			};
-			sp_rtrace_print_call(rd->fp, &call2);
-			rp_write_backtraces(proc, &call2);
+			fds[0] = trace_mem_readw(proc, arg0);
+			fds[1] = trace_mem_readw(proc, arg0 + 4);
+			write_function(proc, "pipe2", SP_RTRACE_FTYPE_ALLOC, NULL, res_fd.type, RES_SIZE, fds[0]);
+			write_function(proc, "pipe2", SP_RTRACE_FTYPE_ALLOC, NULL, res_fd.type, RES_SIZE, fds[1]);
 		}
 
 	} else if (strcmp(name, "fcntl") == 0) {
 		size_t arg1 = fn_argument(proc, 1);
-		if ( (arg1 == F_DUPFD || arg1 == F_DUPFD_CLOEXEC) && retval != (addr_t)-1){
-			sp_rtrace_fcall_t call = {
-					.type = SP_RTRACE_FTYPE_ALLOC,
-					.index = rd->rp_number,
-					.context = context_mask,
-					.timestamp = RP_TIMESTAMP,
-					.name = "fcntl",
-					.res_size = RES_SIZE,
-					.res_id = (pointer_t)retval,
-					.res_type = (void*)res_fd.type,
-					.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
-			};
-			sp_rtrace_print_call(rd->fp, &call);
-			rp_write_backtraces(proc, &call);
-		}
-		else {
-			/* not handling the rest of the fcntl commands */
-			return;
+		/* only these fcntl() operations create new FDs */
+		if ( (arg1 == F_DUPFD || arg1 == F_DUPFD_CLOEXEC) && retval != (addr_t)-1) {
+			size_t arg2 = fn_argument(proc, 2);
+			write_function(proc, "fcntl", SP_RTRACE_FTYPE_FREE, NULL, res_fd.type, 0, arg2);
+			write_function(proc, "fcntl", SP_RTRACE_FTYPE_ALLOC, NULL, res_fd.type, RES_SIZE, retval);
 		}
 
 	} else if (strcmp(name, "inotify_init") == 0) {
-		if (retval == (addr_t)-1) return;
-		sp_rtrace_fcall_t call = {
-				.type = SP_RTRACE_FTYPE_ALLOC,
-				.index = rd->rp_number,
-				.context = context_mask,
-				.timestamp = RP_TIMESTAMP,
-				.name = "inotify_init",
-				.res_size = RES_SIZE,
-				.res_id = (pointer_t)retval,
-				.res_type = (void*)res_fd.type,
-				.res_type_flag = SP_RTRACE_FCALL_RFIELD_NAME,
-		};
-		sp_rtrace_print_call(rd->fp, &call);
-		rp_write_backtraces(proc, &call);
+		if (retval != (addr_t)-1) {
+			write_function(proc, "inotify_init", SP_RTRACE_FTYPE_ALLOC, NULL, res_fd.type, RES_SIZE, retval);
+		}
 
 	 } else {
 		msg_warn("unexpected function exit (%s)\n", name);
-		return;
-	}
-	(rd->rp_number)++;
+	 }
 }
 
 
 static struct plg_symbol symbols[] = {
-		{.name = "_IO_fopen", .hit = 0},
-		{.name = "_IO_fclose", .hit = 0},
-		{.name = "__open", .hit = 0},
-		{.name = "__open64", .hit = 0},
-		{.name = "__close", .hit = 0},
-		{.name = "fcloseall", .hit = 0},
-		{.name = "creat", .hit = 0},
-		{.name = "freopen", .hit = 0},
-		{.name = "_IO_fdopen", .hit = 0},
-		{.name = "accept", .hit = 0},
-		{.name = "dup", .hit = 0},
-		{.name = "__dup2", .hit = 0},
-		{.name = "socket", .hit = 0},
-		{.name = "fcntl", .hit = 0},
-		{.name = "socketpair", .hit = 0},
-		{.name = "inotify_init", .hit = 0},
-		{.name = "pipe", .hit = 0},
-		{.name = "pipe2", .hit = 0},
+	{.name = "_IO_fopen", .hit = 0},
+	{.name = "_IO_fclose", .hit = 0},
+	{.name = "__open", .hit = 0},
+	{.name = "__open64", .hit = 0},
+	{.name = "__close", .hit = 0},
+	{.name = "fcloseall", .hit = 0},
+	{.name = "creat", .hit = 0},
+	{.name = "freopen", .hit = 0},
+	{.name = "_IO_fdopen", .hit = 0},
+	{.name = "accept", .hit = 0},
+	{.name = "dup", .hit = 0},
+	{.name = "__dup2", .hit = 0},
+	{.name = "socket", .hit = 0},
+	{.name = "fcntl", .hit = 0},
+	{.name = "socketpair", .hit = 0},
+	{.name = "inotify_init", .hit = 0},
+	{.name = "pipe", .hit = 0},
+	{.name = "pipe2", .hit = 0},
 };
 
 static int get_symbols(struct plg_symbol **syms)
