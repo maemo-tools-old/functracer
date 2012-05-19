@@ -69,6 +69,9 @@ static char file_api_version[] = FILE_API_VERSION;
 
 static void write_function(struct process *proc, const char *name, unsigned int type, sp_rtrace_farg_t *args, void *res_type, size_t size, pointer_t id)
 {
+	while (*name == '_') {
+		name++;
+	}
 	struct rp_data *rd = proc->rp_data;
 	sp_rtrace_fcall_t call = {
 		.type = type,
@@ -137,7 +140,7 @@ static void file_function_exit(struct process *proc, const char *name)
 				{.name = "mode", .value = mode},
 				{.name = NULL}
 			};
-			write_function(proc, "freopen", SP_RTRACE_FTYPE_ALLOC, args, res_fp.type, RES_SIZE, retval);
+			write_function(proc, name, SP_RTRACE_FTYPE_ALLOC, args, res_fp.type, RES_SIZE, retval);
 		}
 
 	} else if (strcmp(name, "_IO_fclose") == 0) {
@@ -148,7 +151,7 @@ static void file_function_exit(struct process *proc, const char *name)
 
 	} else if (strcmp(name, "fcloseall") == 0) {
 		if (retval == 0) {
-			write_function(proc, "fcloseall", SP_RTRACE_FTYPE_FREE, NULL, res_fp.type, 0, -1);
+			write_function(proc, name, SP_RTRACE_FTYPE_FREE, NULL, res_fp.type, 0, -1);
 		}
 
 	/* file descriptor functions */
@@ -162,7 +165,7 @@ static void file_function_exit(struct process *proc, const char *name)
 				{.name = "mode", .value = mode},
 				{.name = NULL}
 			};
-			write_function(proc, "creat", SP_RTRACE_FTYPE_ALLOC, args, res_fd.type, RES_SIZE, retval);
+			write_function(proc, name, SP_RTRACE_FTYPE_ALLOC, args, res_fd.type, RES_SIZE, retval);
 		}
 
 	} else if (strcmp(name, "__open") == 0) {
@@ -174,7 +177,7 @@ static void file_function_exit(struct process *proc, const char *name)
 				{.name = "flags", .value = mode},
 				{.name = NULL}
 			};
-			write_function(proc, "open", SP_RTRACE_FTYPE_ALLOC, args, res_fd.type, RES_SIZE, retval);
+			write_function(proc, name, SP_RTRACE_FTYPE_ALLOC, args, res_fd.type, RES_SIZE, retval);
 		}
 
 	} else if (strcmp(name, "__open64") == 0) {
@@ -186,25 +189,25 @@ static void file_function_exit(struct process *proc, const char *name)
 				{.name = "flags", .value = mode},
 				{.name = NULL}
 			};
-			write_function(proc, "open64", SP_RTRACE_FTYPE_ALLOC, args, res_fd.type, RES_SIZE, retval);
+			write_function(proc, name, SP_RTRACE_FTYPE_ALLOC, args, res_fd.type, RES_SIZE, retval);
 		}
 
 	} else if (strcmp(name, "__close") == 0) {
 		if (retval == 0) {
 			size_t arg0 = fn_argument(proc, 0);
-			write_function(proc, "close", SP_RTRACE_FTYPE_FREE, NULL, res_fd.type, 0, arg0);
+			write_function(proc, name, SP_RTRACE_FTYPE_FREE, NULL, res_fd.type, 0, arg0);
 		}
 
 	} else if (strcmp(name, "dup") == 0) {
 		if (retval != (addr_t)-1) {
-			write_function(proc, "dup", SP_RTRACE_FTYPE_ALLOC, NULL, res_fd.type, RES_SIZE, retval);
+			write_function(proc, name, SP_RTRACE_FTYPE_ALLOC, NULL, res_fd.type, RES_SIZE, retval);
 		}
 
-	} else if (strcmp(name, "__dup2") == 0) {
+	} else if (strcmp(name, "__dup2") == 0 || strcmp(name, "dup3") == 0) {
 		if (retval != (addr_t)-1) {
 			size_t arg1 = fn_argument(proc, 1);
-			write_function(proc, "dup2", SP_RTRACE_FTYPE_FREE, NULL, res_fd.type, 0, arg1);
-			write_function(proc, "dup2", SP_RTRACE_FTYPE_ALLOC, NULL, res_fd.type, RES_SIZE, retval);
+			write_function(proc, name, SP_RTRACE_FTYPE_FREE, NULL, res_fd.type, 0, arg1);
+			write_function(proc, name, SP_RTRACE_FTYPE_ALLOC, NULL, res_fd.type, RES_SIZE, retval);
 		}
 
 	} else if (strcmp(name, "fcntl") == 0) {
@@ -212,8 +215,8 @@ static void file_function_exit(struct process *proc, const char *name)
 		/* only these fcntl() operations create new FDs */
 		if ( (arg1 == F_DUPFD || arg1 == F_DUPFD_CLOEXEC) && retval != (addr_t)-1) {
 			size_t arg2 = fn_argument(proc, 2);
-			write_function(proc, "fcntl", SP_RTRACE_FTYPE_FREE, NULL, res_fd.type, 0, arg2);
-			write_function(proc, "fcntl", SP_RTRACE_FTYPE_ALLOC, NULL, res_fd.type, RES_SIZE, retval);
+			write_function(proc, name, SP_RTRACE_FTYPE_FREE, NULL, res_fd.type, 0, arg2);
+			write_function(proc, name, SP_RTRACE_FTYPE_ALLOC, NULL, res_fd.type, RES_SIZE, retval);
 		}
 
 	} else if (strcmp(name, "pipe") == 0) {
@@ -222,8 +225,8 @@ static void file_function_exit(struct process *proc, const char *name)
 			size_t arg0 = fn_argument(proc, 0);
 			fds[0] = trace_mem_readw(proc, arg0);
 			fds[1] = trace_mem_readw(proc, arg0 + 4);
-			write_function(proc, "pipe", SP_RTRACE_FTYPE_ALLOC, NULL, res_fd.type, RES_SIZE, fds[0]);
-			write_function(proc, "pipe", SP_RTRACE_FTYPE_ALLOC, NULL, res_fd.type, RES_SIZE, fds[1]);
+			write_function(proc, name, SP_RTRACE_FTYPE_ALLOC, NULL, res_fd.type, RES_SIZE, fds[0]);
+			write_function(proc, name, SP_RTRACE_FTYPE_ALLOC, NULL, res_fd.type, RES_SIZE, fds[1]);
 		}
 
 	} else if (strcmp(name, "pipe2") == 0) {
@@ -232,8 +235,8 @@ static void file_function_exit(struct process *proc, const char *name)
 			size_t arg0 = fn_argument(proc, 0);
 			fds[0] = trace_mem_readw(proc, arg0);
 			fds[1] = trace_mem_readw(proc, arg0 + 4);
-			write_function(proc, "pipe2", SP_RTRACE_FTYPE_ALLOC, NULL, res_fd.type, RES_SIZE, fds[0]);
-			write_function(proc, "pipe2", SP_RTRACE_FTYPE_ALLOC, NULL, res_fd.type, RES_SIZE, fds[1]);
+			write_function(proc, name, SP_RTRACE_FTYPE_ALLOC, NULL, res_fd.type, RES_SIZE, fds[0]);
+			write_function(proc, name, SP_RTRACE_FTYPE_ALLOC, NULL, res_fd.type, RES_SIZE, fds[1]);
 		}
 
 	/* socket file descriptor related functions */
@@ -250,7 +253,7 @@ static void file_function_exit(struct process *proc, const char *name)
 				{.name = "protocol", .value = protocol_s},
 				{.name = NULL}
 			};
-			write_function(proc, "socket", SP_RTRACE_FTYPE_ALLOC, args, res_fd.type, RES_SIZE, retval);
+			write_function(proc, name, SP_RTRACE_FTYPE_ALLOC, args, res_fd.type, RES_SIZE, retval);
 		}
 
 	} else if (strcmp(name, "socketpair") == 0){
@@ -269,20 +272,24 @@ static void file_function_exit(struct process *proc, const char *name)
 			size_t arg3 = fn_argument(proc, 3);
 			fds[0] = trace_mem_readw(proc, arg3);
 			fds[1] = trace_mem_readw(proc, arg3+4);
-			write_function(proc, "socketpair", SP_RTRACE_FTYPE_ALLOC, args, res_fd.type, RES_SIZE, fds[0]);
-			write_function(proc, "socketpair", SP_RTRACE_FTYPE_ALLOC, args, res_fd.type, RES_SIZE, fds[1]);
+			write_function(proc, name, SP_RTRACE_FTYPE_ALLOC, args, res_fd.type, RES_SIZE, fds[0]);
+			write_function(proc, name, SP_RTRACE_FTYPE_ALLOC, args, res_fd.type, RES_SIZE, fds[1]);
 		}
 
-	} else if (strcmp(name, "accept") == 0) {
+	} else if (strcmp(name, "accept") == 0 || strcmp(name, "accept4") == 0) {
 		if (retval != (addr_t)-1) {
-			write_function(proc, "accept", SP_RTRACE_FTYPE_ALLOC, NULL, res_fd.type, RES_SIZE, retval);
+			write_function(proc, name, SP_RTRACE_FTYPE_ALLOC, NULL, res_fd.type, RES_SIZE, retval);
 		}
 
 	/* other special file descriptor related functions */
 
-	} else if (strcmp(name, "inotify_init") == 0) {
+	} else if (strcmp(name, "inotify_init") == 0 || strcmp(name, "inotify_init1") == 0 ||
+		   strcmp(name, "epoll_create") == 0 || strcmp(name, "epoll_create1") == 0 ||
+		   strcmp(name, "eventfd") == 0      || strcmp(name, "signalfd") == 0 ||
+		   strcmp(name, "posix_openpt") == 0 || strcmp(name, "getpt") == 0 ||
+		   strcmp(name, "timerfd_create") == 0) {
 		if (retval != (addr_t)-1) {
-			write_function(proc, "inotify_init", SP_RTRACE_FTYPE_ALLOC, NULL, res_fd.type, RES_SIZE, retval);
+			write_function(proc, name, SP_RTRACE_FTYPE_ALLOC, NULL, res_fd.type, RES_SIZE, retval);
 		}
 
 	 } else {
@@ -301,14 +308,13 @@ static struct plg_symbol symbols[] = {
 	{.name = "fcloseall", .hit = 0},
 	/* file descriptor functions */
 	{.name = "creat", .hit = 0},	// creat64?
-//	{.name = "openat", .hit = 0},	// openat64?
 	{.name = "__open", .hit = 0},
 	{.name = "__open64", .hit = 0},
-//	{.name = "openat", .hit = 0},
+//	{.name = "openat", .hit = 0},	// openat64?
 	{.name = "__close", .hit = 0},
 	{.name = "dup", .hit = 0},
 	{.name = "__dup2", .hit = 0},
-//	{.name = "dup3", .hit = 0},
+	{.name = "dup3", .hit = 0},
 	{.name = "fcntl", .hit = 0},
 	{.name = "pipe", .hit = 0},
 	{.name = "pipe2", .hit = 0},
@@ -316,19 +322,19 @@ static struct plg_symbol symbols[] = {
 //	{.name = "bind", .hit = 0},
 //	{.name = "connect", .hit = 0},
 	{.name = "accept", .hit = 0},
-//	{.name = "accept4", .hit = 0},
+	{.name = "accept4", .hit = 0},
 	{.name = "socket", .hit = 0},
 	{.name = "socketpair", .hit = 0},
 	/* (other) special file descriptor functions */
-//	{.name = "eventfd", .hit = 0},
-//	{.name = "signalfd", .hit = 0},
-//	{.name = "timerfd_create", .hit = 0},
-//	{.name = "epoll_create", .hit = 0},
-//	{.name = "epoll_create1", .hit = 0},
+	{.name = "eventfd", .hit = 0},
+	{.name = "signalfd", .hit = 0},
+	{.name = "timerfd_create", .hit = 0},
+	{.name = "epoll_create", .hit = 0},
+	{.name = "epoll_create1", .hit = 0},
 	{.name = "inotify_init", .hit = 0},
-//	{.name = "inotify_init1", .hit = 0},
-//	{.name = "posix_openpt", .hit = 0},
-//	{.name = "getpt", .hit = 0},
+	{.name = "inotify_init1", .hit = 0},
+	{.name = "posix_openpt", .hit = 0},
+	{.name = "getpt", .hit = 0}
 };
 
 static int get_symbols(struct plg_symbol **syms)
