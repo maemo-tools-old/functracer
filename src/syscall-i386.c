@@ -36,7 +36,7 @@ struct syscall_data syscall_data_i386 = {
 	.retval_reg = EAX
 };
 
-struct syscall_data *get_syscall_data(struct process *proc)
+struct syscall_data *get_syscall_data(__attribute__((unused)) struct process *proc)
 {
 	return &syscall_data_i386;
 }
