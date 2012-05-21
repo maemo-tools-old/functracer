@@ -60,7 +60,7 @@ static void write_function(struct process *proc, const char *name, unsigned int 
 		.index = rd->rp_number,
 		.context = context_mask,
 		.timestamp = RP_TIMESTAMP,
-		.name = name,
+		.name = (char *)name,	/* not modified by libsp-rtrace */
 		.res_size = size,
 		.res_id = id
 	};

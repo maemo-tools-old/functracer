@@ -104,7 +104,8 @@ static void audit_function_exit(struct process *proc, const char *name)
 				.index = rd->rp_number++,
 				.context = context_mask,
 				.timestamp = RP_TIMESTAMP,
-				.name = target_name,
+				/* cast: not modified by libsp-rtrace */
+				.name = (char *)target_name,
 				.res_size = RES_SIZE,
 				.res_id = (pointer_t)RES_ID,
 			};
