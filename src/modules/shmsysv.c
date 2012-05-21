@@ -119,7 +119,7 @@ static int compare_nodes(const void* node1, const void* node2)
 {
 	const addrmap_t* map1 = (const addrmap_t*)node1;
 	const addrmap_t* map2 = (const addrmap_t*)node2;
-	return map1->addr - map2->addr;
+	return (long)map1->addr - (long)map2->addr;
 }
 
 /**
