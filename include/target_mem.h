@@ -1,7 +1,7 @@
 /*
  * This file is part of Functracer.
  *
- * Copyright (C) 2008 by Nokia Corporation
+ * Copyright (C) 2008-2012 by Nokia Corporation
  *
  * Contact: Eero Tamminen <eero.tamminen@nokia.com>
  *
@@ -41,6 +41,7 @@ extern void trace_mem_write(struct process *proc, addr_t addr, const void *buf, 
 extern void trace_getregs(struct process *proc, void *regs);
 extern void trace_setregs(struct process *proc, void *regs);
 extern size_t trace_mem_readstr(struct process* proc, addr_t addr, char* buffer, size_t size);
-extern size_t trace_mem_readwstr(struct process* proc, addr_t addr, int* buffer, size_t size);
+#include <wchar.h>
+extern size_t trace_mem_readwstr(struct process* proc, addr_t addr, wchar_t* buffer, size_t size);
 
 #endif /* TT_PTRACE_H */
