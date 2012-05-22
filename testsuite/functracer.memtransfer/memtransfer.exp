@@ -43,9 +43,11 @@ set exec_output [ft_runtest $srcdir/$subdir $srcdir/$subdir/$binfile]
 verbose "ft runtest output: $exec_output\n"
 
 # functracer matches these (WEAK symbols), but doesn't register breakpoint?
-#ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " memccpy\(14\) " 1
 #ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " stpcpy\(5\) " 1
 #ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " mempcpy\(14\) " 1
+
+# by function exit, size cannot be accessed, at least on x86, so ignore it
+ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " memccpy\(" 1
 
 ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " strcpy\(14\) " 1
 ft_verify_output ${srcdir}/${subdir}/*.rtrace.txt " memcpy\(14\) " 1
