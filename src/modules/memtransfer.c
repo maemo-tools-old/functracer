@@ -98,7 +98,8 @@ static void memtransfer_function_exit(struct process *proc, const char *name)
 		}
 	} else if (*name == 's') {
 		if (strcmp(name, "stpcpy") == 0) {
-			len = trace_mem_readstr(proc, retval, NULL, 0);
+			arg1 = fn_argument(proc, 1);
+			len = trace_mem_readstr(proc, arg1, NULL, 0);
 			write_function(proc, name, len, fn_argument(proc, 0));
 		} else if (strcmp(name, "stpncpy") == 0) {
 			write_function(proc, name, fn_argument(proc, 2), fn_argument(proc, 0));
@@ -153,7 +154,7 @@ static void memtransfer_function_exit(struct process *proc, const char *name)
 		} else if (strcmp(name, "wmemcpy") == 0) {
 			write_function(proc, name, WSIZE * fn_argument(proc, 2), retval);
 		} else if (strcmp(name, "wmemmove") == 0) {
-			/* for some reason, when this is entered, the size is already multiplied by WSIZE */
+			/* when this function exits, the size args seems already multiplied by WSIZE */
 			write_function(proc, name, fn_argument(proc, 2), retval);
 		} else if (strcmp(name, "wmempcpy") == 0) {
 			write_function(proc, name, WSIZE * fn_argument(proc, 2), fn_argument(proc, 0));
