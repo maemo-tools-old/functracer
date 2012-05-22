@@ -323,8 +323,26 @@ thread
 6. Issues and Limitations
 -------------------------
 
-Not all functions can be currently tracked by plugins. This happens for two
-reasons:
+Some arguments for traced functions may not be available:
+
+- Plugin function_exit callback is called when the function exits,
+  to catch the function return value (resource ID / call success). 
+  At that stage the function argument values may have changed.
+  I.e. all function arguments may not be available.
+
+- In practice this doesn't seem a problem for most of the things
+  one wants to trace, but it's something one needs to check when
+  adding a new module or extending an existing one.
+  -> Tests for the modules should cover checking argument values
+     for all the functions traced by the module.
+
+- You should run the tests when either Functracer itself, or
+  the library from which functions are traced, changes.  Fortunately
+  most of them are in C-library which changes very rarely.
+
+
+Not all functions can be currently tracked by plugins.
+This can be due to several reasons:
 
 -  Functions should be tracked by using their "public" name as found in the
    library export table. This means that any existing name mangling added by
@@ -342,6 +360,9 @@ reasons:
   This is important so that plugins tracking arbitrary functions do not crash
   the target application. For more details, see the source for the
   ssol_prepare_bkpt() function in src/breakpoint-arm.c.
+
+- STT_GNU_IFUNC functions which implementation is resolved at run-time
+  cannot be traced currently.  See TODO.plugins for more info.
 
 
 7. License
