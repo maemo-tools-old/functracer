@@ -4,13 +4,12 @@ functracer installation instructions
 0. Supported platforms
 ----------------------
 
-Functracer supports tracing of 32-bit ARM and x86 binaries only.
+Functracer supports tracing of 32-bit ARM and x86 binaries only
+(not e.g. 64-bit x86).  There's also partial ARM Thumb support.
 
-(Support is mainly about being able to run instructions left under
-function entry point breakpoints from a different address.)
-
-Currently it doesn't support e.g. ARM Thumb instructions, enabled
-by default on Ubuntu (but not on Debian?), or 64-bit x86.
+Support is mainly about being able to emulate instructions left
+under function entry point breakpoints from a different address.
+Code assumes 32-bit pointer/instruction sizes.
 
 
 1. Compiling from sources
@@ -44,11 +43,21 @@ steps in the functracer directory:
      are one functracer specific optional parameter:
      --enable-debug  - enables additional debug output in console.
   3) Build the functracer binaries with "make"
+     3.1) Optional: run the test suite with "make check" [1]
   4) Install the bult binaries with "make install"
-  
+
+[1] Test-suite has its own requirements.  See testsuite/README
+    for more information.  To run all the tests, including gthreads
+    one, you need to configure Functracer with Glib v2 headers
+    and pkg-config files present.
+
 
 1.3 Troubleshooting
 -------------------
 
 The -d functracer option works only if functracer has been compiled with
 --enable-debug option (see Compilation & Installation).
+
+Similarly to Gdb, Functracer needs to use private/interval binutils
+API on ARM, so that's most likely to break.  Versions 2.20.1 and 2.22
+have been known to work.
