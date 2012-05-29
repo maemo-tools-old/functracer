@@ -197,6 +197,17 @@ static int ssol_prepare_bkpt_thumb(struct breakpoint *bkpt, void *safe_insn)
 			bkpt->ssol_post_handler = post_branch_t4;
 			return 0;
 		}
+		if (insn_s[0] == 0xF8DF) {
+			/* LDR.W (literal) 32-bit variant */
+			/* "LDR.W Rt, [pc, imm12]]" -> "LDR.W Rt, [r0, imm12]]" */
+			insn_s[0] = 0xF8D0;
+			bkpt->ssol_pre_handler = pre_rn_pc_thumb;
+			if ((insn_s[0] >> 12) != 0) {
+				/* Destination is not r0 and has to be restored */
+				bkpt->ssol_post_handler = post_rn_pc;
+			}
+			return 0;
+		}
 	}
 	else
 	{
