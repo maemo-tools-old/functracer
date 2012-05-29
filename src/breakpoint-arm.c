@@ -216,6 +216,15 @@ static int ssol_prepare_bkpt_thumb(struct breakpoint *bkpt, void *safe_insn)
 			/* Data-processing instructions (immediate) */
 			return 0;
 		}
+		if ((insn_s[0] & 0xFF00) == 0xB200) {
+			/* SXTH/SXTB/UXTH/UXTB */
+			return 0;
+		}
+		if ((insn_s[0] & 0xF000) >= 0x5000 &&
+		    (insn_s[0] & 0xF000) <= 0x9000) {
+			/* Load/store single data item */
+			return 0;
+		}
 		if (((insn_s[0] & 0xFF00) == 0x4600) &&
 		    ((insn_s[0] & 0x87) != 0x87) &&
 		    ((insn_s[0] & 0x78) != 0x78)) {
