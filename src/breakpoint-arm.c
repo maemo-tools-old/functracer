@@ -49,6 +49,7 @@
 /* Same as above, but with SBZ (should be zero) bits not masked. */
 /*#define MOV_reg(insn)		((insn & 0x0fe00ff0) == 0x01a00000)*/
 #define ARM_NOP			0xe1a00000	/* nop (mov r0,r0) */
+#define THUMB_NOP16		0x46c0		/* nop (mov r8,r8) */
 
 #define BRANCH(insn)		((insn & 0xff000000) == 0xea000000)
 #define sign_extend(x, signbit) ((x) | (0 - ((x) & (1 << (signbit)))))
@@ -138,6 +139,30 @@ static void post_branch(struct process *proc, struct breakpoint *bkpt)
 	set_instruction_pointer(proc, pc + 8 + disp);
 }
 
+static void post_branch_t2(struct process *proc, struct breakpoint *bkpt)
+{
+	addr_t pc = bkpt->addr;
+	long insn = bkpt->orig_insn.insn;
+	int disp = sign_extend(((insn) & ((1 << 11) - 1)) << 1, 11);
+	set_instruction_pointer(proc, pc + 4 + disp);
+}
+
+static void post_branch_t4(struct process *proc, struct breakpoint *bkpt)
+{
+	addr_t pc = bkpt->addr;
+	long insn = bkpt->orig_insn.insn;
+	int s = (insn >> 10) & 1;
+	int j1 = (insn >> (16 + 13)) & 1;
+	int j2 = (insn >> (16 + 11)) & 1;
+	int i1 = !(j1 ^ s);
+	int i2 = !(j2 ^ s);
+	int imm10 = insn & ((1 << 10) - 1);
+	int imm11 = (insn >> 16) & ((1 << 11) - 1);
+	int disp = sign_extend((imm11 | (imm10 << 11) | (i2 << 21) |
+				(i1 << 22) | (s << 23)) << 1, 24);
+	set_instruction_pointer(proc, pc + 4 + disp);
+}
+
 static int ssol_prepare_bkpt_thumb(struct breakpoint *bkpt, void *safe_insn)
 {
 	int bits_15_11;
@@ -162,6 +187,14 @@ static int ssol_prepare_bkpt_thumb(struct breakpoint *bkpt, void *safe_insn)
 		    ((insn_s[1] & 0x000F) != 0x000F) &&
 		    ((insn_s[1] & 0x0F00) != 0x0F00)) {
 			/* MUL/MLA variants (regs != PC) */
+			return 0;
+		}
+		if (((insn_s[0] & 0xF800) == 0xF000) &&
+		    ((insn_s[1] & 0xD000) == 0x9000)) {
+			/* B.W (t4) */
+			insn_s[0] = 0xf3af; /* nop.w */
+			insn_s[1] = 0x8000;
+			bkpt->ssol_post_handler = post_branch_t4;
 			return 0;
 		}
 	}
@@ -229,6 +262,12 @@ static int ssol_prepare_bkpt_thumb(struct breakpoint *bkpt, void *safe_insn)
 		    ((insn_s[0] & 0x87) != 0x87) &&
 		    ((insn_s[0] & 0x78) != 0x78)) {
 			/* MOV reg1, reg2 (reg1 != PC, reg2 != PC) */
+			return 0;
+		}
+		if ((insn_s[0] & 0xF800)== 0xE000) {
+			/* B imm11 (t2) */
+			insn_s[0] = THUMB_NOP16;
+			bkpt->ssol_post_handler = post_branch_t2;
 			return 0;
 		}
 	}
