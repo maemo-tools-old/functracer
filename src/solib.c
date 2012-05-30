@@ -447,11 +447,10 @@ static void solib_read_library(struct process *proc, char *filename,
 	asymbol *sym, **symbol_table;
 	addr_t symaddr;
 	const flagword flags = BSF_FUNCTION;
-	int read_symbols_from_target_program = 0;
 
-	/* Check whether we are reading symbols from the target program itself. */
+	/* Do not read symbols from the target program itself. */
 	if (strcmp(proc->filename, filename) == 0)
-		read_symbols_from_target_program = 1;
+		return;
 
 	/* Do not read symbols from the dynamic linker.
 	   FIXME: ideally this should be done on the callback, but filtering it
@@ -474,8 +473,7 @@ static void solib_read_library(struct process *proc, char *filename,
 				/* Ignore symbols with no defined address. */
 				if (symaddr == 0)
 					continue;
-				if (!solib_is_prelinked(abfd) &&
-				    !read_symbols_from_target_program)
+				if (!solib_is_prelinked(abfd))
 					symaddr += start_addr;
 				if (is_thumb_func(sym))
 					symaddr |= 1;
