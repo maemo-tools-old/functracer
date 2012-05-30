@@ -87,7 +87,8 @@ static const struct argp_option options[] = {
 			"Limit symbol scan only to the specified libraries, where NAMES is <library1>[,<library2>,...]. "
 			"Speeds startup when auditing programs linking large libraries.", 0},
 	{"skip-symbol-check", 'S', NULL, 0,
-			"Skip check if all of monitored symbols are located.", 0},
+			"Skip abort when not all traced symbols are found from libraries directly linked by the binary. "
+			"Needed when the symbols come from dlopen()ed libraries.", 0},
 	{"quiet", 'q', NULL, 0,
 			"Hide internal event messages.", 0},
 	{"help", 'h', NULL, 0,
